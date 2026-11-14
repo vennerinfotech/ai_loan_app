@@ -13,9 +13,11 @@ class OnboardingPageData {
   });
 }
 
-class OnboardingController extends GetxController {
+class OnboardingController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   final PageController pageController = PageController();
   final RxInt currentPage = 0.obs;
+  late final AnimationController orbitAnimation;
 
   final List<OnboardingPageData> pages = const [
     OnboardingPageData(
@@ -37,6 +39,16 @@ class OnboardingController extends GetxController {
           'Flexible repayment tenures, lowest interest rates, and bank-grade data security at every step.',
     ),
   ];
+
+  @override
+  void onInit() {
+    super.onInit();
+    // Smooth 24-second continuous loop for top card background celestial motion
+    orbitAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 24),
+    )..repeat();
+  }
 
   void onPageChanged(int index) {
     currentPage.value = index;
@@ -61,6 +73,7 @@ class OnboardingController extends GetxController {
   @override
   void onClose() {
     pageController.dispose();
+    orbitAnimation.dispose();
     super.onClose();
   }
 }

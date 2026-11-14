@@ -6,7 +6,7 @@ import '../theme/theme.dart';
 
 /// Clean, responsive, and stateless Onboarding Screen for Finsphere AI using GetX.
 /// Seamlessly proportioned without blank space, with swipeable top card & text,
-/// and stationary 3-dot indicator & fixed bottom buttons.
+/// stationary 3-dot indicator, and smooth taramandal celestial orbit animation.
 /// All colors are sourced directly from AppColors for centralized theming.
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -63,12 +63,13 @@ class OnboardingScreen extends StatelessWidget {
                               children: [
                                 const SizedBox(height: 4),
 
-                                // Top hero container (swipes with page)
+                                // Top hero container with taramandal celestial orbit animation
                                 SizedBox(
                                   height: heroCardHeight,
                                   child: _OnboardingHeroCard(
                                     heroHeight: heroCardHeight,
                                     screenWidth: screenWidth,
+                                    animation: controller.orbitAnimation,
                                   ),
                                 ),
 
@@ -273,10 +274,12 @@ class OnboardingScreen extends StatelessWidget {
 class _OnboardingHeroCard extends StatelessWidget {
   final double heroHeight;
   final double screenWidth;
+  final Animation<double> animation;
 
   const _OnboardingHeroCard({
     required this.heroHeight,
     required this.screenWidth,
+    required this.animation,
   });
 
   @override
@@ -301,10 +304,10 @@ class _OnboardingHeroCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Background concentric circles & cosmic orbit ring
+          // Background concentric circles & fixed cosmic orbit with orbiting light beam
           Positioned.fill(
             child: CustomPaint(
-              painter: _HeroBackgroundPainter(),
+              painter: _HeroBackgroundPainter(animation: animation),
             ),
           ),
 
@@ -584,11 +587,16 @@ class _FeaturePill extends StatelessWidget {
   }
 }
 
-/// Painter for the subtle concentric circles and orbital line inside the dark hero card
+/// Painter for the subtle concentric circles and fixed orbit with smooth traveling celestial beam
 class _HeroBackgroundPainter extends CustomPainter {
+  final Animation<double> animation;
+
+  _HeroBackgroundPainter({required this.animation}) : super(repaint: animation);
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width * 0.5, size.height * 0.46);
+    final progress = animation.value;
 
     // Faint circular guide rings
     final ringPaint = Paint()
@@ -600,26 +608,72 @@ class _HeroBackgroundPainter extends CustomPainter {
     canvas.drawCircle(center, size.height * 0.35, ringPaint);
     canvas.drawCircle(center, size.height * 0.50, ringPaint);
 
-    // Smooth tilted elliptical orbit loop
-    final orbitPaint = Paint()
-      ..color = AppColors.orbitViolet.withValues(alpha: 0.65)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+    // Fixed elliptical orbit dimensions centered at the globe
+    final ovalWidth = size.width * 0.98;
+    final ovalHeight = size.height * 0.44;
+    const baseAngle = -24 * math.pi / 180;
+
+    final ovalPath = Path()
+      ..addOval(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: ovalWidth,
+          height: ovalHeight,
+        ),
+      );
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(-24 * math.pi / 180);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: size.width * 0.98,
-        height: size.height * 0.44,
-      ),
-      orbitPaint,
-    );
+    canvas.rotate(baseAngle);
+
+    // Base track (always visible)
+    final basePaint = Paint()
+      ..color = AppColors.orbitViolet.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawPath(ovalPath, basePaint);
+
+    // Luminous beam sweeping around the globe (like Earth revolving around Sun)
+    final beamPaint = Paint()
+      ..color = AppColors.orbitViolet
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 2.0;
+
+    Offset? headPos;
+    for (final metric in ovalPath.computeMetrics()) {
+      final total = metric.length;
+      final trailLen = total * 0.30;
+      final head = progress * total;
+      final tail = head - trailLen;
+
+      if (tail >= 0) {
+        canvas.drawPath(metric.extractPath(tail, head), beamPaint);
+      } else {
+        canvas.drawPath(metric.extractPath(tail + total, total), beamPaint);
+        canvas.drawPath(metric.extractPath(0, head), beamPaint);
+      }
+
+      final tangent = metric.getTangentForOffset(head);
+      if (tangent != null) {
+        headPos = tangent.position;
+      }
+    }
+
+    if (headPos != null) {
+      canvas.drawCircle(
+        headPos,
+        4.5,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawCircle(headPos, 2.2, Paint()..color = Colors.white);
+    }
+
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _HeroBackgroundPainter oldDelegate) => false;
 }

@@ -5,8 +5,9 @@ import '../controller/splash_controller.dart';
 import '../theme/theme.dart';
 
 /// Clean, responsive, and stateless Splash Screen UI for Finsphere.AI.
-/// Uses SplashController (GetX) for automatic navigation after 5 seconds.
-/// All colors are sourced directly from AppColors for centralized theming.
+/// Features a realistic planetarium (taramandal) animation:
+/// Orbit positions remain completely fixed, while smooth celestial light sweeps
+/// and streaming stardust travel around the planet (like Earth revolving around the Sun).
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -52,10 +53,11 @@ class SplashScreen extends StatelessWidget {
           onTap: controller.navigateToOnboarding,
           child: Stack(
             children: [
-              // 1. Background custom paint anchored to the exact logoCenterY
+              // 1. Background custom paint: Fixed orbits with taramandal traveling beam animation
               Positioned.fill(
                 child: CustomPaint(
                   painter: _BackgroundOrbitPainter(
+                    animation: controller.orbitAnimation,
                     center: Offset(screenWidth * 0.5, logoCenterY),
                     screenWidth: screenWidth,
                   ),
@@ -154,7 +156,7 @@ class SplashScreen extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // App icon container with glow and Saturn-style planet emblem
+        // App icon container with glow and Saturn-style planet emblem (stationary)
         Container(
           width: logoSize,
           height: logoSize,
@@ -285,19 +287,26 @@ class SplashScreen extends StatelessWidget {
   }
 }
 
-/// Custom painter rendering crossed tilted oval orbits with switched angles and reduced height
+/// Custom painter: Taramandal (Planetarium-style) celestial orbit animation.
+/// - Orbit positions are 100% FIXED in their signature design positions (-18° and +18°).
+/// - White Orbit: Luminous beam with a glowing planetary head sweeps around the track (like Earth orbiting the Sun).
+/// - Yellow Dotted Orbit: Golden stardust dots stream smoothly along the track in the opposite direction.
 class _BackgroundOrbitPainter extends CustomPainter {
+  final Animation<double> animation;
   final Offset center;
   final double screenWidth;
 
   _BackgroundOrbitPainter({
+    required this.animation,
     required this.center,
     required this.screenWidth,
-  });
+  }) : super(repaint: animation);
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Soft purple halo glow centered behind the logo
+    final progress = animation.value;
+
+    // 1. Soft halo glow centered behind the logo
     final haloGlow = Paint()
       ..color = AppColors.splashHaloGlow.withValues(alpha: 0.22)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 55);
@@ -305,7 +314,7 @@ class _BackgroundOrbitPainter extends CustomPainter {
 
     // 2. Faint concentric circular guide rings proportional to screenWidth
     final ringPaint = Paint()
-      ..color = AppColors.splashGuideRing
+      ..color = AppColors.splashGuideRing.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -313,34 +322,85 @@ class _BackgroundOrbitPainter extends CustomPainter {
     canvas.drawCircle(center, screenWidth * 0.50, ringPaint);
     canvas.drawCircle(center, screenWidth * 0.72, ringPaint);
 
-    // Sleeker, reduced-height oval dimensions proportional to screenWidth
+    // Exact original oval dimensions (fixed position, never changes)
     final ovalWidth = screenWidth * 1.10;
     final ovalHeight = screenWidth * 0.36;
 
-    // 3. Purple continuous oval orbit (tilted at -18 degrees: rising from bottom-left to top-right)
-    final violetAngle = -18 * math.pi / 180;
-    final violetPaint = Paint()
-      ..color = AppColors.splashOrbitViolet.withValues(alpha: 0.85)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
+    // =========================================================================
+    // 3. White Orbit (FIXED at -18°): Luminous beam orbiting like Earth around Sun
+    // =========================================================================
+    const violetAngle = -18 * math.pi / 180;
+
+    final whiteOvalPath = Path()
+      ..addOval(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: ovalWidth,
+          height: ovalHeight,
+        ),
+      );
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(violetAngle);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: ovalWidth,
-        height: ovalHeight,
-      ),
-      violetPaint,
-    );
+
+    // Faint full base track (always visible)
+    final baseWhitePaint = Paint()
+      ..color = AppColors.orbitWhite.withValues(alpha: 0.30)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    canvas.drawPath(whiteOvalPath, baseWhitePaint);
+
+    // Animated luminous beam sweeping along the track (like Earth revolving around Sun)
+    final beamPaint = Paint()
+      ..color = AppColors.orbitWhite
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 2.4;
+
+    Offset? headPosition;
+    for (final metric in whiteOvalPath.computeMetrics()) {
+      final total = metric.length;
+      final trailLen = total * 0.35; // 35% trailing light arc
+      final head = progress * total;
+      final tail = head - trailLen;
+
+      if (tail >= 0) {
+        final arc = metric.extractPath(tail, head);
+        canvas.drawPath(arc, beamPaint);
+      } else {
+        final arc1 = metric.extractPath(tail + total, total);
+        final arc2 = metric.extractPath(0, head);
+        canvas.drawPath(arc1, beamPaint);
+        canvas.drawPath(arc2, beamPaint);
+      }
+
+      // Leading planetary head position
+      final tangent = metric.getTangentForOffset(head);
+      if (tangent != null) {
+        headPosition = tangent.position;
+      }
+    }
+
+    // Glowing planetary head node (Earth) at the front of the beam
+    if (headPosition != null) {
+      final headGlow = Paint()
+        ..color = Colors.white.withValues(alpha: 0.6)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      canvas.drawCircle(headPosition, 6.0, headGlow);
+
+      final headCore = Paint()..color = Colors.white;
+      canvas.drawCircle(headPosition, 3.2, headCore);
+    }
+
     canvas.restore();
 
-    // 4. Gold dotted oval orbit (tilted at +18 degrees: dipping from top-left to bottom-right, crossing in an "X")
-    final goldAngle = 18 * math.pi / 180;
+    // =========================================================================
+    // 4. Yellow Dotted Orbit (FIXED at +18°): Golden stardust streaming smoothly
+    // =========================================================================
+    const goldAngle = 18 * math.pi / 180;
     final goldPaint = Paint()
-      ..color = AppColors.splashDottedOrbit.withValues(alpha: 0.9)
+      ..color = AppColors.splashDottedOrbit
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 2.2;
@@ -357,26 +417,16 @@ class _BackgroundOrbitPainter extends CustomPainter {
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(goldAngle);
-    _drawDashedPath(canvas, goldOvalPath, goldPaint, dashLength: 1.0, spaceLength: 6.5);
+    // Streams smoothly along the path in the opposite direction
+    _drawDashedPath(
+      canvas,
+      goldOvalPath,
+      goldPaint,
+      dashLength: 1.0,
+      spaceLength: 6.5,
+      phase: 1.0 - progress,
+    );
     canvas.restore();
-
-    // 5. Glowing white satellite dot resting precisely on the purple orbit path
-    const t = 52 * math.pi / 180;
-    final a = ovalWidth / 2;
-    final b = ovalHeight / 2;
-    final x0 = a * math.cos(t);
-    final y0 = b * math.sin(t);
-    final dotX = center.dx + (x0 * math.cos(violetAngle) - y0 * math.sin(violetAngle));
-    final dotY = center.dy + (x0 * math.sin(violetAngle) + y0 * math.cos(violetAngle));
-    final dotPosition = Offset(dotX, dotY + 65);
-
-    final dotGlow = Paint()
-      ..color = AppColors.splashSatellite.withValues(alpha: 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawCircle(dotPosition, 6.0, dotGlow);
-
-    final dotPaint = Paint()..color = AppColors.splashSatellite;
-    canvas.drawCircle(dotPosition, 3.0, dotPaint);
   }
 
   void _drawDashedPath(
@@ -385,19 +435,20 @@ class _BackgroundOrbitPainter extends CustomPainter {
     Paint paint, {
     required double dashLength,
     required double spaceLength,
+    required double phase,
   }) {
+    final period = dashLength + spaceLength;
     for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
+      var distance = (phase * period) % period;
       while (distance < metric.length) {
         final length = math.min(dashLength, metric.length - distance);
         final extractPath = metric.extractPath(distance, distance + length);
         canvas.drawPath(extractPath, paint);
-        distance += dashLength + spaceLength;
+        distance += period;
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _BackgroundOrbitPainter oldDelegate) =>
-      oldDelegate.center != center || oldDelegate.screenWidth != screenWidth;
+  bool shouldRepaint(covariant _BackgroundOrbitPainter oldDelegate) => false;
 }

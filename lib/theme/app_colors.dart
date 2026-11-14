@@ -31,6 +31,7 @@ class AppColors {
   static const Color splashOrbitViolet = Color(0xFF6B67C6);
   static const Color splashDottedOrbit = Color(0xFFFBC14E);
   static const Color splashGuideRing = Color(0xFF3835A0);
+  static const Color orbitWhite = Color(0xB3FFFFFF);
   static const Color splashSatellite = Colors.white;
 
   // Splash Pill / Badge ("Your financial partner")
