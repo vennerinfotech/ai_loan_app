@@ -1,15 +1,20 @@
 import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
+import '../controller/splash_controller.dart';
 import '../theme/theme.dart';
 
-/// Fully responsive and stateless Splash Screen UI for Finsphere.AI.
-/// Uses a unified coordinate system so the center logo and background orbits
-/// are mathematically locked together across any screen size or aspect ratio.
+/// Clean, responsive, and stateless Splash Screen UI for Finsphere.AI.
+/// Uses SplashController (GetX) for automatic navigation after 5 seconds.
+/// All colors are sourced directly from AppColors for centralized theming.
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Initialize SplashController which auto-navigates after 5 seconds
+    final controller = Get.put(SplashController());
+
     final mediaQuery = MediaQuery.of(context);
     final screenSize = mediaQuery.size;
     final screenWidth = screenSize.width;
@@ -31,55 +36,70 @@ class SplashScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // 1. Background custom paint anchored to the exact logoCenterY
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _BackgroundOrbitPainter(
-                center: Offset(screenWidth * 0.5, logoCenterY),
-                screenWidth: screenWidth,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppColors.splashGradientTop,
+              AppColors.splashGradientBottom,
+            ],
+          ),
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: controller.navigateToOnboarding,
+          child: Stack(
+            children: [
+              // 1. Background custom paint anchored to the exact logoCenterY
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _BackgroundOrbitPainter(
+                    center: Offset(screenWidth * 0.5, logoCenterY),
+                    screenWidth: screenWidth,
+                  ),
+                ),
               ),
-            ),
-          ),
 
-          // 2. Top Section: Pill Badge (anchored below safe area / notch)
-          Positioned(
-            top: topPadding + 14,
-            left: 0,
-            right: 0,
-            child: Center(child: _buildTopBadge()),
-          ),
+              // 2. Top Section: Pill Badge (anchored below safe area / notch)
+              Positioned(
+                top: topPadding + 14,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildTopBadge()),
+              ),
 
-          // 3. Center Section: Saturn Logo, Title, and Subtitle (anchored to logoCenterY)
-          Positioned(
-            top: logoCenterY - (logoSize / 2),
-            left: 0,
-            right: 0,
-            child: _buildCenterBrand(
-              logoSize: logoSize,
-              titleFontSize: titleFontSize,
-              subtitleFontSize: subtitleFontSize,
-              gap: logoToTitleGap,
-            ),
-          ),
+              // 3. Center Section: Saturn Logo, Title, and Subtitle (anchored to logoCenterY)
+              Positioned(
+                top: logoCenterY - (logoSize / 2),
+                left: 0,
+                right: 0,
+                child: _buildCenterBrand(
+                  logoSize: logoSize,
+                  titleFontSize: titleFontSize,
+                  subtitleFontSize: subtitleFontSize,
+                  gap: logoToTitleGap,
+                ),
+              ),
 
-          // 4. Bottom Section: LinearProgressIndicator & Status Text (anchored above home indicator)
-          Positioned(
-            bottom: bottomPadding + 24,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _buildBottomSection(barWidth: progressBarWidth),
-            ),
+              // 4. Bottom Section: LinearProgressIndicator & Status Text (anchored above home indicator)
+              Positioned(
+                bottom: bottomPadding + 24,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: _buildBottomSection(barWidth: progressBarWidth),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  /// Top pill badge: "Your financial partner" with glowing lime dot
+  /// Top pill badge: "Your financial partner" with glowing golden dot
   Widget _buildTopBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -95,11 +115,11 @@ class SplashScreen extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: AppColors.accentLime,
+              color: AppColors.pillDot,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.accentLime.withValues(alpha: 0.7),
+                  color: AppColors.pillDot.withValues(alpha: 0.7),
                   blurRadius: 6,
                 ),
               ],
@@ -154,16 +174,16 @@ class SplashScreen extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // White Planet Sphere
+                // Planet Sphere
                 Container(
                   width: sphereSize,
                   height: sphereSize,
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.saturnPlanetColor,
                     shape: BoxShape.circle,
                   ),
                 ),
-                // Tilted Accent Lime Ring
+                // Tilted Accent Gold Ring
                 Transform.rotate(
                   angle: -30 * math.pi / 180,
                   child: Container(
@@ -174,7 +194,7 @@ class SplashScreen extends StatelessWidget {
                         Radius.elliptical(ringWidth / 2, ringHeight / 2),
                       ),
                       border: Border.all(
-                        color: AppColors.accentLime,
+                        color: AppColors.saturnRingColor,
                         width: 3.2,
                       ),
                     ),
@@ -187,7 +207,7 @@ class SplashScreen extends StatelessWidget {
 
         SizedBox(height: gap),
 
-        // Brand title: Finsphere.AI with accent lime dot
+        // Brand title: Finsphere.AI with accent gold dot
         Text.rich(
           TextSpan(
             children: [
@@ -195,7 +215,7 @@ class SplashScreen extends StatelessWidget {
               const TextSpan(
                 text: '.',
                 style: TextStyle(
-                  color: AppColors.accentLime,
+                  color: AppColors.accentGold,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -254,7 +274,7 @@ class SplashScreen extends StatelessWidget {
           'SECURING YOUR SESSION',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AppColors.textMuted,
+            color: AppColors.splashStatusText,
             fontSize: 10.5,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.8,
@@ -279,13 +299,13 @@ class _BackgroundOrbitPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     // 1. Soft purple halo glow centered behind the logo
     final haloGlow = Paint()
-      ..color = AppColors.primaryPurple.withValues(alpha: 0.22)
+      ..color = AppColors.splashHaloGlow.withValues(alpha: 0.22)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 55);
     canvas.drawCircle(center, 75, haloGlow);
 
     // 2. Faint concentric circular guide rings proportional to screenWidth
     final ringPaint = Paint()
-      ..color = const Color(0xFF191C3B)
+      ..color = AppColors.splashGuideRing
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -300,7 +320,7 @@ class _BackgroundOrbitPainter extends CustomPainter {
     // 3. Purple continuous oval orbit (tilted at -18 degrees: rising from bottom-left to top-right)
     final violetAngle = -18 * math.pi / 180;
     final violetPaint = Paint()
-      ..color = AppColors.orbitViolet.withValues(alpha: 0.85)
+      ..color = AppColors.splashOrbitViolet.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
 
@@ -317,15 +337,15 @@ class _BackgroundOrbitPainter extends CustomPainter {
     );
     canvas.restore();
 
-    // 4. Lime dotted oval orbit (tilted at +18 degrees: dipping from top-left to bottom-right, crossing in an "X")
-    final limeAngle = 18 * math.pi / 180;
-    final limePaint = Paint()
-      ..color = AppColors.accentLime.withValues(alpha: 0.9)
+    // 4. Gold dotted oval orbit (tilted at +18 degrees: dipping from top-left to bottom-right, crossing in an "X")
+    final goldAngle = 18 * math.pi / 180;
+    final goldPaint = Paint()
+      ..color = AppColors.splashDottedOrbit.withValues(alpha: 0.9)
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 2.2;
 
-    final limeOvalPath = Path()
+    final goldOvalPath = Path()
       ..addOval(
         Rect.fromCenter(
           center: Offset.zero,
@@ -336,8 +356,8 @@ class _BackgroundOrbitPainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(limeAngle);
-    _drawDashedPath(canvas, limeOvalPath, limePaint, dashLength: 1.0, spaceLength: 6.5);
+    canvas.rotate(goldAngle);
+    _drawDashedPath(canvas, goldOvalPath, goldPaint, dashLength: 1.0, spaceLength: 6.5);
     canvas.restore();
 
     // 5. Glowing white satellite dot resting precisely on the purple orbit path
@@ -351,11 +371,11 @@ class _BackgroundOrbitPainter extends CustomPainter {
     final dotPosition = Offset(dotX, dotY + 65);
 
     final dotGlow = Paint()
-      ..color = Colors.white.withValues(alpha: 0.4)
+      ..color = AppColors.splashSatellite.withValues(alpha: 0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
     canvas.drawCircle(dotPosition, 6.0, dotGlow);
 
-    final dotPaint = Paint()..color = Colors.white;
+    final dotPaint = Paint()..color = AppColors.splashSatellite;
     canvas.drawCircle(dotPosition, 3.0, dotPaint);
   }
 

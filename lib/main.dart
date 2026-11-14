@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 import 'screens/splash_screen.dart';
 import 'theme/theme.dart';
 
@@ -12,6 +13,7 @@ class FinsphereApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: Get.key,
       title: 'Finsphere.AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
