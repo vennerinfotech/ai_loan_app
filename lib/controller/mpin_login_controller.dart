@@ -2,11 +2,35 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 /// GetX controller for Login with MPIN flow.
-class MpinLoginController extends GetxController {
+/// Includes ticker provider for continuous cosmic orbit animation in top card.
+class MpinLoginController extends GetxController
+    with GetSingleTickerProviderStateMixin {
   final mpin = ''.obs;
   final userName = 'Aarav Mehta'.obs;
   final userInitials = 'AM'.obs;
   final isSubmitting = false.obs;
+
+  late final AnimationController orbitController;
+  late final Animation<double> orbitAnimation;
+
+  @override
+  void onInit() {
+    super.onInit();
+    orbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 24),
+    )..repeat();
+    orbitAnimation = CurvedAnimation(
+      parent: orbitController,
+      curve: Curves.linear,
+    );
+  }
+
+  @override
+  void onClose() {
+    orbitController.dispose();
+    super.onClose();
+  }
 
   void enterDigit(String digit) {
     if (mpin.value.length < 4) {

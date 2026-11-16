@@ -69,10 +69,10 @@ class RegistrationController extends GetxController
   @override
   void onInit() {
     super.onInit();
-    // Continuous loop animation for cosmic orbit pattern
+    // Continuous loop animation for cosmic orbit pattern (matched with onboarding & login screens)
     mpinOrbitAnimation = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 24),
     )..repeat();
 
     // Sync text controllers with observables

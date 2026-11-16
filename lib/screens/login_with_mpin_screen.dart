@@ -5,8 +5,9 @@ import '../controller/mpin_login_controller.dart';
 import '../theme/theme.dart';
 
 /// Screen: Login with MPIN
-/// Features top cosmic user hero card with avatar, 4 MPIN indicator dots,
-/// and responsive numeric keypad with integrated biometric fingerprint button.
+/// Features proportionally sized top cosmic user hero card with avatar,
+/// intersecting animated cosmic orbit rings with moving golden satellite,
+/// 4 MPIN indicator dots, and responsive numeric keypad with biometric button.
 /// Exact pixel-perfect match to Figma reference design.
 class LoginWithMpinScreen extends StatelessWidget {
   const LoginWithMpinScreen({super.key});
@@ -22,7 +23,7 @@ class LoginWithMpinScreen extends StatelessWidget {
           children: [
             // Top Hero Card (User Avatar + Welcome back + Name + 4 MPIN dots)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 0.0),
               child: _buildTopUserCard(controller),
             ),
 
@@ -37,7 +38,7 @@ class LoginWithMpinScreen extends StatelessWidget {
                   _buildNumberPad(controller),
                   const SizedBox(height: 20),
                   _buildFooterLinks(controller),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                 ],
               ),
             ),
@@ -51,7 +52,7 @@ class LoginWithMpinScreen extends StatelessWidget {
   Widget _buildTopUserCard(MpinLoginController controller) {
     return Container(
       width: double.infinity,
-      height: 275,
+      height: 335,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
@@ -67,10 +68,12 @@ class LoginWithMpinScreen extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Background subtle cosmic orbit lines
+          // Background intersecting cosmic orbit lines with animation
           Positioned.fill(
             child: CustomPaint(
-              painter: _TopCardCosmicPainter(),
+              painter: _TopCardCosmicPainter(
+                animation: controller.orbitAnimation,
+              ),
             ),
           ),
 
@@ -78,10 +81,11 @@ class LoginWithMpinScreen extends StatelessWidget {
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 12),
               // Avatar circle with initials
               Container(
-                width: 68,
-                height: 68,
+                width: 72,
+                height: 72,
                 decoration: const BoxDecoration(
                   color: AppColors.mpinAvatarBackground,
                   shape: BoxShape.circle,
@@ -91,36 +95,36 @@ class LoginWithMpinScreen extends StatelessWidget {
                       controller.userInitials.value,
                       style: const TextStyle(
                         color: AppColors.mpinAvatarText,
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.5,
                       ),
                     )),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
 
               // "Welcome back" subtitle
               const Text(
                 'Welcome back',
                 style: TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 12.5,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 5),
 
               // User Name
               Obx(() => Text(
                     controller.userName.value,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 23,
+                      fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.4,
                     ),
                   )),
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
 
               // 4 MPIN indicator dots
               Obx(() => Row(
@@ -129,9 +133,9 @@ class LoginWithMpinScreen extends StatelessWidget {
                       final isFilled = index < controller.mpin.value.length;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
-                        width: 11,
-                        height: 11,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        width: 12,
+                        height: 12,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isFilled
@@ -141,23 +145,24 @@ class LoginWithMpinScreen extends StatelessWidget {
                             color: isFilled
                                 ? AppColors.mpinDotFilled
                                 : AppColors.mpinDotEmptyBorder,
-                            width: 1.6,
+                            width: 1.8,
                           ),
                         ),
                       );
                     }),
                   )),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
 
               // "Enter your 4-digit MPIN"
               const Text(
                 'Enter your 4-digit MPIN',
                 style: TextStyle(
                   color: AppColors.inputHintIcon,
-                  fontSize: 12,
+                  fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 8),
             ],
           ),
         ],
@@ -210,7 +215,7 @@ class LoginWithMpinScreen extends StatelessWidget {
         }
 
         if (isBackspace) {
-          // Backspace button
+          // Backspace Button
           return GestureDetector(
             onTap: controller.deleteDigit,
             child: Container(
@@ -228,7 +233,7 @@ class LoginWithMpinScreen extends StatelessWidget {
           );
         }
 
-        // Standard numeric key (1-9, 0)
+        // Standard Numeric Key (1-9, 0)
         return GestureDetector(
           onTap: () => controller.enterDigit(key),
           child: Container(
@@ -255,7 +260,7 @@ class LoginWithMpinScreen extends StatelessWidget {
     );
   }
 
-  /// Footer links: "Use mobile number" & "Forgot MPIN?"
+  /// Footer Links: "Use mobile number" and "Forgot MPIN?"
   Widget _buildFooterLinks(MpinLoginController controller) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,7 +270,7 @@ class LoginWithMpinScreen extends StatelessWidget {
           child: const Text(
             'Use mobile number',
             style: TextStyle(
-              color: AppColors.inputText,
+              color: AppColors.numPadKeyText,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -287,36 +292,94 @@ class LoginWithMpinScreen extends StatelessWidget {
   }
 }
 
-/// Custom painter for background cosmic orbits in the user card
+/// Custom painter for background cosmic orbits and animated celestial satellite in the user card
 class _TopCardCosmicPainter extends CustomPainter {
+  final Animation<double> animation;
+
+  _TopCardCosmicPainter({required this.animation}) : super(repaint: animation);
+
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.40);
+    // Aligned with the center of the user avatar in the top card
+    final center = Offset(size.width * 0.5, size.height * 0.31);
+    final progress = animation.value;
 
-    // Orbit ellipse
-    final orbitPaint = Paint()
+    final ringPaint = Paint()
       ..color = AppColors.heroConcentricRings.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.1;
 
+    final ovalWidth = size.width * 0.88;
+    const ovalHeight = 84.0;
+
+    final ovalRect = Rect.fromCenter(
+      center: Offset.zero,
+      width: ovalWidth,
+      height: ovalHeight,
+    );
+
+    final path1 = Path()..addOval(ovalRect);
+    final path2 = Path()..addOval(ovalRect);
+
+    // Orbit 1: Tilted -18 degrees
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(-20 * math.pi / 180);
+    canvas.rotate(-18 * math.pi / 180);
+    canvas.drawPath(path1, ringPaint);
 
-    final oval = Rect.fromCenter(
-      center: Offset.zero,
-      width: size.width * 0.88,
-      height: size.height * 0.48,
-    );
-    canvas.drawOval(oval, orbitPaint);
+    // Animated Golden satellite dot along Orbit 1
+    Offset? headPos;
+    for (final metric in path1.computeMetrics()) {
+      final total = metric.length;
+      final head = progress * total;
+      final tangent = metric.getTangentForOffset(head);
+      if (tangent != null) {
+        headPos = tangent.position;
+      }
 
-    // Golden accent planet dot on the orbit
-    final dotPaint = Paint()..color = AppColors.accentGold;
-    canvas.drawCircle(Offset(size.width * 0.38, -size.height * 0.10), 3.5, dotPaint);
+      // Gentle golden light trail behind the satellite
+      final trailLen = total * 0.15;
+      final tail = head - trailLen;
+      final trailPaint = Paint()
+        ..color = AppColors.accentGold.withValues(alpha: 0.65)
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2.0;
 
+      if (tail >= 0) {
+        canvas.drawPath(metric.extractPath(tail, head), trailPaint);
+      } else {
+        canvas.drawPath(metric.extractPath(tail + total, total), trailPaint);
+        canvas.drawPath(metric.extractPath(0, head), trailPaint);
+      }
+    }
+
+    if (headPos != null) {
+      // Golden outer glow
+      canvas.drawCircle(
+        headPos,
+        5.0,
+        Paint()
+          ..color = AppColors.accentGold.withValues(alpha: 0.45)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
+      // Golden satellite core dot
+      canvas.drawCircle(
+        headPos,
+        3.2,
+        Paint()..color = AppColors.accentGold,
+      );
+    }
+    canvas.restore();
+
+    // Orbit 2: Intersecting Orbit tilted +18 degrees (matches Figma 3D celestial sphere)
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(18 * math.pi / 180);
+    canvas.drawPath(path2, ringPaint);
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _TopCardCosmicPainter oldDelegate) => false;
 }
