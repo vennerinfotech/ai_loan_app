@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../screens/registration_screen.dart';
+import '../screens/login_with_mpin_screen.dart';
 
 class OnboardingPageData {
   final String titlePrefix;
@@ -68,7 +69,7 @@ class OnboardingController extends GetxController
   }
 
   void alreadyHaveAccount() {
-    // Handle sign-in action
+    Get.to(() => const LoginWithMpinScreen());
   }
 
   @override

@@ -2,9 +2,13 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../models/registration_step.dart';
+import '../screens/login_with_mpin_screen.dart';
 
 /// GetX controller for Create Account + OTP Verify registration flow.
-class RegistrationController extends GetxController {
+class RegistrationController extends GetxController
+    with GetSingleTickerProviderStateMixin {
+  late final AnimationController mpinOrbitAnimation;
+
   // ==========================================
   // Step Management
   // ==========================================
@@ -14,7 +18,7 @@ class RegistrationController extends GetxController {
   final List<RegistrationStep> steps = const [
     RegistrationStep(index: 0, title: 'Create Account'),
     RegistrationStep(index: 1, title: 'Verify OTP'),
-    RegistrationStep(index: 2, title: 'Complete Profile'),
+    RegistrationStep(index: 2, title: 'Create MPIN'),
   ];
 
   // ==========================================
@@ -65,6 +69,12 @@ class RegistrationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Continuous loop animation for cosmic orbit pattern
+    mpinOrbitAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 20),
+    )..repeat();
+
     // Sync text controllers with observables
     fullNameController.addListener(() => fullName.value = fullNameController.text);
     mobileNumberController.addListener(() => mobileNumber.value = mobileNumberController.text);
@@ -75,6 +85,7 @@ class RegistrationController extends GetxController {
 
   @override
   void onClose() {
+    mpinOrbitAnimation.dispose();
     fullNameController.dispose();
     mobileNumberController.dispose();
     emailController.dispose();
@@ -193,8 +204,86 @@ class RegistrationController extends GetxController {
 
   void verifyOtp() {
     if (otpController.text.length < 6) return;
-    // Advance to step 3 (future)
+    // Advance to step 3 (Create MPIN)
     currentStep.value = 2;
+  }
+
+  // ==========================================
+  // Step 3: Create MPIN Actions & Validation
+  // ==========================================
+  final newMpin = ''.obs;
+  final confirmMpin = ''.obs;
+  final activeMpinField = 'new'.obs; // 'new' or 'confirm'
+
+  bool get has4Digits => newMpin.value.length == 4;
+
+  bool get hasNoSequence {
+    final pin = newMpin.value;
+    if (pin.length < 2) return true;
+    const sequences = [
+      '0123', '1234', '2345', '3456', '4567', '5678', '6789',
+      '3210', '4321', '5432', '6543', '7654', '8765', '9876',
+    ];
+    for (final seq in sequences) {
+      if (pin == seq) return false;
+    }
+    return true;
+  }
+
+  bool get hasNoRepeats {
+    final pin = newMpin.value;
+    if (pin.length < 2) return true;
+    if (pin.length == 4 &&
+        pin[0] == pin[1] &&
+        pin[1] == pin[2] &&
+        pin[2] == pin[3]) {
+      return false;
+    }
+    return true;
+  }
+
+  bool get isMpinValid => has4Digits && hasNoSequence && hasNoRepeats;
+  bool get isMpinConfirmed =>
+      confirmMpin.value.length == 4 && confirmMpin.value == newMpin.value;
+  bool get canSetMpin => isMpinValid && isMpinConfirmed;
+
+  void selectMpinField(String field) {
+    activeMpinField.value = field;
+  }
+
+  void enterMpinDigit(String digit) {
+    if (activeMpinField.value == 'new') {
+      if (newMpin.value.length < 4) {
+        newMpin.value += digit;
+        if (newMpin.value.length == 4) {
+          activeMpinField.value = 'confirm';
+        }
+      }
+    } else {
+      if (confirmMpin.value.length < 4) {
+        confirmMpin.value += digit;
+      }
+    }
+  }
+
+  void deleteMpinDigit() {
+    if (activeMpinField.value == 'confirm') {
+      if (confirmMpin.value.isNotEmpty) {
+        confirmMpin.value =
+            confirmMpin.value.substring(0, confirmMpin.value.length - 1);
+      } else {
+        activeMpinField.value = 'new';
+      }
+    } else {
+      if (newMpin.value.isNotEmpty) {
+        newMpin.value = newMpin.value.substring(0, newMpin.value.length - 1);
+      }
+    }
+  }
+
+  void setMpin() {
+    if (!canSetMpin) return;
+    Get.offAll(() => const LoginWithMpinScreen());
   }
 
   /// Format countdown seconds to MM:SS

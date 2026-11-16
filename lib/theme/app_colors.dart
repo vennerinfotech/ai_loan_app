@@ -175,4 +175,42 @@ class AppColors {
   static const Color resendTimerText = Color(0xFF727681);
   /// Resend link active text
   static const Color resendLinkText = Color(0xFF524FBA);
+
+  // ==========================================
+  // MPIN Screens (Create MPIN & Login with MPIN)
+  // ==========================================
+  /// Create MPIN dark gradient
+  static const Color mpinDarkBackgroundTop = Color(0xFF4846C2);
+  static const Color mpinDarkBackgroundBottom = Color(0xFF242378);
+
+  /// MPIN row container
+  static const Color mpinFieldBackground = Color(0xFF26257C);
+  static const Color mpinFieldBorder = Color(0xFF3E3D9C);
+
+  /// MPIN indicator dots
+  static const Color mpinDotFilled = Color(0xFFFBC14E);
+  static const Color mpinDotEmpty = Color(0x336B68D8);
+  static const Color mpinDotEmptyBorder = Color(0xFF6B68D8);
+
+  /// Criteria rule pills
+  static const Color mpinRuleActiveBg = Color(0x33FBC14E);
+  static const Color mpinRuleInactiveBg = Color(0x22FFFFFF);
+  static const Color mpinRuleActiveText = Colors.white;
+  static const Color mpinRuleInactiveText = Color(0xFFB0B3D6);
+
+  /// Dark keypad for Create MPIN
+  static const Color mpinDarkKeyBackground = Color(0xFF26257C);
+  static const Color mpinDarkKeyBorder = Color(0xFF383792);
+  static const Color mpinDarkKeyText = Colors.white;
+  static const Color mpinDarkActionKeyBackground = Color(0xFF363590);
+
+  /// "Set MPIN" Button (Golden Amber with Navy Text)
+  static const Color mpinSetButtonBackground = Color(0xFFFBC14E);
+  static const Color mpinSetButtonText = Color(0xFF212074);
+
+  /// Login with MPIN Top Card & Avatar
+  static const Color mpinAvatarBackground = Color(0xFFFBC14E);
+  static const Color mpinAvatarText = Color(0xFF212074);
+  static const Color mpinBiometricBackground = Color(0xFF524FBA);
+  static const Color mpinBiometricIcon = Colors.white;
 }
