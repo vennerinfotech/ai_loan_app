@@ -378,8 +378,8 @@ class CreateAccountStep extends StatelessWidget {
   }
 }
 
-/// Custom text field that dynamically updates focus border and background color
-class _FocusableTextField extends StatefulWidget {
+/// Focusable text field directly using native TextFormField (no wrapped container)
+class _FocusableTextField extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData prefixIcon;
@@ -393,161 +393,111 @@ class _FocusableTextField extends StatefulWidget {
   });
 
   @override
-  State<_FocusableTextField> createState() => _FocusableTextFieldState();
-}
-
-class _FocusableTextFieldState extends State<_FocusableTextField> {
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isFocused = _focusNode.hasFocus;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: isFocused
-            ? AppColors.fieldFocusedBackground
-            : AppColors.fieldUnfocusedBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isFocused
-              ? AppColors.fieldFocusedBorder
-              : AppColors.fieldUnfocusedBorder,
-          width: 1.8,
-        ),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        color: AppColors.inputText,
+        fontSize: 14.5,
+        fontWeight: FontWeight.w600,
       ),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: _focusNode,
-        keyboardType: widget.keyboardType,
-        style: const TextStyle(
-          color: AppColors.inputText,
-          fontSize: 14.5,
-          fontWeight: FontWeight.w600,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppColors.fieldUnfocusedBackground,
+        hintText: hintText,
+        hintStyle: const TextStyle(
+          color: AppColors.inputHintIcon,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
         ),
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: const TextStyle(
-            color: AppColors.inputHintIcon,
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
+        prefixIcon: Icon(
+          prefixIcon,
+          color: AppColors.inputHintIcon,
+          size: 20,
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: AppColors.fieldFocusedBorder,
+            width: 1.8,
           ),
-          prefixIcon: Icon(
-            widget.prefixIcon,
-            color: isFocused
-                ? AppColors.fieldFocusedBorder
-                : AppColors.inputHintIcon,
-            size: 20,
-          ),
-          border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
   }
 }
 
-/// Mobile number input field with +91 prefix and digits-only number keyboard
-class _MobileNumberField extends StatefulWidget {
+/// Mobile number input field directly using native TextFormField (no wrapped container)
+class _MobileNumberField extends StatelessWidget {
   final TextEditingController controller;
 
   const _MobileNumberField({required this.controller});
 
   @override
-  State<_MobileNumberField> createState() => _MobileNumberFieldState();
-}
-
-class _MobileNumberFieldState extends State<_MobileNumberField> {
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isFocused = _focusNode.hasFocus;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: isFocused
-            ? AppColors.fieldFocusedBackground
-            : AppColors.fieldUnfocusedBackground,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isFocused
-              ? AppColors.fieldFocusedBorder
-              : AppColors.fieldUnfocusedBorder,
-          width: 1.8,
-        ),
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      maxLength: 10,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+      ],
+      style: const TextStyle(
+        color: AppColors.inputText,
+        fontSize: 14.5,
+        fontWeight: FontWeight.w600,
       ),
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          Text(
-            '+91',
-            style: TextStyle(
-              color: isFocused ? AppColors.textDark : AppColors.inputHintIcon,
-              fontSize: 14.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              focusNode: _focusNode,
-              keyboardType: TextInputType.number,
-              maxLength: 10,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              style: const TextStyle(
-                color: AppColors.inputText,
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppColors.fieldUnfocusedBackground,
+        counterText: '',
+        hintText: '98765 43210',
+        hintStyle: const TextStyle(
+          color: AppColors.inputHintIcon,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        prefixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            SizedBox(width: 16),
+            Text(
+              '+91',
+              style: TextStyle(
+                color: AppColors.inputHintIcon,
                 fontSize: 14.5,
-                fontWeight: FontWeight.w600,
-              ),
-              decoration: const InputDecoration(
-                hintText: '98765 43210',
-                hintStyle: TextStyle(
-                  color: AppColors.inputHintIcon,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-                border: InputBorder.none,
-                counterText: '',
-                contentPadding: EdgeInsets.symmetric(vertical: 14),
+                fontWeight: FontWeight.w700,
               ),
             ),
+            SizedBox(width: 12),
+          ],
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: AppColors.fieldFocusedBorder,
+            width: 1.8,
           ),
-        ],
+        ),
       ),
     );
   }
