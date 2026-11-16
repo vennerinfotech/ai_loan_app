@@ -6,17 +6,20 @@ import '../screens/otp_verification_screen.dart';
 import '../screens/registration_screen.dart';
 
 /// GetX controller for "Login with mobile" screen.
+/// Uses direct reactive observable variable binding (no addListener needed).
 class LoginWithMobileController extends GetxController
     with GetSingleTickerProviderStateMixin {
   final mobileNumber = ''.obs;
   final mobileController = TextEditingController();
-  final focusNode = FocusNode();
-  final isFocused = false.obs;
 
   late final AnimationController orbitController;
   late final Animation<double> orbitAnimation;
 
   bool get canSubmit => mobileNumber.value.trim().length == 10;
+
+  void onMobileChanged(String val) {
+    mobileNumber.value = val;
+  }
 
   @override
   void onInit() {
@@ -30,21 +33,12 @@ class LoginWithMobileController extends GetxController
       parent: orbitController,
       curve: Curves.linear,
     );
-
-    mobileController.addListener(() {
-      mobileNumber.value = mobileController.text;
-    });
-
-    focusNode.addListener(() {
-      isFocused.value = focusNode.hasFocus;
-    });
   }
 
   @override
   void onClose() {
     orbitController.dispose();
     mobileController.dispose();
-    focusNode.dispose();
     super.onClose();
   }
 

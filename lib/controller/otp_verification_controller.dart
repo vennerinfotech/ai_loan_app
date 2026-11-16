@@ -42,9 +42,6 @@ class OtpVerificationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    otpController.addListener(() {
-      otpCode.value = otpController.text;
-    });
     startResendTimer();
   }
 
@@ -70,10 +67,15 @@ class OtpVerificationController extends GetxController {
     });
   }
 
+  void onOtpChanged(String val) {
+    otpCode.value = val;
+  }
+
   void enterOtpDigit(String digit) {
     if (otpController.text.length < 6) {
       otpController.text += digit;
-      if (otpController.text.length == 6) {
+      otpCode.value = otpController.text;
+      if (otpCode.value.length == 6) {
         verifyOtp();
       }
     }
@@ -83,6 +85,7 @@ class OtpVerificationController extends GetxController {
     if (otpController.text.isNotEmpty) {
       otpController.text =
           otpController.text.substring(0, otpController.text.length - 1);
+      otpCode.value = otpController.text;
     }
   }
 

@@ -171,7 +171,7 @@ class ForgotMpinScreen extends StatelessWidget {
   Widget _buildMobileInputField(ForgotMpinController controller) {
     return TextFormField(
       controller: controller.mobileController,
-      focusNode: controller.focusNode,
+      onChanged: controller.onMobileChanged,
       keyboardType: TextInputType.phone,
       enableSuggestions: false,
       autocorrect: false,

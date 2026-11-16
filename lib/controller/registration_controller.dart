@@ -74,13 +74,6 @@ class RegistrationController extends GetxController
       vsync: this,
       duration: const Duration(seconds: 24),
     )..repeat();
-
-    // Sync text controllers with observables
-    fullNameController.addListener(() => fullName.value = fullNameController.text);
-    mobileNumberController.addListener(() => mobileNumber.value = mobileNumberController.text);
-    emailController.addListener(() => email.value = emailController.text);
-    referralCodeController.addListener(() => referralCode.value = referralCodeController.text);
-    otpController.addListener(() => otpCode.value = otpController.text);
   }
 
   @override
@@ -169,9 +162,14 @@ class RegistrationController extends GetxController
   // ==========================================
   // OTP Actions
   // ==========================================
+  void onOtpChanged(String val) {
+    otpCode.value = val;
+  }
+
   void enterOtpDigit(String digit) {
     if (otpController.text.length < 6) {
       otpController.text += digit;
+      otpCode.value = otpController.text;
     }
   }
 
@@ -179,6 +177,7 @@ class RegistrationController extends GetxController
     if (otpController.text.isNotEmpty) {
       otpController.text =
           otpController.text.substring(0, otpController.text.length - 1);
+      otpCode.value = otpController.text;
     }
   }
 

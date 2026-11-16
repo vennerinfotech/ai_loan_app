@@ -63,6 +63,7 @@ class CreateAccountStep extends StatelessWidget {
             hintText: 'Aarav Mehta',
             prefixIcon: Icons.person_outline_rounded,
             keyboardType: TextInputType.name,
+            onChanged: (val) => controller.fullName.value = val,
           ),
           const SizedBox(height: 20),
 
@@ -80,6 +81,7 @@ class CreateAccountStep extends StatelessWidget {
           // Mobile number input with +91 prefix and digits-only number keyboard
           _MobileNumberField(
             controller: controller.mobileNumberController,
+            onChanged: (val) => controller.mobileNumber.value = val,
           ),
           const SizedBox(height: 20),
 
@@ -100,6 +102,7 @@ class CreateAccountStep extends StatelessWidget {
             hintText: 'you@example.com',
             prefixIcon: Icons.mail_outline_rounded,
             keyboardType: TextInputType.emailAddress,
+            onChanged: (val) => controller.email.value = val,
           ),
           const SizedBox(height: 16),
 
@@ -202,6 +205,7 @@ class CreateAccountStep extends StatelessWidget {
               controller: controller.referralCodeController,
               hintText: 'Enter referral code',
               prefixIcon: Icons.confirmation_number_outlined,
+              onChanged: (val) => controller.referralCode.value = val,
             ),
           ],
         );
@@ -384,12 +388,14 @@ class _FocusableTextField extends StatelessWidget {
   final String hintText;
   final IconData prefixIcon;
   final TextInputType keyboardType;
+  final ValueChanged<String>? onChanged;
 
   const _FocusableTextField({
     required this.controller,
     required this.hintText,
     required this.prefixIcon,
     this.keyboardType = TextInputType.text,
+    this.onChanged,
   });
 
   @override
@@ -397,6 +403,7 @@ class _FocusableTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      onChanged: onChanged,
       style: const TextStyle(
         color: AppColors.inputText,
         fontSize: 14.5,
@@ -440,8 +447,12 @@ class _FocusableTextField extends StatelessWidget {
 /// Mobile number input field directly using native TextFormField (no wrapped container)
 class _MobileNumberField extends StatelessWidget {
   final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
 
-  const _MobileNumberField({required this.controller});
+  const _MobileNumberField({
+    required this.controller,
+    this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -449,6 +460,7 @@ class _MobileNumberField extends StatelessWidget {
       controller: controller,
       keyboardType: TextInputType.number,
       maxLength: 10,
+      onChanged: onChanged,
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
       ],

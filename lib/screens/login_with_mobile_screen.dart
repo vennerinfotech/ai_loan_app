@@ -230,7 +230,7 @@ class LoginWithMobileScreen extends StatelessWidget {
   Widget _buildMobileInputField(LoginWithMobileController controller) {
     return TextFormField(
       controller: controller.mobileController,
-      focusNode: controller.focusNode,
+      onChanged: controller.onMobileChanged,
       keyboardType: TextInputType.phone,
       enableSuggestions: false,
       autocorrect: false,

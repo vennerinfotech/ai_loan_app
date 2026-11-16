@@ -223,6 +223,7 @@ class OtpVerificationScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       useNativeKeyboard: false,
       showCursor: true,
+      onChanged: controller.onOtpChanged,
       cursor: Container(
         width: 2,
         height: 22,
