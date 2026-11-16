@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../screens/reset_mpin_screen.dart';
-import '../screens/login_with_mpin_screen.dart';
+import '../screens/main_nav_screen.dart';
 
 enum OtpVerificationType {
   forgotMpin,
@@ -122,7 +122,7 @@ class OtpVerificationController extends GetxController {
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
         );
-        Get.offAll(() => const LoginWithMpinScreen());
+        Get.offAll(() => const MainNavScreen());
       }
     });
   }

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../screens/forgot_mpin_screen.dart';
+import '../screens/main_nav_screen.dart';
 
 /// GetX controller for Login with MPIN flow.
 /// Includes ticker provider for continuous cosmic orbit animation in top card.
@@ -53,15 +54,7 @@ class MpinLoginController extends GetxController
     isSubmitting.value = true;
     Future.delayed(const Duration(milliseconds: 400), () {
       isSubmitting.value = false;
-      Get.snackbar(
-        'Success',
-        'Welcome back, ${userName.value}!',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF212074),
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
+      Get.offAll(() => const MainNavScreen());
     });
   }
 
@@ -73,8 +66,11 @@ class MpinLoginController extends GetxController
       backgroundColor: const Color(0xFF524FBA),
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 800),
     );
+    Future.delayed(const Duration(milliseconds: 900), () {
+      Get.offAll(() => const MainNavScreen());
+    });
   }
 
   void useMobileNumber() {

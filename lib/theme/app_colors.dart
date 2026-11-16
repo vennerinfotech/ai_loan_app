@@ -213,4 +213,59 @@ class AppColors {
   static const Color mpinAvatarText = Color(0xFF212074);
   static const Color mpinBiometricBackground = Color(0xFF524FBA);
   static const Color mpinBiometricIcon = Colors.white;
+
+  // ==========================================
+  // Dashboard & Bottom Navigation Bar
+  // ==========================================
+  static const Color bottomNavBackground = Color(0xFF212074);
+  static const Color bottomNavSelected = Color(0xFFFBC14E);
+  static const Color bottomNavUnselected = Color(0xFF8C90C2);
+  static const Color bottomNavCenterButton = Color(0xFFFBC14E);
+  static const Color bottomNavCenterIcon = Color(0xFF212074);
+
+  static const Color dashboardCardBorder = Color(0xFFEAEFF8);
+  static const Color cibilGoodTagBg = Color(0xFFFBC14E);
+  static const Color cibilGoodTagText = Color(0xFF212074);
+  static const Color reviewPillBg = Color(0xFFFEEEDB);
+  static const Color reviewPillText = Color(0xFFB45309);
+
+  // ==========================================
+  // Aadhaar KYC Verification Screens
+  // ==========================================
+  static const Color kycStepperActivePill = Color(0xFF212074);
+  static const Color kycStepperActivePillText = Colors.white;
+  static const Color kycStepperActiveBadge = Color(0xFFFBC14E);
+  static const Color kycStepperActiveBadgeText = Color(0xFF212074);
+  static const Color kycStepperInactivePill = Colors.white;
+  static const Color kycStepperInactivePillBorder = Color(0xFFE2E7F4);
+  static const Color kycStepperInactivePillText = Color(0xFF727681);
+  static const Color kycStepperInactiveBadge = Color(0xFFEEF1FD);
+  static const Color kycStepperInactiveBadgeText = Color(0xFF524FBA);
+  static const Color kycStepperLine = Color(0xFFDDE3F0);
+
+  static const Color kycUploadCardBg = Colors.white;
+  static const Color kycUploadCardBorder = Color(0xFFE2E7F4);
+  static const Color kycUploadIconBg = Color(0xFFEEF1FD);
+  static const Color kycUploadIcon = Color(0xFF524FBA);
+  static const Color kycSuccessGreen = Color(0xFF22C55E);
+  static const Color kycSuccessGreenBg = Color(0xFFDCFCE7);
+
+  static const Color kycNotLinkedCircleBg = Color(0xFFFEEEDB);
+  static const Color kycNotLinkedCircleBorder = Color(0xFFFBD38D);
+  static const Color kycNotLinkedIcon = Color(0xFFC05621);
+
+  static const Color kycDetailsCardBg = Colors.white;
+  static const Color kycDetailsCardBorder = Color(0xFFEAEFF8);
+  static const Color kycDetailsItemIconBg = Color(0xFFEEF1FD);
+  static const Color kycDetailsItemIcon = Color(0xFF524FBA);
+
+  // ==========================================
+  // PAN KYC Verification Screens
+  // ==========================================
+  static const Color panCardGold = Color(0xFFFBBF46);
+  static const Color panErrorCircleBg = Color(0xFFFFF0ED);
+  static const Color panErrorCircleBorder = Color(0xFFFED7AA);
+  static const Color panErrorIcon = Color(0xFFB91C1C);
+  static const Color panCaptureBg = Color(0xFF333099);
+  static const Color panFrameDashedBorder = Color(0xFFFBC14E);
 }
