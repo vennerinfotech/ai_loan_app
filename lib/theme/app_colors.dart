@@ -55,12 +55,12 @@ class AppColors {
   static const Color heroCardGradientBottom = Color(0xFF2D2C91);
   static const Color darkCardBackground = Color(0xFF2D2C91);
 
-  /// Central Globe inside Hero Card
+  /// Central Globe/Circle inside Hero Card (visible light violet/indigo circle)
   static const Color globeColor = Color(0xFF4845B6);
 
-  /// Orbits & Concentric Rings inside Hero Card
-  static const Color heroConcentricRings = Color(0xFF3835A0);
-  static const Color orbitViolet = Color(0xFF6B67C6);
+  /// Orbits & Concentric Rings inside Hero Card (luminous cosmic violet lines matching Figma)
+  static const Color heroConcentricRings = Color(0xFF6B68D8);
+  static const Color orbitViolet = Color(0xFF7E7BE6);
 
   /// Saturn Planet & Ring
   static const Color saturnPlanetColor = Colors.white;
@@ -109,4 +109,70 @@ class AppColors {
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0B3D6);
   static const Color textMuted = Color(0xFF6E719B);
+
+  // ==========================================
+  // Registration / Create Account & OTP Screen
+  // ==========================================
+  /// Stepper pill active (Primary Purple #524FBA)
+  static const Color stepperActive = Color(0xFF524FBA);
+  /// Stepper pill inactive
+  static const Color stepperInactive = Color(0xFFDDE3F0);
+
+  /// Back button squircle
+  static const Color backButtonBackground = Colors.white;
+  static const Color backButtonBorder = Color(0xFFE2E7F4);
+  static const Color backButtonIcon = Color(0xFF1E2127);
+
+  /// Step counter text (e.g. "1/3")
+  static const Color stepCounterText = Color(0xFF1E2127);
+
+  /// Input fields - Focused vs Unfocused
+  static const Color fieldFocusedBackground = Colors.white;
+  static const Color fieldFocusedBorder = Color(0xFF524FBA);
+  static const Color fieldUnfocusedBackground = Color(0xFFEEF3FC);
+  static const Color fieldUnfocusedBorder = Colors.transparent;
+
+  static const Color inputBorder = Color(0xFFE2E7F4);
+  static const Color inputBackground = Colors.white;
+  static const Color inputHintIcon = Color(0xFF98A6D4);
+  static const Color inputText = Color(0xFF1E2127);
+  static const Color inputLabel = Color(0xFF727681);
+
+  /// Referral container & Add button
+  static const Color referralCardBackground = Color(0xFFEEF2FA);
+  static const Color referralCardBorder = Color(0xFFDCE4F5);
+  static const Color referralIcon = Color(0xFF524FBA);
+  static const Color referralText = Color(0xFF1E2127);
+  static const Color referralAddButtonBg = Colors.white;
+  static const Color referralAddButtonText = Color(0xFF524FBA);
+  static const Color referralAddButtonBorder = Color(0xFFDCE4F5);
+
+  /// Checkbox active fill
+  static const Color checkboxActive = Color(0xFF212074);
+  /// Terms & link text
+  static const Color linkText = Color(0xFF524FBA);
+
+  /// OTP cells
+  static const Color otpFilledBackground = Color(0xFF212074);
+  static const Color otpFilledText = Colors.white;
+  static const Color otpActiveBorder = Color(0xFF524FBA);
+  static const Color otpActiveBackground = Colors.white;
+  static const Color otpEmptyBackground = Colors.white;
+  static const Color otpEmptyBorder = Color(0xFFE2E7F4);
+
+  /// Security notice container
+  static const Color securityBoxBackground = Color(0xFFEEF1FD);
+  static const Color securityIcon = Color(0xFF6C74A6);
+  static const Color securityText = Color(0xFF6C74A6);
+
+  /// Number pad keys
+  static const Color numPadKeyBackground = Colors.white;
+  static const Color numPadKeyBorder = Color(0xFFE8EEF8);
+  static const Color numPadKeyText = Color(0xFF1E2127);
+  static const Color numPadActionKeyBackground = Color(0xFFEEF2F8);
+
+  /// Resend timer text
+  static const Color resendTimerText = Color(0xFF727681);
+  /// Resend link active text
+  static const Color resendLinkText = Color(0xFF524FBA);
 }

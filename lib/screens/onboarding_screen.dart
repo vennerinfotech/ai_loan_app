@@ -198,13 +198,13 @@ class OnboardingScreen extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         height: 56,
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.primaryButtonBackground,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
@@ -222,9 +222,9 @@ class OnboardingScreen extends StatelessWidget {
             Container(
               width: 44,
               height: 44,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.primaryButtonArrowCircle,
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
                 Icons.arrow_forward_rounded,
@@ -245,13 +245,13 @@ class OnboardingScreen extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         height: 52,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: AppColors.lightButtonBackground,
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppColors.lightButtonBorder,
             width: 1,
@@ -284,8 +284,8 @@ class _OnboardingHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Proportional globe diameter (~36% of heroHeight, clamped between 110 and 155)
-    final globeSize = (heroHeight * 0.36).clamp(112.0, 160.0);
+    // Proportional, clearly visible center circle matching Figma reference
+    final globeSize = (heroHeight * 0.22).clamp(72.0, 96.0);
 
     return Container(
       width: double.infinity,
@@ -598,20 +598,20 @@ class _HeroBackgroundPainter extends CustomPainter {
     final center = Offset(size.width * 0.5, size.height * 0.46);
     final progress = animation.value;
 
-    // Faint circular guide rings
+    // Faint circular guide rings matching luminous violet in Figma
     final ringPaint = Paint()
-      ..color = AppColors.heroConcentricRings.withValues(alpha: 0.6)
+      ..color = AppColors.heroConcentricRings.withValues(alpha: 0.30)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
-    canvas.drawCircle(center, size.height * 0.20, ringPaint);
-    canvas.drawCircle(center, size.height * 0.35, ringPaint);
-    canvas.drawCircle(center, size.height * 0.50, ringPaint);
+    canvas.drawCircle(center, size.height * 0.16, ringPaint);
+    canvas.drawCircle(center, size.height * 0.30, ringPaint);
+    canvas.drawCircle(center, size.height * 0.46, ringPaint);
 
-    // Fixed elliptical orbit dimensions centered at the globe
-    final ovalWidth = size.width * 0.98;
-    final ovalHeight = size.height * 0.44;
-    const baseAngle = -24 * math.pi / 180;
+    // Fixed elliptical orbit dimensions centered at the globe with reduced height
+    final ovalWidth = size.width * 0.96;
+    final ovalHeight = size.height * 0.25;
+    const baseAngle = -20 * math.pi / 180;
 
     final ovalPath = Path()
       ..addOval(
