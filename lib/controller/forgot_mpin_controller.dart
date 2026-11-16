@@ -2,31 +2,17 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
 /// GetX controller for "Forgot MPIN" screen.
-class ForgotMpinController extends GetxController
-    with GetSingleTickerProviderStateMixin {
+class ForgotMpinController extends GetxController {
   final mobileNumber = ''.obs;
   final mobileController = TextEditingController();
   final focusNode = FocusNode();
   final isFocused = false.obs;
-
-  late final AnimationController orbitController;
-  late final Animation<double> orbitAnimation;
 
   bool get canSubmit => mobileNumber.value.trim().length == 10;
 
   @override
   void onInit() {
     super.onInit();
-    // Synchronized 24-second continuous loop for cosmic orbit around key
-    orbitController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 24),
-    )..repeat();
-    orbitAnimation = CurvedAnimation(
-      parent: orbitController,
-      curve: Curves.linear,
-    );
-
     mobileController.addListener(() {
       mobileNumber.value = mobileController.text;
     });
@@ -38,7 +24,6 @@ class ForgotMpinController extends GetxController
 
   @override
   void onClose() {
-    orbitController.dispose();
     mobileController.dispose();
     focusNode.dispose();
     super.onClose();

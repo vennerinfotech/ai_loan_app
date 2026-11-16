@@ -226,12 +226,14 @@ class LoginWithMobileScreen extends StatelessWidget {
     );
   }
 
-  /// Mobile Number input field using native TextFormField directly (no wrapped container)
+  /// Mobile Number input field using native TextFormField directly (no wrapped container, no bottom divider)
   Widget _buildMobileInputField(LoginWithMobileController controller) {
     return TextFormField(
       controller: controller.mobileController,
       focusNode: controller.focusNode,
       keyboardType: TextInputType.phone,
+      enableSuggestions: false,
+      autocorrect: false,
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(10),
@@ -241,6 +243,7 @@ class LoginWithMobileScreen extends StatelessWidget {
         fontSize: 16,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.5,
+        decoration: TextDecoration.none,
       ),
       decoration: InputDecoration(
         filled: true,
@@ -250,6 +253,7 @@ class LoginWithMobileScreen extends StatelessWidget {
           color: AppColors.inputLabel,
           fontSize: 15,
           fontWeight: FontWeight.w400,
+          decoration: TextDecoration.none,
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         prefixIcon: Row(
@@ -291,6 +295,13 @@ class LoginWithMobileScreen extends StatelessWidget {
           borderSide: const BorderSide(
             color: AppColors.fieldFocusedBorder,
             width: 1.8,
+          ),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.inputBorder,
+            width: 1.2,
           ),
         ),
       ),

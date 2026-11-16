@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -9,8 +8,9 @@ import '../theme/theme.dart';
 
 /// Screen: Forgot MPIN
 /// Allows users to recover/reset their MPIN via registered mobile number OTP.
-/// Features top back button, cosmic key badge with animated golden orbit,
-/// security notice card, "Send OTP →" CTA button, and "Back to login" link.
+/// Features top back button, clean key badge icon container (no animation),
+/// clean mobile number input with no bottom dividers, security notice card,
+/// "Send OTP →" CTA button, and "Back to login" link.
 /// Pixel-perfect match to Figma reference design.
 class ForgotMpinScreen extends StatelessWidget {
   const ForgotMpinScreen({super.key});
@@ -60,8 +60,8 @@ class ForgotMpinScreen extends StatelessWidget {
                   children: [
                     const SizedBox(height: 10),
 
-                    // Cosmic Golden Key Badge (with animated celestial orbit)
-                    _buildCosmicKeyBadge(controller),
+                    // Golden Key Badge Container (simple clean container with key icon)
+                    _buildKeyBadge(),
                     const SizedBox(height: 24),
 
                     // Title
@@ -104,7 +104,7 @@ class ForgotMpinScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
 
-                        // +91 | 98765 43210 Input Container
+                        // +91 | 98765 43210 Input Container (clean native TextFormField)
                         _buildMobileInputField(controller),
                         const SizedBox(height: 16),
 
@@ -149,8 +149,8 @@ class ForgotMpinScreen extends StatelessWidget {
     );
   }
 
-  /// Center badge with deep navy squircle, golden key, and animated golden orbit
-  Widget _buildCosmicKeyBadge(ForgotMpinController controller) {
+  /// Simple clean badge container with tilted golden key icon (no animation)
+  Widget _buildKeyBadge() {
     return Container(
       width: 108,
       height: 108,
@@ -158,39 +158,23 @@ class ForgotMpinScreen extends StatelessWidget {
         color: const Color(0xFF24227E),
         borderRadius: BorderRadius.circular(28),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Animated cosmic golden orbit ring
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _KeyCosmicOrbitPainter(
-                animation: controller.orbitAnimation,
-              ),
-            ),
-          ),
-
-          // Tilted Golden Key icon matching reference
-          Transform.rotate(
-            angle: -38 * math.pi / 180,
-            child: const Icon(
-              Icons.key_rounded,
-              color: AppColors.accentGold,
-              size: 40,
-            ),
-          ),
-        ],
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.key_outlined,
+        color: AppColors.accentGold,
+        size: 42,
       ),
     );
   }
 
-  /// Mobile Number input field using native TextFormField directly (no wrapped container)
+  /// Mobile Number input field using native TextFormField directly (no wrapped container, no bottom divider)
   Widget _buildMobileInputField(ForgotMpinController controller) {
     return TextFormField(
       controller: controller.mobileController,
       focusNode: controller.focusNode,
       keyboardType: TextInputType.phone,
+      enableSuggestions: false,
+      autocorrect: false,
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,
         LengthLimitingTextInputFormatter(10),
@@ -200,6 +184,7 @@ class ForgotMpinScreen extends StatelessWidget {
         fontSize: 16,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.5,
+        decoration: TextDecoration.none,
       ),
       decoration: InputDecoration(
         filled: true,
@@ -209,6 +194,7 @@ class ForgotMpinScreen extends StatelessWidget {
           color: AppColors.inputLabel,
           fontSize: 15,
           fontWeight: FontWeight.w400,
+          decoration: TextDecoration.none,
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
@@ -253,6 +239,13 @@ class ForgotMpinScreen extends StatelessWidget {
           borderSide: const BorderSide(
             color: AppColors.fieldFocusedBorder,
             width: 1.8,
+          ),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: AppColors.inputBorder,
+            width: 1.2,
           ),
         ),
       ),
@@ -339,83 +332,4 @@ class ForgotMpinScreen extends StatelessWidget {
       );
     });
   }
-}
-
-/// Custom painter for the animated golden orbit ring around the key in the badge
-class _KeyCosmicOrbitPainter extends CustomPainter {
-  final Animation<double> animation;
-
-  _KeyCosmicOrbitPainter({required this.animation}) : super(repaint: animation);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.5);
-    final progress = animation.value;
-
-    final ovalWidth = size.width * 0.82;
-    const ovalHeight = 44.0;
-    const baseAngle = -28 * math.pi / 180;
-
-    final ovalPath = Path()
-      ..addOval(
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: ovalWidth,
-          height: ovalHeight,
-        ),
-      );
-
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(baseAngle);
-
-    // Faint base orbit track
-    final basePaint = Paint()
-      ..color = AppColors.accentGold.withValues(alpha: 0.32)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1;
-    canvas.drawPath(ovalPath, basePaint);
-
-    // Luminous moving golden satellite dot with soft glow
-    Offset? headPos;
-    for (final metric in ovalPath.computeMetrics()) {
-      final total = metric.length;
-      final head = progress * total;
-      final tangent = metric.getTangentForOffset(head);
-      if (tangent != null) {
-        headPos = tangent.position;
-      }
-
-      final trailLen = total * 0.18;
-      final tail = head - trailLen;
-      final trailPaint = Paint()
-        ..color = AppColors.accentGold.withValues(alpha: 0.65)
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 1.8;
-
-      if (tail >= 0) {
-        canvas.drawPath(metric.extractPath(tail, head), trailPaint);
-      } else {
-        canvas.drawPath(metric.extractPath(tail + total, total), trailPaint);
-        canvas.drawPath(metric.extractPath(0, head), trailPaint);
-      }
-    }
-
-    if (headPos != null) {
-      canvas.drawCircle(
-        headPos,
-        4.0,
-        Paint()
-          ..color = AppColors.accentGold.withValues(alpha: 0.45)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
-      );
-      canvas.drawCircle(headPos, 2.2, Paint()..color = AppColors.accentGold);
-    }
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant _KeyCosmicOrbitPainter oldDelegate) => false;
 }
