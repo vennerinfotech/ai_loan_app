@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../controller/otp_verification_controller.dart';
 import '../screens/login_with_mpin_screen.dart';
+import '../screens/otp_verification_screen.dart';
 import '../screens/registration_screen.dart';
 
 /// GetX controller for "Login with mobile" screen.
@@ -48,15 +50,10 @@ class LoginWithMobileController extends GetxController
 
   void getOtp() {
     if (!canSubmit) return;
-    Get.snackbar(
-      'OTP Sent',
-      'A 6-digit code has been sent to +91 ${mobileNumber.value}',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
+    Get.to(() => OtpVerificationScreen(
+          phoneNumber: mobileNumber.value,
+          type: OtpVerificationType.loginWithMobile,
+        ));
   }
 
   void signInWithMpin() {
