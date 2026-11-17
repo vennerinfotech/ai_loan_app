@@ -5,8 +5,9 @@ import '../controller/dashboard_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'dashboard_screen.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
-import 'login_with_mpin_screen.dart';
-import '../services/session_manager.dart';
+import 'emi_calculator_screen.dart';
+import 'document_wallet_screen.dart';
+import 'profile_screen.dart';
 
 /// Separate container screen hosting the bottom navigation bar and pages.
 class MainNavScreen extends StatelessWidget {
@@ -26,14 +27,14 @@ class MainNavScreen extends StatelessWidget {
               case 0:
                 return const DashboardScreen();
               case 1:
-                return _buildSimpleTabScreen('My Loans & Cards', Icons.credit_card_rounded, controller);
+                return const EmiCalculatorScreen(showBackButton: true);
               case 2:
                 // Center action handled by controller, fallback to dashboard
                 return const DashboardScreen();
               case 3:
-                return _buildSimpleTabScreen('Documents & Reports', Icons.receipt_long_outlined, controller);
+                return const DocumentWalletScreen(showBackButton: true);
               case 4:
-                return _buildSimpleTabScreen('My Profile', Icons.person_outline_rounded, controller);
+                return const ProfileScreen();
               default:
                 return const DashboardScreen();
             }
@@ -58,108 +59,6 @@ class MainNavScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSimpleTabScreen(String title, IconData icon, DashboardController controller) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 40),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: AppColors.primaryPurple, size: 36),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Explore your applications, EMIs, and records.',
-                    style: TextStyle(
-                      color: AppColors.textDarkSecondary,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => controller.currentNavIndex.value = 0,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryButtonBackground,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    ),
-                    child: const Text('Back to Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  ),
-                  if (title == 'My Profile') ...[
-                    const SizedBox(height: 14),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        await SessionManager.clearSession();
-                        Get.snackbar(
-                          'Logged Out',
-                          'You have been logged out successfully.',
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: const Color(0xFF212074),
-                          colorText: Colors.white,
-                          margin: const EdgeInsets.all(16),
-                          duration: const Duration(seconds: 2),
-                        );
-                        Get.offAll(() => const LoginWithMpinScreen());
-                      },
-                      icon: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
-                      label: const Text(
-                        'Logout',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFFD1D1), width: 1.2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

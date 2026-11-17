@@ -39,6 +39,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 0,
             icon: Icons.home_rounded,
             isSelected: currentIndex == 0,
+            selectedBgColor: const Color(0xFF3331A8),
+            selectedIconColor: const Color(0xFFFDB022),
           ),
 
           // 1: Cards / EMIs
@@ -46,6 +48,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 1,
             icon: Icons.credit_card_rounded,
             isSelected: currentIndex == 1,
+            selectedBgColor: const Color(0xFF3331A8),
+            selectedIconColor: const Color(0xFFFDB022),
           ),
 
           // 2: Center Highlighted Add Button
@@ -78,8 +82,10 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
           // 3: Documents / Reports
           _buildNavItem(
             index: 3,
-            icon: Icons.receipt_long_outlined,
+            icon: Icons.description_outlined,
             isSelected: currentIndex == 3,
+            selectedBgColor: const Color(0xFF3331A8),
+            selectedIconColor: const Color(0xFFFDB022),
           ),
 
           // 4: Profile
@@ -87,6 +93,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 4,
             icon: Icons.person_outline_rounded,
             isSelected: currentIndex == 4,
+            selectedBgColor: const Color(0xFF3331A8),
+            selectedIconColor: const Color(0xFFFDB022),
           ),
         ],
       ),
@@ -97,6 +105,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
     required int index,
     required IconData icon,
     required bool isSelected,
+    Color? selectedBgColor,
+    Color? selectedIconColor,
   }) {
     return GestureDetector(
       onTap: () => onTap(index),
@@ -105,13 +115,17 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
+          color: isSelected
+              ? (selectedBgColor ?? Colors.white.withValues(alpha: 0.12))
+              : Colors.transparent,
           shape: BoxShape.circle,
         ),
         child: Center(
           child: Icon(
             icon,
-            color: isSelected ? Colors.white : AppColors.bottomNavUnselected,
+            color: isSelected
+                ? (selectedIconColor ?? Colors.white)
+                : AppColors.bottomNavUnselected,
             size: 22,
           ),
         ),

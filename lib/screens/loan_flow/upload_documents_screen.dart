@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
-import 'application_status_screen.dart';
+import 'applicant_details_screen.dart';
 import 'apply_loan_flow_screen.dart';
 
 /// Screen 4 of Apply Loan Flow: "Upload documents" (Step 4 of 4)
@@ -596,7 +596,7 @@ class UploadDocumentsBody extends StatelessWidget {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () {
-                    Get.to(() => const ApplicationStatusScreen());
+                    Get.to(() => const ApplicantDetailsScreen());
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF212074),
