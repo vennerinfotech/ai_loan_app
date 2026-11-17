@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
-import '../feature_placeholder_screen.dart';
+import 'upload_documents_screen.dart';
 
 /// Screen 3 of Apply Loan Flow: "Employment type" (Step 3 of 4)
 class EmploymentTypeScreen extends StatelessWidget {
@@ -314,11 +314,7 @@ class EmploymentTypeScreen extends StatelessWidget {
         height: 52,
         child: ElevatedButton(
           onPressed: () {
-            Get.to(
-              () => const FeaturePlaceholderScreen(
-                featureTitle: 'Loan Documents & Co-applicant (Step 4 of 4)',
-              ),
-            );
+            Get.to(() => const UploadDocumentsScreen());
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF212074),
