@@ -543,7 +543,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(width: 10),
 
-            // Card 2: AI eligibility (Golden Amber)
+            // Card 2: AI eligibility (Golden Amber - navigation removed per request)
             Expanded(
               child: _buildGridCard(
                 backgroundColor: AppColors.accentGold,
@@ -554,7 +554,7 @@ class DashboardScreen extends StatelessWidget {
                 titleColor: const Color(0xFF212074),
                 subtitle: 'Check before you apply',
                 subtitleColor: const Color(0xFF212074).withValues(alpha: 0.8),
-                onTap: () => controller.onDashboardOptionSelected('AI eligibility'),
+                onTap: () {},
               ),
             ),
           ],
@@ -689,15 +689,12 @@ class DashboardScreen extends StatelessWidget {
                 letterSpacing: -0.2,
               ),
             ),
-            GestureDetector(
-              onTap: () => controller.onDashboardOptionSelected('All Applications'),
-              child: const Text(
-                'View all',
-                style: TextStyle(
-                  color: AppColors.primaryPurple,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+            const Text(
+              'View all',
+              style: TextStyle(
+                color: AppColors.primaryPurple,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -880,15 +877,9 @@ class _CibilCosmicOrbitPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
 
-    final faintPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.16)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // 1. Concentric guide rings centered on the gauge
+    // 1. Concentric guide rings centered on the gauge (outer 155 ring removed per request)
     canvas.drawCircle(anchor, 58, orbitPaint);
     canvas.drawCircle(anchor, 105, orbitPaint);
-    canvas.drawCircle(anchor, 155, faintPaint);
 
     // 2. Wide flat tilted cosmic orbit ellipse passing through the gauge
     canvas.save();

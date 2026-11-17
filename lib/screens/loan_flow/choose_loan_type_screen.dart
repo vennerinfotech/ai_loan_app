@@ -6,10 +6,18 @@ import 'apply_loan_flow_screen.dart';
 
 /// Screen 1 of Apply Loan Flow: "Choose loan type" (Step 1 of 4)
 class ChooseLoanTypeScreen extends StatelessWidget {
-  const ChooseLoanTypeScreen({super.key});
+  final bool expandOtherLoans;
+
+  const ChooseLoanTypeScreen({super.key, this.expandOtherLoans = false});
 
   @override
   Widget build(BuildContext context) {
+    if (expandOtherLoans) {
+      final controller = Get.isRegistered<ApplyLoanController>()
+          ? Get.find<ApplyLoanController>()
+          : Get.put(ApplyLoanController());
+      controller.isOtherLoansExpanded.value = true;
+    }
     return const ApplyLoanFlowScreen(initialStep: 1);
   }
 }

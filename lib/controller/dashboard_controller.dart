@@ -6,6 +6,8 @@ import '../screens/kyc_flow_screen.dart';
 import '../screens/feature_placeholder_screen.dart';
 import '../screens/cibil_score_screen.dart';
 import '../screens/loan_flow/choose_loan_type_screen.dart';
+import '../screens/loan_flow/application_status_screen.dart';
+import 'apply_loan_controller.dart';
 
 /// GetX controller for Dashboard screen and bottom navigation bar.
 class DashboardController extends GetxController {
@@ -38,6 +40,22 @@ class DashboardController extends GetxController {
   void onDashboardOptionSelected(String featureName) {
     if (featureName == 'Apply for loan' || featureName == 'New Loan' || featureName == 'Choose loan type') {
       Get.to(() => const ChooseLoanTypeScreen());
+      return;
+    }
+    if (featureName == 'Other loans') {
+      final applyController = Get.isRegistered<ApplyLoanController>()
+          ? Get.find<ApplyLoanController>()
+          : Get.put(ApplyLoanController());
+      applyController.isOtherLoansExpanded.value = true;
+      Get.to(() => const ChooseLoanTypeScreen(expandOtherLoans: true));
+      return;
+    }
+    if (featureName == 'Loan updates' || featureName == 'Home loan Application') {
+      Get.to(() => const ApplicationStatusScreen());
+      return;
+    }
+    if (featureName == 'AI eligibility' || featureName == 'All Applications') {
+      // Navigation removed per user request
       return;
     }
     if (!isAadhaarCompleted) {
