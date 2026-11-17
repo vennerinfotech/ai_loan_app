@@ -39,6 +39,7 @@ dependencies:
   pinput: ^7.0.0
   image_picker: ^1.2.4
   dotted_border: ^2.1.0
+  syncfusion_flutter_gauges: ^35.1.46
 
 dev_dependencies:
   flutter_test:

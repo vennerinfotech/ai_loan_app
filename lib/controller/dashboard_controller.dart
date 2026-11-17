@@ -4,6 +4,7 @@ import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
 import '../screens/kyc_flow_screen.dart';
 import '../screens/feature_placeholder_screen.dart';
+import '../screens/cibil_score_screen.dart';
 
 /// GetX controller for Dashboard screen and bottom navigation bar.
 class DashboardController extends GetxController {
@@ -41,7 +42,11 @@ class DashboardController extends GetxController {
       panController.setTargetFeature(featureName);
       Get.to(() => const KycFlowScreen(initialStep: KycSubStep.panInput));
     } else {
-      Get.to(() => FeaturePlaceholderScreen(featureTitle: featureName));
+      if (featureName == 'CIBIL Report' || featureName == 'Credit Score') {
+        Get.to(() => const CibilScoreScreen());
+      } else {
+        Get.to(() => FeaturePlaceholderScreen(featureTitle: featureName));
+      }
     }
   }
 }

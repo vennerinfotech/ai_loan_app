@@ -1,9 +1,9 @@
-import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../widgets/kyc_stepper.dart';
 import 'main_nav_screen.dart';
+import 'fetching_report_screen.dart';
 
 /// Screen 3 of KYC Flow: "Credit check" (CIBIL / CRIF Consent - Reference Image)
 class CreditCheckScreen extends StatelessWidget {
@@ -161,8 +161,8 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
         // Card 1: Bureau data
         Expanded(
           child: Container(
-            height: 110,
-            padding: const EdgeInsets.all(14),
+            height: 126,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -180,17 +180,17 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: const Color(0xFFE2F7D8),
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.add_rounded,
                       color: Color(0xFF16A34A),
-                      size: 20,
+                      size: 21,
                     ),
                   ),
                 ),
@@ -201,16 +201,16 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                       'Bureau data',
                       style: TextStyle(
                         color: AppColors.textDark,
-                        fontSize: 13,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 3),
                     Text(
                       'Straight from CIBIL & CRIF',
                       style: TextStyle(
                         color: AppColors.textDarkSecondary,
-                        fontSize: 10.5,
+                        fontSize: 11,
                         height: 1.25,
                       ),
                     ),
@@ -225,8 +225,8 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
         // Card 2: Private
         Expanded(
           child: Container(
-            height: 110,
-            padding: const EdgeInsets.all(14),
+            height: 126,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -244,17 +244,17 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEF1FD),
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.lock_outline_rounded,
                       color: AppColors.primaryPurple,
-                      size: 17,
+                      size: 18,
                     ),
                   ),
                 ),
@@ -265,16 +265,16 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                       'Private',
                       style: TextStyle(
                         color: AppColors.textDark,
-                        fontSize: 13,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(height: 2),
+                    SizedBox(height: 3),
                     Text(
                       'Shared only with lenders you pick',
                       style: TextStyle(
                         color: AppColors.textDarkSecondary,
-                        fontSize: 10.5,
+                        fontSize: 11,
                         height: 1.25,
                       ),
                     ),
@@ -292,7 +292,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
   Widget _buildConsentCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 19),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -313,28 +313,31 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               onTap: () => isBureauAuthorized.value = !isBureauAuthorized.value,
               behavior: HitTestBehavior.opaque,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: isBureauAuthorized.value
-                          ? AppColors.primaryButtonBackground
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
                         color: isBureauAuthorized.value
                             ? AppColors.primaryButtonBackground
-                            : const Color(0xFFC7D0EE),
-                        width: 1.5,
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isBureauAuthorized.value
+                              ? AppColors.primaryButtonBackground
+                              : const Color(0xFFC7D0EE),
+                          width: 1.5,
+                        ),
                       ),
+                      child: isBureauAuthorized.value
+                          ? const Center(
+                              child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                            )
+                          : null,
                     ),
-                    child: isBureauAuthorized.value
-                        ? const Center(
-                            child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                          )
-                        : null,
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -343,7 +346,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                       style: TextStyle(
                         color: AppColors.textDark,
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         height: 1.35,
                       ),
                     ),
@@ -352,7 +355,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // Checkbox 2: WhatsApp updates (optional)
           Obx(
@@ -360,28 +363,31 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               onTap: () => isWhatsAppOptIn.value = !isWhatsAppOptIn.value,
               behavior: HitTestBehavior.opaque,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(
-                      color: isWhatsAppOptIn.value
-                          ? AppColors.primaryButtonBackground
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
                         color: isWhatsAppOptIn.value
                             ? AppColors.primaryButtonBackground
-                            : const Color(0xFFC7D0EE),
-                        width: 1.5,
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isWhatsAppOptIn.value
+                              ? AppColors.primaryButtonBackground
+                              : const Color(0xFFC7D0EE),
+                          width: 1.5,
+                        ),
                       ),
+                      child: isWhatsAppOptIn.value
+                          ? const Center(
+                              child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                            )
+                          : null,
                     ),
-                    child: isWhatsAppOptIn.value
-                        ? const Center(
-                            child: Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                          )
-                        : null,
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -390,7 +396,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                       style: TextStyle(
                         color: AppColors.textDark,
                         fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         height: 1.35,
                       ),
                     ),
@@ -443,18 +449,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                 child: ElevatedButton(
                   onPressed: isBureauAuthorized.value
                       ? () {
-                          Get.snackbar(
-                            'Fetching Credit Report',
-                            'Connecting to bureau database to retrieve your latest score...',
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: const Color(0xFF212074),
-                            colorText: Colors.white,
-                            margin: const EdgeInsets.all(16),
-                            duration: const Duration(seconds: 3),
-                          );
-                          Future.delayed(const Duration(milliseconds: 1500), () {
-                            Get.offAll(() => const MainNavScreen());
-                          });
+                          Get.to(() => const FetchingReportScreen());
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -500,25 +495,30 @@ class _CreditHeroOrbitPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.translate(size.width - 45, size.height * 0.42);
-    canvas.rotate(-24 * math.pi / 180);
-
     final orbitPaint = Paint()
-      ..color = const Color(0xFF6B68D8).withValues(alpha: 0.42)
+      ..color = const Color(0xFF7E7BE6).withValues(alpha: 0.38)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3;
+      ..strokeWidth = 1.25;
 
+    // Outer large sweeping arc passing from top down towards bottom-right
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset.zero,
-        width: 170,
-        height: 65,
+        center: Offset(size.width * 0.82, size.height * 0.28),
+        width: size.width * 0.86,
+        height: size.height * 1.35,
       ),
       orbitPaint,
     );
 
-    canvas.restore();
+    // Inner secondary sweeping arc
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.90, size.height * 0.20),
+        width: size.width * 0.50,
+        height: size.height * 0.82,
+      ),
+      orbitPaint,
+    );
   }
 
   @override
