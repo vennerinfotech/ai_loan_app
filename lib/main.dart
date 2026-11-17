@@ -1,5 +1,6 @@
 // ignore: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart' as m_ui;
 import 'package:get/get.dart';
 import 'screens/splash_screen.dart';
 import 'theme/theme.dart';
@@ -17,6 +18,9 @@ class FinsphereApp extends StatelessWidget {
       title: 'Finsphere.AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      localizationsDelegates: const [
+        m_ui.DefaultMaterialLocalizations.delegate,
+      ],
       home: const SplashScreen(),
     );
   }
