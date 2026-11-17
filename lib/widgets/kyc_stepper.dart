@@ -112,9 +112,8 @@ class KycHeaderWithStepper extends StatelessWidget {
 
         // Stepper Row
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Step 1: Aadhaar
               _buildStepPill(
@@ -161,7 +160,7 @@ class KycHeaderWithStepper extends StatelessWidget {
     if (isActive) {
       // Active pill: Dark indigo container with yellow circular badge
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: AppColors.kycStepperActivePill,
           borderRadius: BorderRadius.circular(20),
@@ -204,7 +203,7 @@ class KycHeaderWithStepper extends StatelessWidget {
     if (isDone) {
       // Completed pill: Light lime green with yellow checkmark badge (as seen in PAN reference images)
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: const Color(0xFFE2F7D8),
           borderRadius: BorderRadius.circular(20),
@@ -284,11 +283,15 @@ class KycHeaderWithStepper extends StatelessWidget {
   }
 
   Widget _buildConnector({required bool isFilled}) {
-    return Container(
-      width: 20,
-      height: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: isFilled ? AppColors.primaryPurple : AppColors.kycStepperLine,
+    return Expanded(
+      child: Container(
+        height: 2,
+        margin: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: isFilled ? AppColors.primaryPurple : AppColors.kycStepperLine,
+          borderRadius: BorderRadius.circular(1),
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
@@ -86,11 +87,10 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
     );
   }
 
-  /// Dark banner card with avatar and masked Aadhaar
+  /// Dark banner card with avatar, masked Aadhaar, and cosmic orbit bg pattern
   Widget _buildUserBannerCard(AadhaarKycController controller) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFF2C2A8E),
         borderRadius: BorderRadius.circular(20),
@@ -102,56 +102,72 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          // Yellow avatar AM
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: AppColors.accentGold,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Obx(
-                () => Text(
-                  controller.userInitials.value,
-                  style: const TextStyle(
-                    color: Color(0xFF212074),
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+          // Background cosmic orbit design pattern at top right / right edge
+          const Positioned.fill(
+            child: CustomPaint(
+              painter: _UserCardCosmicPatternPainter(),
             ),
           ),
-          const SizedBox(width: 14),
 
-          // User Name & Masked Aadhaar
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // Foreground Content
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
               children: [
-                Obx(
-                  () => Text(
-                    controller.userName.value,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
+                // Yellow square avatar AM
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: AppColors.accentGold,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Obx(
+                      () => Text(
+                        controller.userInitials.value,
+                        style: const TextStyle(
+                          color: Color(0xFF212074),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Obx(
-                  () => Text(
-                    controller.maskedAadhaarDisplay.value,
-                    style: const TextStyle(
-                      color: Color(0xFFC7CAE8),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                const SizedBox(width: 14),
+
+                // User Name & Masked Aadhaar
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Obx(
+                        () => Text(
+                          controller.userName.value,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Obx(
+                        () => Text(
+                          controller.maskedAadhaarDisplay.value,
+                          style: const TextStyle(
+                            color: Color(0xFFC7CAE8),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -277,12 +293,11 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
         onTap: () => controller.isConfirmChecked.value = !controller.isConfirmChecked.value,
         behavior: HitTestBehavior.opaque,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 22,
               height: 22,
-              margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
                 color: controller.isConfirmChecked.value
                     ? AppColors.primaryButtonBackground
@@ -394,4 +409,36 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tilted cosmic orbit elliptical pattern for user info card matching Figma (single line only)
+class _UserCardCosmicPatternPainter extends CustomPainter {
+  const _UserCardCosmicPatternPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.translate(size.width - 45, size.height * 0.48);
+    canvas.rotate(-25 * math.pi / 180);
+
+    // Single distinct loop stroke matching reference
+    final orbitPaint = Paint()
+      ..color = const Color(0xFF6B68D8).withValues(alpha: 0.45)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3;
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: 145,
+        height: 60,
+      ),
+      orbitPaint,
+    );
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
