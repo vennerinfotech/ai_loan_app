@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
@@ -598,25 +599,32 @@ class _DualColorThumbShape extends SliderComponentShape {
   }
 }
 
-/// Background Cosmic Orbit Curve Painter for Loan EMI Banner
+/// Custom painter for tilted elliptical cosmic orbit loop on Loan EMI Banner,
+/// matching the exact design pattern used on the PAN card in Review PAN Details screen.
 class _LoanEmiCosmicPainter extends CustomPainter {
   const _LoanEmiCosmicPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final orbitPaint = Paint()
-      ..color = const Color(0xFF7E7BE6).withValues(alpha: 0.35)
+    canvas.save();
+    canvas.translate(size.width - 50, size.height * 0.44);
+    canvas.rotate(-23 * math.pi / 180);
+
+    final paint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.38)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.width * 0.85, size.height * 0.30),
-        width: size.width * 0.85,
-        height: size.height * 1.4,
+        center: Offset.zero,
+        width: 170,
+        height: 68,
       ),
-      orbitPaint,
+      paint,
     );
+
+    canvas.restore();
   }
 
   @override
