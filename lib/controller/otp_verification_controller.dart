@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../screens/reset_mpin_screen.dart';
 import '../screens/main_nav_screen.dart';
+import '../services/session_manager.dart';
 
 enum OtpVerificationType {
   forgotMpin,
@@ -113,6 +114,8 @@ class OtpVerificationController extends GetxController {
       if (type == OtpVerificationType.forgotMpin) {
         Get.off(() => const ResetMpinScreen());
       } else {
+        // Save session with setString
+        SessionManager.saveLoginSession(phone: phoneNumber);
         Get.snackbar(
           'Login Successful',
           'Welcome to Finsphere AI!',

@@ -5,6 +5,8 @@ import '../controller/dashboard_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'dashboard_screen.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
+import 'login_with_mpin_screen.dart';
+import '../services/session_manager.dart';
 
 /// Separate container screen hosting the bottom navigation bar and pages.
 class MainNavScreen extends StatelessWidget {
@@ -119,6 +121,40 @@ class MainNavScreen extends StatelessWidget {
                     ),
                     child: const Text('Back to Home', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
+                  if (title == 'My Profile') ...[
+                    const SizedBox(height: 14),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await SessionManager.clearSession();
+                        Get.snackbar(
+                          'Logged Out',
+                          'You have been logged out successfully.',
+                          snackPosition: SnackPosition.BOTTOM,
+                          backgroundColor: const Color(0xFF212074),
+                          colorText: Colors.white,
+                          margin: const EdgeInsets.all(16),
+                          duration: const Duration(seconds: 2),
+                        );
+                        Get.offAll(() => const LoginWithMpinScreen());
+                      },
+                      icon: const Icon(Icons.logout_rounded, color: Colors.red, size: 18),
+                      label: const Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFFD1D1), width: 1.2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

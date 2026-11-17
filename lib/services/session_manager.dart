@@ -1,0 +1,46 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Simple and lightweight session manager using SharedPreferences.
+/// Uses [setString] and [getString] to store and check user authentication state.
+class SessionManager {
+  static const String keyIsLogin = 'is_login';
+  static const String keyUserPhone = 'user_phone';
+  static const String keyUserName = 'user_name';
+
+  /// Save login session into SharedPreferences using setString
+  static Future<void> saveLoginSession({String? phone, String? name}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyIsLogin, 'true');
+    if (phone != null && phone.trim().isNotEmpty) {
+      await prefs.setString(keyUserPhone, phone.trim());
+    }
+    if (name != null && name.trim().isNotEmpty) {
+      await prefs.setString(keyUserName, name.trim());
+    }
+  }
+
+  /// Check whether user is already logged in using getString
+  static Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLogin = prefs.getString(keyIsLogin);
+    return isLogin == 'true';
+  }
+
+  /// Get saved phone number using getString
+  static Future<String> getUserPhone() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserPhone) ?? '';
+  }
+
+  /// Get saved user name using getString
+  static Future<String> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserName) ?? 'Aarav Mehta';
+  }
+
+  /// Clear login session using setString (or remove)
+  static Future<void> clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyIsLogin, 'false');
+  }
+}

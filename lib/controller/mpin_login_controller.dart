@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../screens/forgot_mpin_screen.dart';
 import '../screens/main_nav_screen.dart';
+import '../services/session_manager.dart';
 
 /// GetX controller for Login with MPIN flow.
 /// Includes ticker provider for continuous cosmic orbit animation in top card.
@@ -52,8 +53,10 @@ class MpinLoginController extends GetxController
 
   void submitLogin() {
     isSubmitting.value = true;
-    Future.delayed(const Duration(milliseconds: 400), () {
+    Future.delayed(const Duration(milliseconds: 400), () async {
       isSubmitting.value = false;
+      // Save session with setString
+      await SessionManager.saveLoginSession(name: userName.value);
       Get.offAll(() => const MainNavScreen());
     });
   }
@@ -68,7 +71,9 @@ class MpinLoginController extends GetxController
       margin: const EdgeInsets.all(16),
       duration: const Duration(milliseconds: 800),
     );
-    Future.delayed(const Duration(milliseconds: 900), () {
+    Future.delayed(const Duration(milliseconds: 900), () async {
+      // Save session with setString
+      await SessionManager.saveLoginSession(name: userName.value);
       Get.offAll(() => const MainNavScreen());
     });
   }
