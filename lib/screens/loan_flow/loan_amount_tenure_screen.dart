@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
-import 'employment_type_screen.dart';
+import 'apply_loan_flow_screen.dart';
 
 /// Screen 2 of Apply Loan Flow: "Loan amount + Tenure" (Step 2 of 4)
 class LoanAmountTenureScreen extends StatelessWidget {
@@ -10,116 +10,74 @@ class LoanAmountTenureScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const ApplyLoanFlowScreen(initialStep: 2);
+  }
+}
+
+/// Content body of "Loan amount + Tenure" (used within sticky-header Loan Flow)
+class LoanAmountTenureBody extends StatelessWidget {
+  const LoanAmountTenureBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final controller = Get.find<ApplyLoanController>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar: Back button, Selected Loan Type badge, and "2/4"
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 20, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Back Button
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: Color(0xFF1E2127),
-                        ),
-                      ),
+    return Column(
+      children: [
+        // Scrollable Content
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Selected Loan Type Chip Badge
+                Obx(
+                  () => Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
                     ),
-                  ),
-
-                  // Selected Loan Type Chip Badge
-                  Obx(
-                    () => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEF1FD),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            controller.getIconForLoanType(
-                              controller.selectedLoanType.value,
-                            ),
-                            size: 15,
-                            color: const Color(0xFF4340BE),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF1FD),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          controller.getIconForLoanType(
                             controller.selectedLoanType.value,
-                            style: const TextStyle(
-                              color: Color(0xFF4340BE),
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
                           ),
-                        ],
-                      ),
+                          size: 15,
+                          color: const Color(0xFF4340BE),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          controller.selectedLoanType.value,
+                          style: const TextStyle(
+                            color: Color(0xFF4340BE),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
 
-                  // "2/4" Step indicator
-                  const Text(
-                    '2/4',
-                    style: TextStyle(
-                      color: Color(0xFF5D6578),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
+                // Title
+                const Text(
+                  'How much do you need?',
+                  style: TextStyle(
+                    color: Color(0xFF1E2127),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
                   ),
-                ],
-              ),
-            ),
-
-            // Scrollable Content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title
-                    const Text(
-                      'How much do you need?',
-                      style: TextStyle(
-                        color: Color(0xFF1E2127),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
+                ),
                     const SizedBox(height: 16),
 
                     // 1. Interactive Loan Amount Card
@@ -146,11 +104,9 @@ class LoanAmountTenureScreen extends StatelessWidget {
               ),
             ),
 
-            // Bottom Actions: "Back" & "Next step ->"
-            _buildBottomButtons(context),
-          ],
-        ),
-      ),
+        // Bottom Actions: "Back" & "Next step ->"
+        _buildBottomButtons(context, controller),
+      ],
     );
   }
 
@@ -477,14 +433,14 @@ class LoanAmountTenureScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomButtons(BuildContext context) {
+  Widget _buildBottomButtons(BuildContext context, ApplyLoanController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
       child: Row(
         children: [
           // Back button
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => controller.handleBack(),
             child: Container(
               height: 52,
               padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -516,7 +472,7 @@ class LoanAmountTenureScreen extends StatelessWidget {
               height: 52,
               child: ElevatedButton(
                 onPressed: () {
-                  Get.to(() => const EmploymentTypeScreen());
+                  controller.goToStep(3);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF212074),

@@ -868,30 +868,41 @@ class _CibilRingPainter extends CustomPainter {
       oldDelegate.progress != progress;
 }
 
-/// Cosmic orbit line painter for CIBIL card background
+/// Cosmic orbit line painter for CIBIL card background matching reference design
 class _CibilCosmicOrbitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF5E5ABF).withValues(alpha: 0.3)
+    // Anchor centered directly on the CIBIL score gauge
+    final anchor = Offset(size.width - 44, size.height * 0.33);
+
+    final orbitPaint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.15;
 
-    final path = Path();
-    path.addOval(Rect.fromCenter(
-      center: Offset(size.width * 0.75, size.height * 0.3),
-      width: size.width * 0.9,
-      height: size.height * 1.4,
-    ));
-    canvas.drawPath(path, paint);
+    final faintPaint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
 
-    final path2 = Path();
-    path2.addOval(Rect.fromCenter(
-      center: Offset(size.width * 0.85, size.height * 0.25),
-      width: size.width * 0.5,
-      height: size.height * 0.8,
-    ));
-    canvas.drawPath(path2, paint);
+    // 1. Concentric guide rings centered on the gauge
+    canvas.drawCircle(anchor, 58, orbitPaint);
+    canvas.drawCircle(anchor, 105, orbitPaint);
+    canvas.drawCircle(anchor, 155, faintPaint);
+
+    // 2. Wide flat tilted cosmic orbit ellipse passing through the gauge
+    canvas.save();
+    canvas.translate(anchor.dx, anchor.dy);
+    canvas.rotate(-28 * math.pi / 180);
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: 270,
+        height: 75,
+      ),
+      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
+    );
+    canvas.restore();
   }
 
   @override

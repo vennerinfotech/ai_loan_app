@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
 import 'application_status_screen.dart';
+import 'apply_loan_flow_screen.dart';
 
 /// Screen 4 of Apply Loan Flow: "Upload documents" (Step 4 of 4)
 /// Dynamically adapts to all 4 employment types:
@@ -14,101 +15,59 @@ class UploadDocumentsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const ApplyLoanFlowScreen(initialStep: 4);
+  }
+}
+
+/// Content body of "Upload documents" (used within sticky-header Loan Flow)
+class UploadDocumentsBody extends StatelessWidget {
+  const UploadDocumentsBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final controller = Get.find<ApplyLoanController>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Top App Bar: Back button & "Step 4 of 4"
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 20, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      children: [
+        // Dynamic Scrollable Documents Content
+        Expanded(
+          child: Obx(() {
+            final empType = controller.selectedEmploymentType.value.toLowerCase();
+            final isSalaried = empType.contains('salaried') && !empType.contains('self');
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: Color(0xFF1E2127),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Text(
-                    'Step 4 of 4',
-                    style: TextStyle(
-                      color: Color(0xFF5D6578),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  // Header Section (Circular for Salaried, Icon + Title for others)
+                  if (isSalaried)
+                    _buildSalariedHeader(controller)
+                  else
+                    _buildOtherEmploymentHeader(controller),
+
+                  const SizedBox(height: 16),
+
+                  // Document List (Unified for all employment types with live progress & delete icon)
+                  _buildDocList(controller, controller.activeDocs, context),
+
+                  const SizedBox(height: 14),
+
+                  // Warning Alert Note (Displayed for Salaried as per reference design)
+                  if (isSalaried) ...[
+                    _buildAlertNotice(),
+                    const SizedBox(height: 14),
+                  ],
                 ],
               ),
-            ),
-
-            // 2. Dynamic Scrollable Documents Content
-            Expanded(
-              child: Obx(() {
-                final empType = controller.selectedEmploymentType.value.toLowerCase();
-                final isSalaried = empType.contains('salaried') && !empType.contains('self');
-
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header Section (Circular for Salaried, Icon + Title for others)
-                      if (isSalaried)
-                        _buildSalariedHeader(controller)
-                      else
-                        _buildOtherEmploymentHeader(controller),
-
-                      const SizedBox(height: 16),
-
-                      // Document List (Unified for all employment types with live progress & delete icon)
-                      _buildDocList(controller, controller.activeDocs, context),
-
-                      const SizedBox(height: 14),
-
-                      // Warning Alert Note (Displayed for Salaried as per reference design)
-                      if (isSalaried) ...[
-                        _buildAlertNotice(),
-                        const SizedBox(height: 14),
-                      ],
-                    ],
-                  ),
-                );
-              }),
-            ),
-
-            // 3. Bottom Action Buttons
-            _buildBottomButtons(context, controller),
-          ],
+            );
+          }),
         ),
-      ),
+
+        // Bottom Action Buttons
+        _buildBottomButtons(context, controller),
+      ],
     );
   }
 
@@ -606,7 +565,7 @@ class UploadDocumentsScreen extends StatelessWidget {
                         duration: const Duration(seconds: 2),
                       );
                     } else {
-                      Get.back();
+                      controller.handleBack();
                     }
                   },
                   style: ElevatedButton.styleFrom(

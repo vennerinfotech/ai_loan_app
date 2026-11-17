@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:dotted_border/dotted_border.dart';
 import '../../controller/apply_loan_controller.dart';
-import 'loan_amount_tenure_screen.dart';
+import 'apply_loan_flow_screen.dart';
 
 /// Screen 1 of Apply Loan Flow: "Choose loan type" (Step 1 of 4)
 class ChooseLoanTypeScreen extends StatelessWidget {
@@ -10,108 +10,66 @@ class ChooseLoanTypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(ApplyLoanController());
+    return const ApplyLoanFlowScreen(initialStep: 1);
+  }
+}
+
+/// Content body of "Choose loan type" (used within sticky-header Loan Flow)
+class ChooseLoanTypeBody extends StatelessWidget {
+  const ChooseLoanTypeBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<ApplyLoanController>();
     final scrollController = ScrollController();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar: Back button & "Step 1 of 4"
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 20, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: Color(0xFF1E2127),
-                        ),
-                      ),
-                    ),
+    return Column(
+      children: [
+        // Scrollable Options Content
+        Expanded(
+          child: SingleChildScrollView(
+            controller: scrollController,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Heading & Subtitle
+                const Text(
+                  'What\'s the loan for?',
+                  style: TextStyle(
+                    color: Color(0xFF1E2127),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
                   ),
-                  const Text(
-                    'Step 1 of 4',
-                    style: TextStyle(
-                      color: Color(0xFF5D6578),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Scrollable Options Content
-            Expanded(
-              child: SingleChildScrollView(
-                controller: scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Heading & Subtitle
-                    const Text(
-                      'What\'s the loan for?',
-                      style: TextStyle(
-                        color: Color(0xFF1E2127),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Pick one — you can change it later.',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Primary 2x3 Grid of Loan Types
-                    _buildLoanTypesGrid(controller),
-                    const SizedBox(height: 14),
-
-                    // "••• Other loans" Section (Expands with Education, Machinery, BT+Top-up, Agri loans)
-                    _buildOtherLoansSection(controller, context, scrollController),
-                    const SizedBox(height: 12),
-                  ],
                 ),
-              ),
-            ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Pick one — you can change it later.',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 18),
 
-            // Bottom CTA Button: "Continue with [selected] loan ->"
-            _buildBottomCta(controller),
-          ],
+                // Primary 2x3 Grid of Loan Types
+                _buildLoanTypesGrid(controller),
+                const SizedBox(height: 14),
+
+                // "••• Other loans" Section (Expands with Education, Machinery, BT+Top-up, Agri loans)
+                _buildOtherLoansSection(controller, context, scrollController),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
         ),
-      ),
+
+        // Bottom CTA Button: "Continue with [selected] loan ->"
+        _buildBottomCta(controller),
+      ],
     );
   }
 
@@ -373,7 +331,7 @@ class ChooseLoanTypeScreen extends StatelessWidget {
           height: 52,
           child: ElevatedButton(
             onPressed: () {
-              Get.to(() => const LoanAmountTenureScreen());
+              controller.goToStep(2);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF212074),

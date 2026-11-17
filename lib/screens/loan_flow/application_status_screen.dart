@@ -544,47 +544,41 @@ class ApplicationStatusScreen extends StatelessWidget {
 }
 
 /// Custom painter for intersecting cosmic orbit curves in the top right corner
-/// of the application status card, matching reference image and PAN card design.
+/// of the application status card, matching reference image.
 class _ApplicationStatusOrbitPainter extends CustomPainter {
   const _ApplicationStatusOrbitPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Primary tilted cosmic orbit oval (matching PAN card / Loan EMI card)
-    final paint1 = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.42)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.35;
+    // Anchor aligned with the top-right #FS-2611-0042 badge region
+    final anchor = Offset(size.width - 65, 38);
 
-    canvas.save();
-    canvas.translate(size.width - 45, size.height * 0.52);
-    canvas.rotate(-23 * math.pi / 180);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: 195,
-        height: 82,
-      ),
-      paint1,
-    );
-    canvas.restore();
-
-    // Secondary intersecting cosmic sweeping curve (visible in reference image)
-    final paint2 = Paint()
+    final orbitPaint = Paint()
       ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+      ..strokeWidth = 1.15;
 
+    final faintPaint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.16)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    // 1. Concentric circular guide rings
+    canvas.drawCircle(anchor, 65, orbitPaint);
+    canvas.drawCircle(anchor, 115, orbitPaint);
+    canvas.drawCircle(anchor, 175, faintPaint);
+
+    // 2. Wide flat tilted cosmic orbit ellipse
     canvas.save();
-    canvas.translate(size.width - 15, size.height * 0.32);
-    canvas.rotate(-42 * math.pi / 180);
+    canvas.translate(anchor.dx, anchor.dy);
+    canvas.rotate(-25 * math.pi / 180);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset.zero,
-        width: 240,
-        height: 120,
+        width: 290,
+        height: 78,
       ),
-      paint2,
+      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
     );
     canvas.restore();
   }

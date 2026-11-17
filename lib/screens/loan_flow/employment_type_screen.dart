@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
-import 'upload_documents_screen.dart';
+import 'apply_loan_flow_screen.dart';
 
 /// Screen 3 of Apply Loan Flow: "Employment type" (Step 3 of 4)
 class EmploymentTypeScreen extends StatelessWidget {
@@ -9,136 +9,63 @@ class EmploymentTypeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return const ApplyLoanFlowScreen(initialStep: 3);
+  }
+}
+
+/// Content body of "Employment type" (used within sticky-header Loan Flow)
+class EmploymentTypeBody extends StatelessWidget {
+  const EmploymentTypeBody({super.key});
+
+  @override
+  Widget build(BuildContext context) {
     final controller = Get.find<ApplyLoanController>();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top App Bar: Back button, Segmented progress bar (3/4 active), and "3/4"
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 20, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Back Button
-                  GestureDetector(
-                    onTap: () => Get.back(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFE2E8F0),
-                          width: 1.2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.03),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 16,
-                          color: Color(0xFF1E2127),
-                        ),
-                      ),
-                    ),
+    return Column(
+      children: [
+        // Scrollable Content
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Heading & Subtitle
+                const Text(
+                  'How do you earn?',
+                  style: TextStyle(
+                    color: Color(0xFF1E2127),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
                   ),
-
-                  // 4-Segmented Progress Bar (3 active, 1 inactive)
-                  _buildSegmentedProgress(activeSegments: 3, totalSegments: 4),
-
-                  // "3/4" text
-                  const Text(
-                    '3/4',
-                    style: TextStyle(
-                      color: Color(0xFF5D6578),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Scrollable Content
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Heading & Subtitle
-                    const Text(
-                      'How do you earn?',
-                      style: TextStyle(
-                        color: Color(0xFF1E2127),
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'This decides which documents we\'ll ask for.',
-                      style: TextStyle(
-                        color: Color(0xFF6B7280),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 4 Employment Options Cards
-                    _buildEmploymentCardsList(controller),
-                    const SizedBox(height: 16),
-
-                    // Co-applicant Tip / Hint Card
-                    _buildCoApplicantHintCard(),
-                  ],
                 ),
-              ),
+                const SizedBox(height: 6),
+                const Text(
+                  'This decides which documents we\'ll ask for.',
+                  style: TextStyle(
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 4 Employment Options Cards
+                _buildEmploymentCardsList(controller),
+                const SizedBox(height: 16),
+
+                // Co-applicant Tip / Hint Card
+                _buildCoApplicantHintCard(),
+              ],
             ),
-
-            // Bottom CTA Button: "Continue ->"
-            _buildBottomCta(context),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 4 horizontal capsule dashes for step 3/4
-  Widget _buildSegmentedProgress({
-    required int activeSegments,
-    required int totalSegments,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(totalSegments, (index) {
-        final isActive = index < activeSegments;
-
-        return Container(
-          width: 22,
-          height: 4.5,
-          margin: const EdgeInsets.symmetric(horizontal: 2.5),
-          decoration: BoxDecoration(
-            color: isActive
-                ? const Color(0xFF4A44D1)
-                : const Color(0xFFE2E8F0),
-            borderRadius: BorderRadius.circular(3),
           ),
-        );
-      }),
+        ),
+
+        // Bottom CTA Buttons: Back & Continue
+        _buildBottomButtons(context, controller),
+      ],
     );
   }
 
@@ -306,43 +233,77 @@ class EmploymentTypeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomCta(BuildContext context) {
+  Widget _buildBottomButtons(BuildContext context, ApplyLoanController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          onPressed: () {
-            Get.to(() => const UploadDocumentsScreen());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF212074),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Continue',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+      child: Row(
+        children: [
+          // Back Button
+          GestureDetector(
+            onTap: () => controller.handleBack(),
+            child: Container(
+              height: 52,
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFDDE3F0),
+                  width: 1.2,
                 ),
               ),
-              SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: Color(0xFFFDB022),
-                size: 18,
+              child: const Center(
+                child: Text(
+                  'Back',
+                  style: TextStyle(
+                    color: Color(0xFF1E2127),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(width: 12),
+
+          // Continue Button
+          Expanded(
+            child: SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  controller.goToStep(4);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF212074),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Color(0xFFFDB022),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

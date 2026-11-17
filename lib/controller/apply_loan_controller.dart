@@ -53,6 +53,32 @@ class LoanDocItem {
 
 /// GetX controller managing the 4-step Apply Loan Flow
 class ApplyLoanController extends GetxController {
+  // Step Coordination (Sticky Header Flow matching Aadhaar verification flow)
+  final currentStep = 1.obs; // 1 = Type, 2 = Plan, 3 = Work, 4 = Docs
+  final List<int> stepHistory = [1];
+
+  void goToStep(int step) {
+    if (currentStep.value != step) {
+      stepHistory.add(step);
+      currentStep.value = step;
+    }
+  }
+
+  void handleBack() {
+    if (stepHistory.length > 1) {
+      stepHistory.removeLast();
+      currentStep.value = stepHistory.last;
+    } else {
+      Get.back();
+    }
+  }
+
+  void resetFlow() {
+    currentStep.value = 1;
+    stepHistory.clear();
+    stepHistory.add(1);
+  }
+
   // Step 1: Loan Type
   final selectedLoanType = 'Home loan'.obs;
   final isOtherLoansExpanded = false.obs;
