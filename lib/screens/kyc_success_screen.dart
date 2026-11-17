@@ -6,6 +6,7 @@ import '../controller/aadhaar_kyc_controller.dart';
 import '../controller/pan_kyc_controller.dart';
 import '../controller/kyc_flow_controller.dart';
 import 'credit_check_screen.dart';
+import 'loan_flow/choose_loan_type_screen.dart';
 
 /// Screen: "KYC success" (Reference Image 1)
 /// Displayed upon successful completion of Aadhaar and PAN verification.
@@ -225,17 +226,13 @@ class KycSuccessBody extends StatelessWidget {
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        // Primary Button: "Check my credit score ->"
+        // 1. Primary Button: "Choose loan type" (Proceed directly to apply for loan)
         SizedBox(
           width: double.infinity,
           height: 52,
           child: ElevatedButton(
             onPressed: () {
-              if (Get.isRegistered<KycFlowController>()) {
-                Get.find<KycFlowController>().setStep(KycSubStep.creditCheck);
-              } else {
-                Get.to(() => const CreditCheckScreen());
-              }
+              Get.to(() => const ChooseLoanTypeScreen());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryButtonBackground,
@@ -248,7 +245,7 @@ class KycSuccessBody extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Check my credit score',
+                  'Choose loan type',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14.5,
@@ -267,7 +264,47 @@ class KycSuccessBody extends StatelessWidget {
         ),
         const SizedBox(height: 10),
 
-        // Secondary Button: "Download receipt"
+        // 2. Secondary Button: "Check my credit score"
+        GestureDetector(
+          onTap: () {
+            if (Get.isRegistered<KycFlowController>()) {
+              Get.find<KycFlowController>().setStep(KycSubStep.creditCheck);
+            } else {
+              Get.to(() => const CreditCheckScreen());
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F6FC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.speed_rounded,
+                  color: Color(0xFF212074),
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Check my credit score',
+                  style: TextStyle(
+                    color: Color(0xFF212074),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // 3. Download Receipt Button
         GestureDetector(
           onTap: () {
             Get.snackbar(
@@ -282,27 +319,26 @@ class KycSuccessBody extends StatelessWidget {
           },
           child: Container(
             width: double.infinity,
-            height: 50,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F6FC),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.download_rounded,
-                  color: Color(0xFF1E2127),
-                  size: 18,
+                  color: Color(0xFF6B7280),
+                  size: 16,
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Text(
                   'Download receipt',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

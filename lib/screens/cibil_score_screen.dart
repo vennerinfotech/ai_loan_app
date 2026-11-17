@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
-import 'main_nav_screen.dart';
+import 'loan_flow/choose_loan_type_screen.dart';
 
 /// Screen displaying the retrieved CIBIL / CRIF score matching Reference Image 2
 class CibilScoreScreen extends StatelessWidget {
@@ -431,7 +431,7 @@ class CibilScoreScreen extends StatelessWidget {
         height: 52,
         child: ElevatedButton(
           onPressed: () {
-            Get.offAll(() => const MainNavScreen());
+            Get.to(() => const ChooseLoanTypeScreen());
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF4340BE),

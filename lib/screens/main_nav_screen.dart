@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../controller/dashboard_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'dashboard_screen.dart';
+import 'loan_flow/choose_loan_type_screen.dart';
 
 /// Separate container screen hosting the bottom navigation bar and pages.
 class MainNavScreen extends StatelessWidget {
@@ -46,7 +47,7 @@ class MainNavScreen extends StatelessWidget {
                 currentIndex: controller.currentNavIndex.value,
                 onTap: (index) {
                   if (index == 2) {
-                    controller.onDashboardOptionSelected('Apply for loan');
+                    Get.to(() => const ChooseLoanTypeScreen());
                   } else {
                     controller.currentNavIndex.value = index;
                   }

@@ -5,6 +5,7 @@ import 'kyc_flow_controller.dart';
 import '../screens/kyc_flow_screen.dart';
 import '../screens/feature_placeholder_screen.dart';
 import '../screens/cibil_score_screen.dart';
+import '../screens/loan_flow/choose_loan_type_screen.dart';
 
 /// GetX controller for Dashboard screen and bottom navigation bar.
 class DashboardController extends GetxController {
@@ -35,6 +36,10 @@ class DashboardController extends GetxController {
 
   /// Triggered whenever any option or feature is tapped from the dashboard
   void onDashboardOptionSelected(String featureName) {
+    if (featureName == 'Apply for loan' || featureName == 'New Loan' || featureName == 'Choose loan type') {
+      Get.to(() => const ChooseLoanTypeScreen());
+      return;
+    }
     if (!isAadhaarCompleted) {
       kycController.setTargetFeature(featureName);
       Get.to(() => const KycFlowScreen(initialStep: KycSubStep.aadhaarInput));
