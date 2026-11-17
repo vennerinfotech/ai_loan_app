@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:dotted_border/dotted_border.dart';
 
 import '../theme/app_colors.dart';
 import '../controller/pan_kyc_controller.dart';
@@ -88,84 +89,155 @@ class UploadPanBody extends StatelessWidget {
     );
   }
 
-  /// Dark indigo container with dashed golden frame viewfinder
+  /// Viewfinder container: Shows full card image with cancel option when uploaded,
+  /// or dark indigo container with DottedBorder from package when empty.
   Widget _buildPanCardFrameViewfinder(
     BuildContext context,
     PanKycController controller,
   ) {
-    return GestureDetector(
-      onTap: () => controller.openImagePickerBottomSheet(context: context),
-      child: Container(
-        width: double.infinity,
-        height: 185,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF333099),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF333099).withValues(alpha: 0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: CustomPaint(
-          foregroundPainter: _DashedRectPainter(
-            color: AppColors.accentGold,
-            strokeWidth: 2.0,
-            dashWidth: 6,
-            dashSpace: 4,
-            radius: 16,
-          ),
-          child: Center(
-            child: Obx(() {
-              final bytes = controller.panImageBytes.value;
-              final imagePath = controller.panImagePath.value;
-              final hasImage =
-                  bytes != null ||
-                  (imagePath.isNotEmpty && File(imagePath).existsSync());
+    return Obx(() {
+      final bytes = controller.panImageBytes.value;
+      final imagePath = controller.panImagePath.value;
+      final hasImage =
+          bytes != null ||
+          (imagePath.isNotEmpty && File(imagePath).existsSync());
 
-              if (hasImage) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: bytes != null
-                          ? Image.memory(
-                              bytes,
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.file(
-                              File(imagePath),
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+      if (hasImage) {
+        // FULL CARD IMAGE DISPLAY with cancel & change options
+        return Container(
+          width: double.infinity,
+          height: 195,
+          foregroundDecoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF10B981), width: 1.8),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 1. Full-cover image
+              GestureDetector(
+                onTap: () => controller.openImagePickerBottomSheet(context: context),
+                child: bytes != null
+                    ? Image.memory(
+                        bytes,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.file(
+                        File(imagePath),
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
                       ),
+              ),
+
+              // Gradient vignette at bottom
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 60,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.7),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // 2. Status Badge (top-left)
+              Positioned(
+                top: 10,
+                left: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF10B981), width: 1),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 14),
+                      SizedBox(width: 5),
+                      Text(
+                        'PAN Card Front',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. Cancel Option Button (top-right)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: GestureDetector(
+                  onTap: controller.clearPanImage,
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white38, width: 1),
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 4. Change photo pill (bottom center)
+              Positioned(
+                bottom: 12,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () => controller.openImagePickerBottomSheet(context: context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.65),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white30, width: 0.8),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: Color(0xFF22C55E),
-                            size: 16,
-                          ),
+                          Icon(Icons.edit_rounded, color: Colors.white, size: 13),
                           SizedBox(width: 6),
                           Text(
-                            'Tap to change photo',
+                            'Change photo',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -175,54 +247,72 @@ class UploadPanBody extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ],
-                );
-              }
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
 
-              return Column(
+      // EMPTY STATE: DOTTED BORDER using dotted_border package
+      return GestureDetector(
+        onTap: () => controller.openImagePickerBottomSheet(context: context),
+        child: Container(
+          width: double.infinity,
+          height: 195,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF333099),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF333099).withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: DottedBorder(
+            color: AppColors.accentGold,
+            strokeWidth: 1.8,
+            dashPattern: const [6, 4],
+            borderType: BorderType.RRect,
+            radius: const Radius.circular(12),
+            padding: const EdgeInsets.all(12),
+            child: const Center(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        controller.isCardUploaded.value
-                            ? Icons.check_circle_rounded
-                            : Icons.badge_outlined,
-                        color: controller.isCardUploaded.value
-                            ? const Color(0xFF22C55E)
-                            : Colors.white,
-                        size: 24,
-                      ),
+                  Icon(
+                    Icons.badge_outlined,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'Fit the card inside the frame',
+                    style: TextStyle(
+                      color: Color(0xFFC7CAE8),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 4),
                   Text(
-                    controller.isCardUploaded.value
-                        ? 'PAN card captured via ${controller.uploadSource.value} ✓'
-                        : 'Fit the card inside the frame',
+                    'Tap to capture or choose from gallery',
                     style: TextStyle(
-                      color: controller.isCardUploaded.value
-                          ? AppColors.accentGold
-                          : const Color(0xFFC7CAE8),
-                      fontSize: 12.5,
-                      fontWeight: controller.isCardUploaded.value
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                      color: Color(0xFF9EA3D4),
+                      fontSize: 11,
                     ),
                   ),
                 ],
-              );
-            }),
+              ),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   /// Dual buttons: "Take photo" (Purple) & "Gallery" (White)
@@ -427,56 +517,4 @@ class UploadPanBody extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Custom painter for dashed rounded rectangle viewfinder
-class _DashedRectPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double dashWidth;
-  final double dashSpace;
-  final double radius;
-
-  _DashedRectPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.dashWidth,
-    required this.dashSpace,
-    required this.radius,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      Radius.circular(radius),
-    );
-
-    final path = Path()..addRRect(rrect);
-    final dashedPath = Path();
-
-    for (final metric in path.computeMetrics()) {
-      double distance = 0.0;
-      while (distance < metric.length) {
-        final len = (distance + dashWidth < metric.length)
-            ? dashWidth
-            : metric.length - distance;
-        dashedPath.addPath(
-          metric.extractPath(distance, distance + len),
-          Offset.zero,
-        );
-        distance += dashWidth + dashSpace;
-      }
-    }
-
-    canvas.drawPath(dashedPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

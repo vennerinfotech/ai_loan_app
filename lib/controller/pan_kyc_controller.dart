@@ -130,6 +130,14 @@ class PanKycController extends GetxController {
     }
   }
 
+  /// Clear uploaded PAN image and reset to viewfinder placeholder
+  void clearPanImage() {
+    isCardUploaded.value = false;
+    uploadSource.value = '';
+    panImagePath.value = '';
+    panImageBytes.value = null;
+  }
+
   /// Capture PAN photo using device camera via ImagePicker
   Future<void> takePhoto() async {
     final picker = ImagePicker();
