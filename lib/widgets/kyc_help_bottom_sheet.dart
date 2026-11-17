@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 
 /// Clean & balanced KYC Verification Help Bottom Sheet.
@@ -7,25 +8,30 @@ class KycHelpBottomSheet extends StatelessWidget {
 
   /// Show the help bottom sheet
   static void show(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
+    Get.bottomSheet(
+      const KycHelpBottomSheet(),
       isScrollControlled: true,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) => const KycHelpBottomSheet(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           // Top Drag Handle
           Center(
             child: Container(
@@ -190,8 +196,10 @@ class KycHelpBottomSheet extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   static Widget _buildItem({
     required IconData icon,

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
+import 'application_status_screen.dart';
 
 /// Screen 4 of Apply Loan Flow: "Upload documents" (Step 4 of 4)
 /// Dynamically adapts to all 4 employment types:
@@ -635,7 +636,9 @@ class UploadDocumentsScreen extends StatelessWidget {
               child: SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => _showSubmissionSuccessDialog(context, controller),
+                  onPressed: () {
+                    Get.to(() => const ApplicationStatusScreen());
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF212074),
                     shape: RoundedRectangleBorder(
@@ -671,80 +674,5 @@ class UploadDocumentsScreen extends StatelessWidget {
     );
   }
 
-  void _showSubmissionSuccessDialog(BuildContext context, ApplyLoanController controller) {
-    Get.dialog(
-      Dialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE2F7D8),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: Color(0xFF15803D),
-                    size: 38,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              const Text(
-                'Application Submitted!',
-                style: TextStyle(
-                  color: Color(0xFF1E2127),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your ${controller.selectedLoanType.value} application for ${controller.formatIndianCurrency(controller.loanAmount.value)} has been submitted successfully.\n\nAI eligibility review in under 3 minutes.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF6B7280),
-                  fontSize: 13,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Get.until((route) => route.isFirst);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF212074),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Back to Dashboard',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      barrierDismissible: false,
-    );
-  }
+
 }

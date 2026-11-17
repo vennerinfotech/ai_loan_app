@@ -15,19 +15,20 @@ class ImagePickerBottomSheet {
     String subtitle = 'Take a clear photo or select from your gallery',
   }) async {
     final ImagePicker picker = ImagePicker();
-    final targetContext = context ?? Get.overlayContext ?? Get.context;
 
     Widget buildSheet(BuildContext sheetContext) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      return Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             // Top Drag Handle
             Center(
               child: Container(
@@ -71,7 +72,13 @@ class ImagePickerBottomSheet {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.of(sheetContext).pop(),
+                  onTap: () {
+                    if (Get.isBottomSheetOpen == true) {
+                      Get.back();
+                    } else {
+                      Navigator.of(sheetContext).pop();
+                    }
+                  },
                   child: Container(
                     width: 32,
                     height: 32,
@@ -97,7 +104,13 @@ class ImagePickerBottomSheet {
               iconBgColor: const Color(0xFFEEF1FD),
               title: 'Take photo',
               subtitle: 'Use camera to scan your document',
-              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+              onTap: () {
+                if (Get.isBottomSheetOpen == true) {
+                  Get.back(result: ImageSource.camera);
+                } else {
+                  Navigator.of(sheetContext).pop(ImageSource.camera);
+                }
+              },
             ),
             const SizedBox(height: 12),
 
@@ -108,26 +121,28 @@ class ImagePickerBottomSheet {
               iconBgColor: const Color(0xFFFEF3C7),
               title: 'Choose from gallery',
               subtitle: 'Select existing image or PDF from device',
-              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+              onTap: () {
+                if (Get.isBottomSheetOpen == true) {
+                  Get.back(result: ImageSource.gallery);
+                } else {
+                  Navigator.of(sheetContext).pop(ImageSource.gallery);
+                }
+              },
             ),
             const SizedBox(height: 12),
           ],
         ),
-      );
-    }
+      ),
+    ),
+  );
+}
 
-    final ImageSource? selectedSource = targetContext != null
-        ? await showModalBottomSheet<ImageSource>(
-            context: targetContext,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: buildSheet,
-          )
-        : await Get.bottomSheet<ImageSource>(
-            Builder(builder: buildSheet),
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-          );
+    // Prefer Get.bottomSheet for native GetX routing across all contexts
+    final ImageSource? selectedSource = await Get.bottomSheet<ImageSource>(
+      Builder(builder: buildSheet),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
 
     if (selectedSource == null) return null;
 
