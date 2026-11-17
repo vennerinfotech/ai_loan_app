@@ -494,7 +494,7 @@ class _SuccessCardCosmicPainter extends CustomPainter {
 
     // 3. Outer tilted DASHED / DOTTED elliptical orbit
     const double rx = 160.0;
-    const double ry = 50.0;
+    const double ry = 67.5;
     const double tilt = -24 * math.pi / 180;
 
     final dashedOrbitPaint = Paint()
