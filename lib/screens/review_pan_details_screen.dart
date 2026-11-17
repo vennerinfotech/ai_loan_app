@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
@@ -108,7 +109,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: CustomPaint(
+              child: const CustomPaint(
                 painter: _PanCardOrbitPainter(),
               ),
             ),
@@ -381,22 +382,31 @@ class ReviewPanDetailsBody extends StatelessWidget {
   }
 }
 
-/// Custom painter for orbit curves on PAN card
+/// Custom painter for tilted elliptical cosmic orbit loop on PAN card matching Figma
 class _PanCardOrbitPainter extends CustomPainter {
+  const _PanCardOrbitPainter();
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFE5A62E).withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4;
+    canvas.save();
+    canvas.translate(size.width - 50, size.height * 0.44);
+    canvas.rotate(-23 * math.pi / 180);
 
-    final path = Path();
-    path.addOval(Rect.fromCenter(
-      center: Offset(size.width * 0.85, size.height * 0.4),
-      width: size.width * 0.8,
-      height: size.height * 1.2,
-    ));
-    canvas.drawPath(path, paint);
+    final paint = Paint()
+      ..color = const Color(0xFF212074).withValues(alpha: 0.24)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.25;
+
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: 170,
+        height: 68,
+      ),
+      paint,
+    );
+
+    canvas.restore();
   }
 
   @override
