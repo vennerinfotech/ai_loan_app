@@ -67,10 +67,12 @@ class LoanAmountTenureScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.home_outlined,
+                          Icon(
+                            controller.getIconForLoanType(
+                              controller.selectedLoanType.value,
+                            ),
                             size: 15,
-                            color: Color(0xFF4340BE),
+                            color: const Color(0xFF4340BE),
                           ),
                           const SizedBox(width: 6),
                           Text(

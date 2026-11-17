@@ -11,6 +11,7 @@ class ChooseLoanTypeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ApplyLoanController());
+    final scrollController = ScrollController();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
@@ -67,6 +68,7 @@ class ChooseLoanTypeScreen extends StatelessWidget {
             // Scrollable Options Content
             Expanded(
               child: SingleChildScrollView(
+                controller: scrollController,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Column(
@@ -93,12 +95,13 @@ class ChooseLoanTypeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 18),
 
-                    // 2x3 Grid of Loan Types
+                    // Primary 2x3 Grid of Loan Types
                     _buildLoanTypesGrid(controller),
                     const SizedBox(height: 14),
 
-                    // "••• Other loans" Dotted Button
-                    _buildOtherLoansButton(context),
+                    // "••• Other loans" Section (Expands with Education, Machinery, BT+Top-up, Agri loans)
+                    _buildOtherLoansSection(controller, context, scrollController),
+                    const SizedBox(height: 12),
                   ],
                 ),
               ),
@@ -246,58 +249,117 @@ class ChooseLoanTypeScreen extends StatelessWidget {
     });
   }
 
-  Widget _buildOtherLoansButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Get.snackbar(
-          'Other Loan Types',
-          'Education, gold, and agricultural loans will be available soon.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF212074),
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        );
-      },
-      child: DottedBorder(
-        color: const Color(0xFFC7CAE8),
-        strokeWidth: 1.2,
-        dashPattern: const [5, 4],
-        borderType: BorderType.RRect,
-        radius: const Radius.circular(16),
-        child: Container(
-          width: double.infinity,
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF1F4FD).withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '•••',
-                style: TextStyle(
-                  color: Color(0xFF4A44D1),
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
-                  letterSpacing: 1.0,
+  Widget _buildOtherLoansSection(
+    ApplyLoanController controller,
+    BuildContext context,
+    ScrollController scrollController,
+  ) {
+    return Obx(() {
+      final isExpanded = controller.isOtherLoansExpanded.value;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // If expanded, show the 4 additional cards: Education, Machinery, BT+Top-up, Agri
+          if (isExpanded) ...[
+            Column(
+              children: [
+                for (int i = 0; i < controller.otherLoanTypes.length; i += 2) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildLoanCard(controller, controller.otherLoanTypes[i]),
+                      ),
+                      const SizedBox(width: 14),
+                      if (i + 1 < controller.otherLoanTypes.length)
+                        Expanded(
+                          child: _buildLoanCard(controller, controller.otherLoanTypes[i + 1]),
+                        )
+                      else
+                        const Spacer(),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              ],
+            ),
+          ],
+
+          // Dotted Toggle Button: "••• Other loans" / "Show fewer loans"
+          GestureDetector(
+            onTap: () {
+              controller.toggleOtherLoans();
+              if (controller.isOtherLoansExpanded.value) {
+                Future.delayed(const Duration(milliseconds: 150), () {
+                  if (scrollController.hasClients) {
+                    scrollController.animateTo(
+                      scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeOut,
+                    );
+                  }
+                });
+              }
+            },
+            child: DottedBorder(
+              color: const Color(0xFFC7CAE8),
+              strokeWidth: 1.2,
+              dashPattern: const [5, 4],
+              borderType: BorderType.RRect,
+              radius: const Radius.circular(16),
+              child: Container(
+                width: double.infinity,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F4FD).withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!isExpanded) ...[
+                      const Text(
+                        '•••',
+                        style: TextStyle(
+                          color: Color(0xFF4A44D1),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Other loans',
+                        style: TextStyle(
+                          color: Color(0xFF4A44D1),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ] else ...[
+                      const Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        color: Color(0xFF4A44D1),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Show fewer loans',
+                        style: TextStyle(
+                          color: Color(0xFF4A44D1),
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              SizedBox(width: 8),
-              Text(
-                'Other loans',
-                style: TextStyle(
-                  color: Color(0xFF4A44D1),
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildBottomCta(ApplyLoanController controller) {
@@ -359,6 +421,14 @@ class ChooseLoanTypeScreen extends StatelessWidget {
         return Icons.directions_car_rounded;
       case 'card':
         return Icons.credit_card_rounded;
+      case 'education':
+        return Icons.school_rounded;
+      case 'machinery':
+        return Icons.precision_manufacturing_rounded;
+      case 'bt_topup':
+        return Icons.trending_up_rounded;
+      case 'agri':
+        return Icons.eco_rounded;
       default:
         return Icons.monetization_on_rounded;
     }
