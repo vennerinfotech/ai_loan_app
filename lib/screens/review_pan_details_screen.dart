@@ -38,7 +38,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
         // Scrollable Content
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -47,31 +47,31 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   'Review PAN details',
                   style: TextStyle(
                     color: AppColors.textDark,
-                    fontSize: 22,
+                    fontSize: 21,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 5),
 
                 // Subtitle
                 const Text(
                   'Read from your PAN card. Edit anything that looks off.',
                   style: TextStyle(
                     color: AppColors.textDarkSecondary,
-                    fontSize: 13.5,
-                    height: 1.4,
+                    fontSize: 13,
+                    height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
                 // Golden Amber PAN Card Display
                 _buildGoldenPanCard(controller),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
 
                 // Extracted Details White Card
                 _buildExtractedDetailsCard(controller),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
 
                 // Match Notice Box: "Name on PAN matches your Aadhaar..."
                 _buildMatchNoticeBox(),
@@ -90,15 +90,15 @@ class ReviewPanDetailsBody extends StatelessWidget {
   Widget _buildGoldenPanCard(PanKycController controller) {
     return Container(
       width: double.infinity,
-      height: 145,
+      height: 130,
       decoration: BoxDecoration(
         color: AppColors.accentGold,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentGold.withValues(alpha: 0.35),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+            color: AppColors.accentGold.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -107,7 +107,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
           // Background orbit ring painter
           Positioned.fill(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(16),
               child: CustomPaint(
                 painter: _PanCardOrbitPainter(),
               ),
@@ -115,7 +115,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -124,7 +124,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   'Permanent Account Number',
                   style: TextStyle(
                     color: Color(0xFF212074),
-                    fontSize: 12,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -134,19 +134,19 @@ class ReviewPanDetailsBody extends StatelessWidget {
                     controller.panNumber.value,
                     style: const TextStyle(
                       color: Color(0xFF212074),
-                      fontSize: 26,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 2.2,
+                      letterSpacing: 2.0,
                     ),
                   ),
                 ),
 
                 // "Format valid" pill badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
                     color: const Color(0xFF212074),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -154,14 +154,14 @@ class ReviewPanDetailsBody extends StatelessWidget {
                       Icon(
                         Icons.check_rounded,
                         color: AppColors.accentGold,
-                        size: 14,
+                        size: 13,
                       ),
                       SizedBox(width: 4),
                       Text(
                         'Format valid',
                         style: TextStyle(
                           color: AppColors.accentGold,
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -179,16 +179,16 @@ class ReviewPanDetailsBody extends StatelessWidget {
   /// Extracted Details Card (Name on PAN, Father's name, Date of birth)
   Widget _buildExtractedDetailsCard(PanKycController controller) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -200,7 +200,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             label: 'Name on PAN',
             value: controller.nameAsPerPan.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 16, thickness: 1),
+          const Divider(color: Color(0xFFF1F4FA), height: 14, thickness: 1),
 
           // 2: Father's name
           _buildDetailRow(
@@ -208,7 +208,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             label: 'Father\'s name',
             value: controller.fathersName.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 16, thickness: 1),
+          const Divider(color: Color(0xFFF1F4FA), height: 14, thickness: 1),
 
           // 3: Date of birth
           _buildDetailRow(
@@ -227,23 +227,23 @@ class ReviewPanDetailsBody extends StatelessWidget {
     required String value,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Soft purple icon square
           Container(
-            width: 36,
-            height: 36,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: const Color(0xFFEEF1FD),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
-              child: Icon(icon, color: AppColors.primaryPurple, size: 18),
+              child: Icon(icon, color: AppColors.primaryPurple, size: 16),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
           // Label & Value
           Expanded(
@@ -254,7 +254,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   label,
                   style: const TextStyle(
                     color: AppColors.textDarkSecondary,
-                    fontSize: 11.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -263,7 +263,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   value,
                   style: const TextStyle(
                     color: AppColors.textDark,
-                    fontSize: 14,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -278,10 +278,10 @@ class ReviewPanDetailsBody extends StatelessWidget {
   /// Match notice container
   Widget _buildMatchNoticeBox() {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: const Color(0xFFEEF1FD),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFD6DCF6), width: 1),
       ),
       child: const Row(
@@ -290,15 +290,15 @@ class ReviewPanDetailsBody extends StatelessWidget {
           Icon(
             Icons.shield_outlined,
             color: AppColors.primaryPurple,
-            size: 20,
+            size: 18,
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 10),
           Expanded(
             child: Text(
               'Name on PAN matches your Aadhaar. You\'re good to go.',
               style: TextStyle(
                 color: Color(0xFF333099),
-                fontSize: 12.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
               ),
@@ -312,18 +312,18 @@ class ReviewPanDetailsBody extends StatelessWidget {
   /// Bottom Edit & Confirm & submit buttons
   Widget _buildBottomSection(PanKycController controller) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
       child: Row(
         children: [
           // Edit Button
           GestureDetector(
             onTap: controller.editDetails,
             child: Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 22),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
               ),
               child: const Center(
@@ -331,25 +331,25 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   'Edit',
                   style: TextStyle(
                     color: AppColors.textDark,
-                    fontSize: 14.5,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
 
           // Confirm & submit Button
           Expanded(
             child: SizedBox(
-              height: 52,
+              height: 48,
               child: ElevatedButton(
                 onPressed: controller.submitPanDetails,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryButtonBackground,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
                 ),
@@ -360,7 +360,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                       'Confirm & submit',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14.5,
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
