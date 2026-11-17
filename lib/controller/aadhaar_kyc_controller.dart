@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../screens/aadhaar_otp_screen.dart';
@@ -7,6 +8,7 @@ import '../screens/review_aadhaar_details_screen.dart';
 import '../screens/enter_pan_screen.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
+import '../widgets/image_picker_bottom_sheet.dart';
 
 /// GetX controller for Aadhaar KYC Verification flow.
 /// Implements full flow:
@@ -23,6 +25,10 @@ class AadhaarKycController extends GetxController {
   final aadhaarController = TextEditingController();
   final frontUploaded = false.obs;
   final backUploaded = false.obs;
+  final frontImagePath = ''.obs;
+  final backImagePath = ''.obs;
+  final frontImageBytes = Rxn<Uint8List>();
+  final backImageBytes = Rxn<Uint8List>();
 
   // Step 2: Aadhaar OTP
   final otpCode = ''.obs;
@@ -97,32 +103,52 @@ class AadhaarKycController extends GetxController {
     }
   }
 
-  /// Toggle front side card upload simulation
-  void toggleFrontUpload() {
-    frontUploaded.value = !frontUploaded.value;
-    Get.snackbar(
-      frontUploaded.value ? 'Front Side Uploaded' : 'Front Side Removed',
-      frontUploaded.value ? 'Aadhaar front photo captured successfully.' : 'Upload cleared.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
+  /// Pick Aadhaar document (Front or Back) using camera or gallery via ImagePickerBottomSheet
+  Future<void> pickAadhaarDocument({
+    required bool isFront,
+    BuildContext? context,
+  }) async {
+    final file = await ImagePickerBottomSheet.show(
+      context: context,
+      title: isFront ? 'Upload Aadhaar (Front Side)' : 'Upload Aadhaar (Back Side)',
+      subtitle: 'Take a photo or choose an image from gallery',
     );
+
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      if (isFront) {
+        frontUploaded.value = true;
+        frontImagePath.value = file.path;
+        frontImageBytes.value = bytes;
+      } else {
+        backUploaded.value = true;
+        backImagePath.value = file.path;
+        backImageBytes.value = bytes;
+      }
+
+      Get.snackbar(
+        isFront ? 'Front Side Uploaded' : 'Back Side Uploaded',
+        'Document selected: ${file.name}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF212074),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
-  /// Toggle back side card upload simulation
-  void toggleBackUpload() {
-    backUploaded.value = !backUploaded.value;
-    Get.snackbar(
-      backUploaded.value ? 'Back Side Uploaded' : 'Back Side Removed',
-      backUploaded.value ? 'Aadhaar back photo captured successfully.' : 'Upload cleared.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
+  /// Remove uploaded Aadhaar document
+  void removeAadhaarDocument({required bool isFront}) {
+    if (isFront) {
+      frontUploaded.value = false;
+      frontImagePath.value = '';
+      frontImageBytes.value = null;
+    } else {
+      backUploaded.value = false;
+      backImagePath.value = '';
+      backImageBytes.value = null;
+    }
   }
 
   /// Send OTP to registered mobile number
@@ -206,20 +232,34 @@ class AadhaarKycController extends GetxController {
   }
 
   /// Called from AadhaarNotLinkedScreen when user taps "Upload Aadhaar instead"
-  void uploadAadhaarManually() {
-    Get.snackbar(
-      'Manual Upload',
-      'Documents submitted. Reviewing extracted details...',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
+  Future<void> uploadAadhaarManually({BuildContext? context}) async {
+    final file = await ImagePickerBottomSheet.show(
+      context: context,
+      title: 'Upload Aadhaar Card',
+      subtitle: 'Take a photo or choose your Aadhaar image',
     );
-    if (Get.isRegistered<KycFlowController>()) {
-      Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
-    } else {
-      Get.to(() => const ReviewAadhaarDetailsScreen());
+
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      frontUploaded.value = true;
+      frontImagePath.value = file.path;
+      frontImageBytes.value = bytes;
+
+      Get.snackbar(
+        'Aadhaar Uploaded',
+        'Document submitted: ${file.name}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF212074),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+
+      if (Get.isRegistered<KycFlowController>()) {
+        Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
+      } else {
+        Get.to(() => const ReviewAadhaarDetailsScreen());
+      }
     }
   }
 

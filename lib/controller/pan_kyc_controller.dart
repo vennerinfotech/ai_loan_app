@@ -1,10 +1,13 @@
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../screens/upload_pan_screen.dart';
 import '../screens/pan_not_verified_screen.dart';
 import '../screens/review_pan_details_screen.dart';
 import '../screens/kyc_next_step_placeholder_screen.dart';
 import 'kyc_flow_controller.dart';
+import '../widgets/image_picker_bottom_sheet.dart';
 
 /// GetX Controller for PAN Card Verification flow.
 /// Implements:
@@ -30,6 +33,8 @@ class PanKycController extends GetxController {
   // Upload PAN Card state
   final isCardUploaded = false.obs;
   final uploadSource = ''.obs; // 'Camera' or 'Gallery'
+  final panImagePath = ''.obs;
+  final panImageBytes = Rxn<Uint8List>();
 
   // Extracted PAN details (dummy data matching reference)
   final nameAsPerPan = 'AARAV MEHTA'.obs;
@@ -125,34 +130,104 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Simulate camera photo capture
-  void takePhoto() {
-    isCardUploaded.value = true;
-    uploadSource.value = 'Camera';
-    Get.snackbar(
-      'Photo Captured',
-      'PAN card photo captured successfully via camera.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
+  /// Capture PAN photo using device camera via ImagePicker
+  Future<void> takePhoto() async {
+    final picker = ImagePicker();
+    try {
+      final file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+      );
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        isCardUploaded.value = true;
+        uploadSource.value = 'Camera';
+        panImagePath.value = file.path;
+        panImageBytes.value = bytes;
+        Get.snackbar(
+          'Photo Captured',
+          'PAN card photo captured: ${file.name}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF212074),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      debugPrint('Camera error: $e');
+      Get.snackbar(
+        'Camera Error',
+        'Could not access camera on this device.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }
   }
 
-  /// Simulate gallery photo selection
-  void pickFromGallery() {
-    isCardUploaded.value = true;
-    uploadSource.value = 'Gallery';
-    Get.snackbar(
-      'Image Selected',
-      'PAN card image selected from device gallery.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
+  /// Select PAN card photo from gallery via ImagePicker
+  Future<void> pickFromGallery() async {
+    final picker = ImagePicker();
+    try {
+      final file = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        isCardUploaded.value = true;
+        uploadSource.value = 'Gallery';
+        panImagePath.value = file.path;
+        panImageBytes.value = bytes;
+        Get.snackbar(
+          'Image Selected',
+          'PAN card image selected: ${file.name}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF212074),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+      }
+    } catch (e) {
+      debugPrint('Gallery error: $e');
+      Get.snackbar(
+        'Gallery Error',
+        'Could not access gallery on this device.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }
+  }
+
+  /// Open Bottom Sheet to choose Camera or Gallery for PAN card
+  Future<void> openImagePickerBottomSheet({BuildContext? context}) async {
+    final file = await ImagePickerBottomSheet.show(
+      context: context,
+      title: 'Upload PAN card',
+      subtitle: 'Take a photo or choose from gallery',
     );
+
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      isCardUploaded.value = true;
+      uploadSource.value = 'Selected';
+      panImagePath.value = file.path;
+      panImageBytes.value = bytes;
+      Get.snackbar(
+        'PAN Card Selected',
+        'Document added: ${file.name}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF212074),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+    }
   }
 
   /// Continue from upload screen to Review PAN Details screen

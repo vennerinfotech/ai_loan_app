@@ -31,10 +31,10 @@ class SplashScreen extends StatelessWidget {
     final progressBarWidth = (screenWidth * 0.35).clamp(110.0, 140.0);
 
     // Unified vertical center anchor for both the logo and the background orbits
-    final logoCenterY = (screenHeight * 0.44).clamp(
-      topPadding + 110.0,
-      screenHeight - bottomPadding - 230.0,
-    );
+    final minY = topPadding + 60.0;
+    final rawMaxY = screenHeight - bottomPadding - 180.0;
+    final maxY = rawMaxY > minY ? rawMaxY : (minY + 60.0);
+    final logoCenterY = (screenHeight * 0.44).clamp(minY, maxY);
 
     return Scaffold(
       body: Container(

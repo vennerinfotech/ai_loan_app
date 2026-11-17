@@ -84,7 +84,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
         ),
 
         // Bottom Actions: "Upload Aadhaar instead" & "Do it later"
-        _buildBottomSection(controller),
+        _buildBottomSection(context, controller),
       ],
     );
   }
@@ -187,7 +187,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
   }
 
   /// Bottom buttons
-  Widget _buildBottomSection(AadhaarKycController controller) {
+  Widget _buildBottomSection(BuildContext context, AadhaarKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
       child: Column(
@@ -197,7 +197,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: controller.uploadAadhaarManually,
+              onPressed: () => controller.uploadAadhaarManually(context: context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryButtonBackground,
                 shape: RoundedRectangleBorder(

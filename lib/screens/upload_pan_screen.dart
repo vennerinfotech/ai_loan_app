@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+
 import '../theme/app_colors.dart';
 import '../controller/pan_kyc_controller.dart';
 import '../widgets/kyc_stepper.dart';
@@ -65,7 +68,7 @@ class UploadPanBody extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Card frame viewfinder container (Deep Blue / Indigo)
-                _buildPanCardFrameViewfinder(controller),
+                _buildPanCardFrameViewfinder(context, controller),
                 const SizedBox(height: 16),
 
                 // Dual buttons: "Take photo" & "Gallery"
@@ -86,71 +89,136 @@ class UploadPanBody extends StatelessWidget {
   }
 
   /// Dark indigo container with dashed golden frame viewfinder
-  Widget _buildPanCardFrameViewfinder(PanKycController controller) {
-    return Container(
-      width: double.infinity,
-      height: 185,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF333099),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF333099).withValues(alpha: 0.3),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        painter: _DashedRectPainter(
-          color: AppColors.accentGold,
-          strokeWidth: 2.0,
-          dashWidth: 6,
-          dashSpace: 4,
-          radius: 16,
+  Widget _buildPanCardFrameViewfinder(
+    BuildContext context,
+    PanKycController controller,
+  ) {
+    return GestureDetector(
+      onTap: () => controller.openImagePickerBottomSheet(context: context),
+      child: Container(
+        width: double.infinity,
+        height: 185,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF333099),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF333099).withValues(alpha: 0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Center(
-          child: Obx(
-            () => Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      controller.isCardUploaded.value
-                          ? Icons.check_circle_rounded
-                          : Icons.badge_outlined,
-                      color: controller.isCardUploaded.value
-                          ? const Color(0xFF22C55E)
-                          : Colors.white,
-                      size: 24,
+        child: CustomPaint(
+          foregroundPainter: _DashedRectPainter(
+            color: AppColors.accentGold,
+            strokeWidth: 2.0,
+            dashWidth: 6,
+            dashSpace: 4,
+            radius: 16,
+          ),
+          child: Center(
+            child: Obx(() {
+              final bytes = controller.panImageBytes.value;
+              final imagePath = controller.panImagePath.value;
+              final hasImage =
+                  bytes != null ||
+                  (imagePath.isNotEmpty && File(imagePath).existsSync());
+
+              if (hasImage) {
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: bytes != null
+                          ? Image.memory(
+                              bytes,
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.file(
+                              File(imagePath),
+                              width: double.infinity,
+                              height: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Color(0xFF22C55E),
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Tap to change photo',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        controller.isCardUploaded.value
+                            ? Icons.check_circle_rounded
+                            : Icons.badge_outlined,
+                        color: controller.isCardUploaded.value
+                            ? const Color(0xFF22C55E)
+                            : Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  controller.isCardUploaded.value
-                      ? 'PAN card captured via ${controller.uploadSource.value} ✓'
-                      : 'Fit the card inside the frame',
-                  style: TextStyle(
-                    color: controller.isCardUploaded.value
-                        ? AppColors.accentGold
-                        : const Color(0xFFC7CAE8),
-                    fontSize: 12.5,
-                    fontWeight: controller.isCardUploaded.value
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                  const SizedBox(height: 10),
+                  Text(
+                    controller.isCardUploaded.value
+                        ? 'PAN card captured via ${controller.uploadSource.value} ✓'
+                        : 'Fit the card inside the frame',
+                    style: TextStyle(
+                      color: controller.isCardUploaded.value
+                          ? AppColors.accentGold
+                          : const Color(0xFFC7CAE8),
+                      fontSize: 12.5,
+                      fontWeight: controller.isCardUploaded.value
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            }),
           ),
         ),
       ),

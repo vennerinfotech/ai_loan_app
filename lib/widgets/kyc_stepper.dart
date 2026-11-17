@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
+import 'kyc_help_bottom_sheet.dart';
 
 /// Reusable KYC Top Bar & Stepper Indicator.
 /// Matches reference screens (Images 2, 3, 4, 5):
@@ -11,11 +12,13 @@ import '../theme/app_colors.dart';
 class KycHeaderWithStepper extends StatelessWidget {
   final int activeStep; // 1 = Aadhaar, 2 = PAN, 3 = Docs
   final VoidCallback? onBack;
+  final VoidCallback? onHelp;
 
   const KycHeaderWithStepper({
     super.key,
     this.activeStep = 1,
     this.onBack,
+    this.onHelp,
   });
 
   @override
@@ -73,72 +76,7 @@ class KycHeaderWithStepper extends StatelessWidget {
 
               // Help / Info Button Squircle
               GestureDetector(
-                onTap: () {
-                  Get.bottomSheet(
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Row(
-                            children: [
-                              Icon(Icons.help_outline_rounded, color: AppColors.primaryPurple, size: 22),
-                              SizedBox(width: 10),
-                              Text(
-                                'Aadhaar Verification Help',
-                                style: TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'Your Aadhaar details are verified via UIDAI OTP e-KYC. We ensure bank-grade 256-bit encryption. Your biometric credentials are never accessed or stored.',
-                            style: TextStyle(
-                              color: AppColors.textDarkSecondary,
-                              fontSize: 13.5,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () => Get.back(),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryButtonBackground,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                              ),
-                              child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                onTap: onHelp ?? () => KycHelpBottomSheet.show(context),
                 child: Container(
                   width: 42,
                   height: 42,

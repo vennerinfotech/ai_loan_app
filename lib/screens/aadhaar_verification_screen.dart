@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
@@ -85,7 +87,7 @@ class AadhaarVerificationBody extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Front side & Back side upload cards
-                _buildUploadCardsRow(controller),
+                _buildUploadCardsRow(context, controller),
                 const SizedBox(height: 24),
 
                 // Test toggle for linking simulation (Linked vs Unlinked branch)
@@ -186,7 +188,7 @@ class AadhaarVerificationBody extends StatelessWidget {
   }
 
   /// Front side & Back side upload cards
-  Widget _buildUploadCardsRow(AadhaarKycController controller) {
+  Widget _buildUploadCardsRow(BuildContext context, AadhaarKycController controller) {
     return Row(
       children: [
         // Front Side Card
@@ -196,7 +198,9 @@ class AadhaarVerificationBody extends StatelessWidget {
               title: 'Front side',
               subtitle: controller.frontUploaded.value ? 'Uploaded ✓' : 'Camera or gallery',
               isUploaded: controller.frontUploaded.value,
-              onTap: controller.toggleFrontUpload,
+              imagePath: controller.frontImagePath.value,
+              imageBytes: controller.frontImageBytes.value,
+              onTap: () => controller.pickAadhaarDocument(isFront: true, context: context),
             ),
           ),
         ),
@@ -209,7 +213,9 @@ class AadhaarVerificationBody extends StatelessWidget {
               title: 'Back side',
               subtitle: controller.backUploaded.value ? 'Uploaded ✓' : 'Camera or gallery',
               isUploaded: controller.backUploaded.value,
-              onTap: controller.toggleBackUpload,
+              imagePath: controller.backImagePath.value,
+              imageBytes: controller.backImageBytes.value,
+              onTap: () => controller.pickAadhaarDocument(isFront: false, context: context),
             ),
           ),
         ),
@@ -221,66 +227,171 @@ class AadhaarVerificationBody extends StatelessWidget {
     required String title,
     required String subtitle,
     required bool isUploaded,
+    required String imagePath,
+    Uint8List? imageBytes,
     required VoidCallback onTap,
   }) {
+    final hasImage = imageBytes != null || (imagePath.isNotEmpty && File(imagePath).existsSync());
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 125,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
+        height: 130,
+        foregroundDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isUploaded ? const Color(0xFF16A34A) : AppColors.kycUploadCardBorder,
-            width: isUploaded ? 1.5 : 1.2,
+            width: isUploaded ? 1.8 : 1.2,
           ),
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: isUploaded
+                  ? const Color(0xFF16A34A).withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isUploaded ? const Color(0xFFDCFCE7) : AppColors.kycUploadIconBg,
-                borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: hasImage
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Full Card Image Preview
+                  if (imageBytes != null)
+                    Image.memory(
+                      imageBytes,
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    Image.file(
+                      File(imagePath),
+                      fit: BoxFit.cover,
+                    ),
+
+                  // Bottom Gradient dark overlay for readability
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 54,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Bottom Title & Uploaded Checkmark badge
+                  Positioned(
+                    left: 10,
+                    right: 10,
+                    bottom: 8,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: Color(0xFF22C55E),
+                          size: 15,
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Top-Right "Change" Tag
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.edit_rounded, color: Colors.white, size: 11),
+                          SizedBox(width: 3),
+                          Text(
+                            'Change',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: isUploaded ? const Color(0xFFDCFCE7) : AppColors.kycUploadIconBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isUploaded ? Icons.check_circle_rounded : Icons.photo_camera_back_outlined,
+                        color: isUploaded ? const Color(0xFF16A34A) : AppColors.kycUploadIcon,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isUploaded ? const Color(0xFF16A34A) : AppColors.textDarkSecondary,
+                      fontSize: 10.5,
+                      fontWeight: isUploaded ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
-              child: Center(
-                child: Icon(
-                  isUploaded ? Icons.check_circle_rounded : Icons.photo_camera_back_outlined,
-                  color: isUploaded ? const Color(0xFF16A34A) : AppColors.kycUploadIcon,
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isUploaded ? const Color(0xFF16A34A) : AppColors.textDarkSecondary,
-                fontSize: 10.5,
-                fontWeight: isUploaded ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
