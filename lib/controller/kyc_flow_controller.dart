@@ -16,8 +16,11 @@ enum KycSubStep {
   panUpload,
   panReview,
 
-  // Step 3: Next KYC Step / Credit
+  // Step 2: KYC Verified Success
   nextStepPlaceholder,
+
+  // Step 3: Credit Check (CIBIL / CRIF Consent)
+  creditCheck,
 }
 
 /// Controller that coordinates sticky-header KYC flow.
@@ -56,8 +59,22 @@ class KycFlowController extends GetxController {
       case KycSubStep.panReview:
         return 2;
       case KycSubStep.nextStepPlaceholder:
+      case KycSubStep.creditCheck:
         return 3;
     }
+  }
+
+  /// Title for the top header app bar
+  String get headerTitle {
+    if (currentSubStep.value == KycSubStep.creditCheck) {
+      return 'Credit check';
+    }
+    return 'KYC verification';
+  }
+
+  /// Whether to display the help button in the top header
+  bool get showHeaderHelp {
+    return currentSubStep.value != KycSubStep.creditCheck;
   }
 
   /// Transition to a new sub-step in the KYC flow

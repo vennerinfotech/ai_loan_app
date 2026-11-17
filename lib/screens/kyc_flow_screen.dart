@@ -12,7 +12,8 @@ import 'enter_pan_screen.dart';
 import 'pan_not_verified_screen.dart';
 import 'upload_pan_screen.dart';
 import 'review_pan_details_screen.dart';
-import 'kyc_next_step_placeholder_screen.dart';
+import 'kyc_success_screen.dart';
+import 'credit_check_screen.dart';
 
 /// Unified KYC Verification Screen with a permanently Sticky Top Header.
 /// The top header (Back button, "KYC verification" title, Help squircle, and 3-step Stepper)
@@ -47,16 +48,26 @@ class KycFlowScreen extends StatelessWidget {
           bottom: false,
           child: Column(
             children: [
-              // 1. PERMANENTLY STICKY TOP HEADER SECTION (Back, Title, Help, Stepper)
-              Obx(
-                () => KycHeaderWithStepper(
-                  activeStep: controller.activeStepNumber,
-                  onBack: controller.handleBack,
-                ),
-              ),
-              const SizedBox(height: 8),
+              // 1. TOP HEADER SECTION (Back, Title, Help, Stepper) - Hidden on KYC success screen
+              Obx(() {
+                if (controller.currentSubStep.value == KycSubStep.nextStepPlaceholder) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    KycHeaderWithStepper(
+                      activeStep: controller.activeStepNumber,
+                      title: controller.headerTitle,
+                      showHelp: controller.showHeaderHelp,
+                      onBack: controller.handleBack,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                );
+              }),
 
-              // 2. DYNAMIC BOTTOM CONTENT SECTION (Only this section changes)
+              // 2. DYNAMIC BOTTOM CONTENT SECTION
               Expanded(
                 child: Obx(() {
                   switch (controller.currentSubStep.value) {
@@ -77,9 +88,9 @@ class KycFlowScreen extends StatelessWidget {
                     case KycSubStep.panReview:
                       return const ReviewPanDetailsBody();
                     case KycSubStep.nextStepPlaceholder:
-                      return KycNextStepPlaceholderBody(
-                        targetFeature: controller.panController.targetFeature.value,
-                      );
+                      return const KycSuccessBody();
+                    case KycSubStep.creditCheck:
+                      return const CreditCheckBody();
                   }
                 }),
               ),

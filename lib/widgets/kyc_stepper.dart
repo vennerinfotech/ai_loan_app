@@ -11,12 +11,16 @@ import 'kyc_help_bottom_sheet.dart';
 /// - 3-step pill bar: (1) Aadhaar, (2) PAN, (3) Docs / Credit
 class KycHeaderWithStepper extends StatelessWidget {
   final int activeStep; // 1 = Aadhaar, 2 = PAN, 3 = Docs
+  final String title;
+  final bool showHelp;
   final VoidCallback? onBack;
   final VoidCallback? onHelp;
 
   const KycHeaderWithStepper({
     super.key,
     this.activeStep = 1,
+    this.title = 'KYC verification',
+    this.showHelp = true,
     this.onBack,
     this.onHelp,
   });
@@ -64,9 +68,9 @@ class KycHeaderWithStepper extends StatelessWidget {
               ),
 
               // Title
-              const Text(
-                'KYC verification',
-                style: TextStyle(
+              Text(
+                title,
+                style: const TextStyle(
                   color: AppColors.textDark,
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -74,36 +78,39 @@ class KycHeaderWithStepper extends StatelessWidget {
                 ),
               ),
 
-              // Help / Info Button Squircle
-              GestureDetector(
-                onTap: onHelp ?? () => KycHelpBottomSheet.show(context),
-                child: Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: AppColors.backButtonBorder,
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+              // Help / Info Button Squircle (or placeholder for alignment)
+              if (showHelp)
+                GestureDetector(
+                  onTap: onHelp ?? () => KycHelpBottomSheet.show(context),
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.backButtonBorder,
+                        width: 1,
                       ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.help_outline_rounded,
-                      color: AppColors.textDark,
-                      size: 20,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.help_outline_rounded,
+                        color: AppColors.textDark,
+                        size: 20,
+                      ),
                     ),
                   ),
-                ),
-              ),
+                )
+              else
+                const SizedBox(width: 42, height: 42),
             ],
           ),
         ),
