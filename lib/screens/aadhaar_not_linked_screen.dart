@@ -41,35 +41,36 @@ class AadhaarNotLinkedBody extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
-                // Phone disconnected icon in light peach circular badge
+                // Phone disconnected icon in light peach circular badge with dotted ring
                 _buildDisconnectedPhoneBadge(),
                 const SizedBox(height: 24),
 
-                // Heading
+                // Heading (increased size & bold weight)
                 const Text(
                   'Aadhaar isn\'t linked\nto a mobile number',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textDark,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    height: 1.25,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    height: 1.22,
                   ),
                 ),
                 const SizedBox(height: 10),
 
-                // Subtitle
+                // Subtitle (clearer & balanced size)
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Text(
                     'No problem — upload a photo of your Aadhaar card instead and we\'ll verify it manually.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.textDarkSecondary,
-                      fontSize: 13,
+                      color: Color(0xFF475569),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
                       height: 1.45,
                     ),
                   ),
@@ -92,30 +93,27 @@ class AadhaarNotLinkedBody extends StatelessWidget {
   /// Circular badge with disconnected phone icon
   Widget _buildDisconnectedPhoneBadge() {
     return Container(
-      width: 110,
-      height: 110,
+      width: 108,
+      height: 108,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
         shape: BoxShape.circle,
         border: Border.all(
           color: const Color(0xFFFED7AA),
           width: 1.5,
-          style: BorderStyle.solid,
         ),
       ),
-      child: Center(
-        child: Container(
-          width: 90,
-          height: 90,
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFF2E6),
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-            child: Icon(
-              Icons.phone_disabled_outlined,
-              color: Color(0xFFC2410C),
-              size: 38,
-            ),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFFFF2E6),
+          shape: BoxShape.circle,
+        ),
+        child: const Center(
+          child: Icon(
+            Icons.mobile_off_rounded,
+            color: Color(0xFFC2410C),
+            size: 46,
           ),
         ),
       ),
@@ -125,7 +123,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
   /// 3-step numbered card
   Widget _buildManualStepsCard() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -141,9 +139,9 @@ class AadhaarNotLinkedBody extends StatelessWidget {
       child: Column(
         children: [
           _buildStepRow(1, 'Upload front & back of Aadhaar'),
-          const Divider(color: Color(0xFFF1F4FA), height: 20, thickness: 1),
+          const Divider(color: Color(0xFFF1F4FA), height: 22, thickness: 1),
           _buildStepRow(2, 'Review the details we read'),
-          const Divider(color: Color(0xFFF1F4FA), height: 20, thickness: 1),
+          const Divider(color: Color(0xFFF1F4FA), height: 22, thickness: 1),
           _buildStepRow(3, 'Our team confirms it'),
         ],
       ),
@@ -154,8 +152,8 @@ class AadhaarNotLinkedBody extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 26,
+          height: 26,
           decoration: const BoxDecoration(
             color: Color(0xFF212074),
             shape: BoxShape.circle,
@@ -164,9 +162,9 @@ class AadhaarNotLinkedBody extends StatelessWidget {
             child: Text(
               '$number',
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
+                color: Color(0xFFFBC14E),
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -177,8 +175,8 @@ class AadhaarNotLinkedBody extends StatelessWidget {
             label,
             style: const TextStyle(
               color: AppColors.textDark,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -211,14 +209,14 @@ class AadhaarNotLinkedBody extends StatelessWidget {
                   Icon(
                     Icons.badge_outlined,
                     color: AppColors.accentGold,
-                    size: 18,
+                    size: 20,
                   ),
                   SizedBox(width: 10),
                   Text(
                     'Upload Aadhaar instead',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -235,7 +233,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
               'Do it later',
               style: TextStyle(
                 color: AppColors.primaryPurple,
-                fontSize: 13.5,
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
             ),
