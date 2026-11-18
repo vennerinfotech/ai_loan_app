@@ -53,23 +53,23 @@ class PanNotVerifiedBody extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.textDark,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
                 // Subtitle with bold PAN number
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Obx(
                     () => RichText(
                       textAlign: TextAlign.center,
                       text: TextSpan(
                         style: const TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 13,
+                          color: Color(0xFF475569),
+                          fontSize: 13.5,
                           height: 1.45,
                         ),
                         children: [
@@ -102,20 +102,24 @@ class PanNotVerifiedBody extends StatelessWidget {
     );
   }
 
-  /// Warning badge: red triangle icon in light peach rounded container
+  /// Warning badge: red triangle icon in light peach squircle container with soft border
   Widget _buildWarningIconBadge() {
     return Container(
-      width: 100,
-      height: 100,
+      width: 114,
+      height: 114,
       decoration: BoxDecoration(
-        color: AppColors.panErrorCircleBg,
-        borderRadius: BorderRadius.circular(28),
+        color: const Color(0xFFFFF1EE),
+        borderRadius: BorderRadius.circular(34),
+        border: Border.all(
+          color: const Color(0xFFFED7D2),
+          width: 1.5,
+        ),
       ),
       child: const Center(
         child: Icon(
           Icons.warning_amber_rounded,
-          color: AppColors.panErrorIcon,
-          size: 46,
+          color: Color(0xFFDC2626),
+          size: 54,
         ),
       ),
     );
@@ -125,11 +129,11 @@ class PanNotVerifiedBody extends StatelessWidget {
   Widget _buildCommonFixesCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -145,19 +149,19 @@ class PanNotVerifiedBody extends StatelessWidget {
             'Common fixes',
             style: TextStyle(
               color: AppColors.textDark,
-              fontSize: 13.5,
+              fontSize: 14.5,
               fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
           // 1: Re-check character
           _buildFixRow('Re-check each character (0 vs O, 1 vs I)'),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // 2: PAN linked with Aadhaar
           _buildFixRow('Make sure PAN is linked with Aadhaar'),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // 3: Upload card
           _buildFixRow('Upload the card if the problem continues'),
@@ -180,10 +184,10 @@ class PanNotVerifiedBody extends StatelessWidget {
           child: Text(
             text,
             style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 12.5,
+              color: Color(0xFF334155),
+              fontSize: 13.5,
               fontWeight: FontWeight.w500,
-              height: 1.3,
+              height: 1.35,
             ),
           ),
         ),
@@ -191,7 +195,7 @@ class PanNotVerifiedBody extends StatelessWidget {
     );
   }
 
-  /// Bottom Buttons: "Try again" (Navy) & "Upload PAN card" (Light)
+  /// Bottom Buttons: "Try again" (Navy) & "Upload PAN card" (Light outlined with camera icon in primary color)
   Widget _buildBottomSection(PanKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
@@ -226,10 +230,11 @@ class PanNotVerifiedBody extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 52,
-            child: ElevatedButton(
+            child: OutlinedButton(
               onPressed: controller.uploadPanCardInstead,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEEF3FC),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: Colors.white,
+                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -239,15 +244,15 @@ class PanNotVerifiedBody extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.badge_outlined,
-                    color: AppColors.primaryButtonBackground,
-                    size: 18,
+                    Icons.camera_alt_outlined,
+                    color: AppColors.primaryPurple,
+                    size: 19,
                   ),
                   SizedBox(width: 8),
                   Text(
                     'Upload PAN card',
                     style: TextStyle(
-                      color: AppColors.primaryButtonBackground,
+                      color: AppColors.primaryPurple,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
                     ),
