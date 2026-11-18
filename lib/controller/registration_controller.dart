@@ -3,6 +3,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../models/registration_step.dart';
+import '../models/register_response_model.dart';
+import '../models/verify_otp_response_model.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
 import '../screens/login_with_mpin_screen.dart';
 
 /// GetX controller for Create Account + OTP Verify registration flow.
@@ -23,6 +27,15 @@ class RegistrationController extends GetxController
   ];
 
   // ==========================================
+  // API State & Response
+  // ==========================================
+  final isLoading = false.obs;
+  final registerResponse = Rxn<RegisterResponseModel>();
+  final isVerifyingOtp = false.obs;
+  final verifyOtpResponse = Rxn<VerifyOtpResponseModel>();
+  final authToken = ''.obs;
+
+  // ==========================================
   // Create Account - Form Fields
   // ==========================================
   final fullName = ''.obs;
@@ -33,16 +46,16 @@ class RegistrationController extends GetxController
   final showReferralField = false.obs;
 
   // Text controllers for input fields
-  final fullNameController = TextEditingController();
-  final mobileNumberController = TextEditingController();
-  final emailController = TextEditingController();
-  final referralCodeController = TextEditingController();
+  TextEditingController fullNameController = TextEditingController();
+  TextEditingController mobileNumberController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController referralCodeController = TextEditingController();
 
   // ==========================================
   // OTP Verification
   // ==========================================
-  final otpController = TextEditingController();
-  final otpFocusNode = FocusNode();
+  TextEditingController otpController = TextEditingController();
+  FocusNode otpFocusNode = FocusNode();
   final otpCode = ''.obs;
   final resendCountdown = 57.obs;
   final canResend = false.obs;
@@ -80,12 +93,6 @@ class RegistrationController extends GetxController
   @override
   void onClose() {
     mpinOrbitAnimation.dispose();
-    fullNameController.dispose();
-    mobileNumberController.dispose();
-    emailController.dispose();
-    referralCodeController.dispose();
-    otpController.dispose();
-    otpFocusNode.dispose();
     _resendTimer?.cancel();
     super.onClose();
   }
@@ -118,7 +125,8 @@ class RegistrationController extends GetxController
     agreedToTerms.value = !agreedToTerms.value;
   }
 
-  void submitForm() {
+  /// Submit Form: Calls POST /register API and transitions to OTP step
+  Future<void> submitForm() async {
     if (fullName.value.trim().isEmpty) {
       Get.snackbar(
         'Required',
@@ -155,9 +163,85 @@ class RegistrationController extends GetxController
       );
       return;
     }
-    // Move to OTP step
-    currentStep.value = 1;
-    _startResendTimer();
+
+    try {
+      isLoading.value = true;
+      final Map<String, dynamic> response = await ApiService.register(
+        name: fullName.value.trim(),
+        phone: mobileNumber.value.trim(),
+        email: email.value.trim(),
+        referenceCode: referralCode.value.trim(),
+      );
+
+      isLoading.value = false;
+
+      final statusCode = response['status_code'];
+      final isSuccess =
+          response['success'] == true || statusCode == 200 || statusCode == 201;
+
+      if (isSuccess) {
+        // Store data in model class
+        final model = RegisterResponseModel.fromJson(response);
+        registerResponse.value = model;
+
+        // Update mobile number if returned by API
+        if (model.data?.phone != null && model.data!.phone!.isNotEmpty) {
+          mobileNumber.value = model.data!.phone!;
+        }
+
+        // Auto-fill OTP from response for testing
+        if (model.data?.otp != null) {
+          final otp = model.data!.otp.toString();
+          otpController.value = TextEditingValue(
+            text: otp,
+            selection: TextSelection.collapsed(offset: otp.length),
+          );
+          otpCode.value = otp;
+          debugPrint('Auto-filled OTP: $otp');
+        }
+
+        Get.snackbar(
+          'Success',
+          model.message.isNotEmpty
+              ? model.message
+              : 'Registration successful. OTP sent to mobile.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+
+        // Move to OTP step
+        currentStep.value = 1;
+        _startResendTimer();
+      } else {
+        final errorMsg =
+            response['message']?.toString() ?? 'Registration failed';
+        debugPrint('Registration Error: $errorMsg');
+        Get.snackbar(
+          'Registration Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isLoading.value = false;
+      debugPrint('Registration Exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to connect to server: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   // ==========================================
@@ -202,10 +286,92 @@ class RegistrationController extends GetxController
     _startResendTimer();
   }
 
-  void verifyOtp() {
-    if (otpController.text.length < 6) return;
-    // Advance to step 3 (Create MPIN)
-    currentStep.value = 2;
+  /// Verify OTP API: calls POST /verify-otp with phone and otp
+  Future<void> verifyOtp() async {
+    final enteredOtp = otpCode.value.trim();
+    if (enteredOtp.length < 6) {
+      Get.snackbar(
+        'Incomplete OTP',
+        'Please enter the complete 6-digit OTP',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    try {
+      isVerifyingOtp.value = true;
+      final phone = mobileNumber.value.trim();
+
+      final Map<String, dynamic> response = await ApiService.verifyOtp(
+        phone: phone,
+        otp: enteredOtp,
+      );
+
+      isVerifyingOtp.value = false;
+
+      final statusCode = response['status_code'];
+      final isSuccess =
+          response['success'] == true || statusCode == 200 || statusCode == 201;
+
+      if (isSuccess) {
+        // Store data in model class
+        final model = VerifyOtpResponseModel.fromJson(response);
+        verifyOtpResponse.value = model;
+
+        if (model.data?.token != null && model.data!.token!.isNotEmpty) {
+          authToken.value = model.data!.token!;
+          // Save session
+          await SessionManager.saveLoginSession(
+            phone: model.data?.user?.phone ?? phone,
+            name: model.data?.user?.name ?? fullName.value,
+          );
+        }
+
+        Get.snackbar(
+          'Success',
+          model.message.isNotEmpty
+              ? model.message
+              : 'OTP verified successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+
+        // Advance to Step 3 (Create MPIN)
+        currentStep.value = 2;
+      } else {
+        final errorMsg =
+            response['message']?.toString() ?? 'OTP verification failed';
+        debugPrint('Verify OTP Error: $errorMsg');
+        Get.snackbar(
+          'Verification Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isVerifyingOtp.value = false;
+      debugPrint('Verify OTP Exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to verify OTP: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   // ==========================================

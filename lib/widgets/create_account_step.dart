@@ -339,46 +339,58 @@ class CreateAccountStep extends StatelessWidget {
 
   /// "Continue with OTP →" primary button matching Figma reference
   Widget _buildContinueButton({required bool enabled}) {
-    return InkWell(
-      onTap: enabled ? controller.submitForm : null,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: enabled
-              ? AppColors.primaryButtonBackground
-              : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
+    return Obx(() {
+      final isLoading = controller.isLoading.value;
+      return InkWell(
+        onTap: (enabled && !isLoading) ? controller.submitForm : null,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 54,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: enabled
+                ? AppColors.primaryButtonBackground
+                : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Continue with OTP',
+                      style: TextStyle(
+                        color: enabled
+                            ? AppColors.primaryButtonText
+                            : AppColors.primaryButtonText.withValues(alpha: 0.7),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: enabled
+                          ? AppColors.accentGold
+                          : AppColors.accentGold.withValues(alpha: 0.7),
+                      size: 19,
+                    ),
+                  ],
+                ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Continue with OTP',
-              style: TextStyle(
-                color: enabled
-                    ? AppColors.primaryButtonText
-                    : AppColors.primaryButtonText.withValues(alpha: 0.7),
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.1,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: enabled
-                  ? AppColors.accentGold
-                  : AppColors.accentGold.withValues(alpha: 0.7),
-              size: 19,
-            ),
-          ],
-        ),
-      ),
-    );
+      );
+    });
   }
 }
 

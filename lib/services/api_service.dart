@@ -1,0 +1,89 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+/// Central API Service for handling network requests across Finsphere AI Loan App.
+/// Base URL is kept as a common variable that can be changed anytime.
+class ApiService {
+  ApiService._();
+
+  /// Common base URL for all API calls - can be changed or switched for environments
+  static String baseUrl = 'https://app.crm.finsphereai.com/api';
+
+  /// Standard HTTP headers
+  static Map<String, String> get defaultHeaders => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  /// Register User API (application/json): POST {{baseUrl}}/register
+  static Future<Map<String, dynamic>> register({
+    required String name,
+    required String phone,
+    required String email,
+    String? referenceCode,
+  }) async {
+    final url = Uri.parse('$baseUrl/register');
+
+    final body = jsonEncode({
+      'name': name.trim(),
+      'phone': phone.trim(),
+      'email': email.trim().isNotEmpty ? email.trim() : '',
+      'reference_code': referenceCode?.trim() ?? '',
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('==========Register==========');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> jsonResponse =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      return jsonResponse;
+    } catch (e) {
+      debugPrint('Error in register API: $e');
+      return {'success': false, 'status_code': 500, 'message': e.toString()};
+    }
+  }
+
+  /// Verify Registration OTP API (application/json): POST {{baseUrl}}/verify-otp
+  static Future<Map<String, dynamic>> verifyOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    final url = Uri.parse('$baseUrl/verify-otp');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+      'otp': otp.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('==========Verify OTP ==========');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> jsonResponse =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      return jsonResponse;
+    } catch (e) {
+      debugPrint('Error in verifyOtp API: $e');
+      return {'success': false, 'status_code': 500, 'message': e.toString()};
+    }
+  }
+}

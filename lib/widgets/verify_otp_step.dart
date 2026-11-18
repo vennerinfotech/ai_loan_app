@@ -338,30 +338,40 @@ class VerifyOtpStep extends StatelessWidget {
   Widget _buildVerifyButton() {
     return Obx(() {
       final allFilled = controller.otpCode.value.length >= 6;
+      final isVerifying = controller.isVerifyingOtp.value;
       return InkWell(
-        onTap: allFilled ? controller.verifyOtp : null,
+        onTap: (allFilled && !isVerifying) ? controller.verifyOtp : null,
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 54,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: allFilled
+            color: (allFilled && !isVerifying)
                 ? AppColors.primaryButtonBackground
                 : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(
-            'Verify & continue',
-            style: TextStyle(
-              color: allFilled
-                  ? AppColors.primaryButtonText
-                  : AppColors.primaryButtonText.withValues(alpha: 0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.1,
-            ),
-          ),
+          child: isVerifying
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Verify & continue',
+                  style: TextStyle(
+                    color: allFilled
+                        ? AppColors.primaryButtonText
+                        : AppColors.primaryButtonText.withValues(alpha: 0.7),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.1,
+                  ),
+                ),
         ),
       );
     });
