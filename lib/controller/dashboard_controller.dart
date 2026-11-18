@@ -7,6 +7,7 @@ import '../screens/feature_placeholder_screen.dart';
 import '../screens/cibil_score_screen.dart';
 import '../screens/loan_flow/choose_loan_type_screen.dart';
 import '../screens/loan_flow/application_status_screen.dart';
+import '../screens/active_applications_screen.dart';
 import 'apply_loan_controller.dart';
 
 /// GetX controller for Dashboard screen and bottom navigation bar.
@@ -54,7 +55,17 @@ class DashboardController extends GetxController {
       Get.to(() => const ApplicationStatusScreen());
       return;
     }
-    if (featureName == 'AI eligibility' || featureName == 'All Applications') {
+    if (featureName == 'All Applications' ||
+        featureName == 'Active applications' ||
+        featureName == 'Active application') {
+      Get.to(
+        () => const ActiveApplicationsScreen(),
+        transition: Transition.noTransition,
+        duration: Duration.zero,
+      );
+      return;
+    }
+    if (featureName == 'AI eligibility') {
       // Navigation removed per user request
       return;
     }

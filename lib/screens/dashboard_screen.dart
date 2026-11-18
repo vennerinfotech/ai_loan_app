@@ -689,12 +689,15 @@ class DashboardScreen extends StatelessWidget {
                 letterSpacing: -0.2,
               ),
             ),
-            const Text(
-              'View all',
-              style: TextStyle(
-                color: AppColors.primaryPurple,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+            GestureDetector(
+              onTap: () => controller.onDashboardOptionSelected('All Applications'),
+              child: const Text(
+                'View all',
+                style: TextStyle(
+                  color: AppColors.primaryPurple,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],

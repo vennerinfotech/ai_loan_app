@@ -18,6 +18,8 @@ class FinsphereApp extends StatelessWidget {
       title: 'Finsphere.AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      defaultTransition: Transition.noTransition,
+      transitionDuration: Duration.zero,
       localizationsDelegates: const [
         m_ui.DefaultMaterialLocalizations.delegate,
       ],
