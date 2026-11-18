@@ -44,9 +44,9 @@ class LoginWithMobileController extends GetxController
 
   void getOtp() {
     if (!canSubmit) return;
-    Get.to(() => OtpVerificationScreen(
-          phoneNumber: mobileNumber.value,
-          type: OtpVerificationType.loginWithMobile,
+    final phone = mobileNumber.value.trim();
+    Get.to(() => LoginWithMpinScreen(
+          phoneNumber: phone.isNotEmpty ? phone : null,
         ));
   }
 
