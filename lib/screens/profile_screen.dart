@@ -609,29 +609,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Confirmation dialog before logging out
+  /// Confirmation dialog before logging out, styled according to the Finsphere app theme
   void _showLogoutDialog(BuildContext context) {
-    Get.defaultDialog(
-      title: 'Log out',
-      titleStyle: const TextStyle(
-        color: AppColors.textDark,
-        fontWeight: FontWeight.w800,
-        fontSize: 18,
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF212074).withValues(alpha: 0.16),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon Badge with layered circular styling
+              Container(
+                width: 68,
+                height: 68,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF1F1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFFFD5D5),
+                    width: 1.5,
+                  ),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFE4E4),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+
+              // Title
+              const Text(
+                'Log out',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              const Text(
+                'Are you sure you want to log out of Finsphere? You will need your MPIN to sign back in.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13.5,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Action Buttons Row: Cancel and Log out
+              Row(
+                children: [
+                  // Cancel button
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: TextButton(
+                        onPressed: () => Get.back(),
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color(0xFFF1F5F9),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF475569),
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Log out button
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Get.back();
+                          await SessionManager.clearSession();
+                          Get.offAll(() => const LoginWithMpinScreen());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFDC2626),
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.logout_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'Log out',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      middleText: 'Are you sure you want to log out of Finsphere?',
-      middleTextStyle: const TextStyle(
-        color: Color(0xFF64748B),
-        fontSize: 14,
-      ),
-      textConfirm: 'Log out',
-      confirmTextColor: Colors.white,
-      buttonColor: const Color(0xFFDC2626),
-      textCancel: 'Cancel',
-      cancelTextColor: AppColors.textDark,
-      onConfirm: () async {
-        await SessionManager.clearSession();
-        Get.offAll(() => const LoginWithMpinScreen());
-      },
+      barrierColor: Colors.black.withValues(alpha: 0.54),
+      transitionDuration: const Duration(milliseconds: 200),
     );
   }
 }
