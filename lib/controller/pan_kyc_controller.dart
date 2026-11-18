@@ -25,7 +25,7 @@ class PanKycController extends GetxController {
 
   // PAN Input
   final panNumber = 'ABCDE1234F'.obs;
-  final panController = TextEditingController(text: 'ABCDE1234F');
+  TextEditingController panController = TextEditingController(text: 'ABCDE1234F');
 
   // Branching toggle: is PAN verified with Income Tax records?
   // Defaults to true, can be toggled to test both branches
@@ -52,11 +52,6 @@ class PanKycController extends GetxController {
     return RegExp(r'^[A-Z]{5}[0-9]{4}[A-Z]{1}$').hasMatch(clean);
   }
 
-  @override
-  void onClose() {
-    panController.dispose();
-    super.onClose();
-  }
 
   void setTargetFeature(String feature) {
     targetFeature.value = feature;

@@ -22,8 +22,8 @@ class AadhaarKycController extends GetxController {
   final targetFeature = 'Apply for loan'.obs;
 
   // Step 1: Aadhaar Number
-  final aadhaarNumber = ''.obs; // 12-digit raw
-  final aadhaarController = TextEditingController();
+  final aadhaarNumber = '482177301234'.obs; // 12-digit raw
+  TextEditingController aadhaarController = TextEditingController(text: '4821 7730 1234');
   final frontUploaded = false.obs;
   final backUploaded = false.obs;
   final frontImagePath = ''.obs;
@@ -33,8 +33,8 @@ class AadhaarKycController extends GetxController {
 
   // Step 2: Aadhaar OTP
   final otpCode = ''.obs;
-  final otpController = TextEditingController();
-  final otpFocusNode = FocusNode();
+  TextEditingController otpController = TextEditingController();
+  FocusNode otpFocusNode = FocusNode();
   final resendCountdown = 43.obs;
   final canResend = false.obs;
   Timer? _resendTimer;
@@ -72,9 +72,6 @@ class AadhaarKycController extends GetxController {
   @override
   void onClose() {
     _resendTimer?.cancel();
-    aadhaarController.dispose();
-    otpController.dispose();
-    otpFocusNode.dispose();
     super.onClose();
   }
 

@@ -33,7 +33,9 @@ class AadhaarVerificationBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(AadhaarKycController());
+    final controller = Get.isRegistered<AadhaarKycController>()
+        ? Get.find<AadhaarKycController>()
+        : Get.put(AadhaarKycController(), permanent: true);
 
     return Column(
       children: [

@@ -31,7 +31,9 @@ class EnterPanBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(PanKycController());
+    final controller = Get.isRegistered<PanKycController>()
+        ? Get.find<PanKycController>()
+        : Get.put(PanKycController(), permanent: true);
 
     return Column(
       children: [
