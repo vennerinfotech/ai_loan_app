@@ -72,7 +72,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       'Profile updated',
       'Your personal details have been saved successfully',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFF242278),
+      backgroundColor: AppColors.navy,
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(16),
@@ -135,14 +135,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         Icon(
                           Icons.info_outline_rounded,
                           size: 15,
-                          color: Color(0xFF64748B),
+                          color: AppColors.muted,
                         ),
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'Changing your name needs a fresh KYC check. Mobile number is linked to your account.',
                             style: TextStyle(
-                              color: Color(0xFF64748B),
+                              color: AppColors.muted,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               height: 1.4,
@@ -185,7 +185,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -220,12 +220,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: _isEditing ? const Color(0xFF242278) : Colors.white,
+                color: _isEditing ? AppColors.navy : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isEditing
-                      ? const Color(0xFF242278)
-                      : const Color(0xFFE2E8F0),
+                      ? AppColors.navy
+                      : AppColors.line,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -273,7 +273,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 height: 86,
                 clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFFB800),
+                  color: AppColors.amber,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -287,7 +287,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                     : Text(
                         profileController.initials,
                         style: const TextStyle(
-                          color: Color(0xFF1E2127),
+                          color: AppColors.textDark,
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                         ),
@@ -317,7 +317,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E216B),
+                    color: AppColors.navy,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2.2),
                     boxShadow: [
@@ -399,9 +399,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF2F6),
+            color: AppColors.line,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.line),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -478,7 +478,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.line),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -512,7 +512,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: AppColors.canvas),
           const SizedBox(height: 14),
 
           // Card contents
@@ -526,7 +526,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return Text(
       label,
       style: const TextStyle(
-        color: Color(0xFF334155),
+        color: AppColors.textDark,
         fontSize: 13,
         fontWeight: FontWeight.w700,
       ),
@@ -548,7 +548,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               child: ElevatedButton(
                 onPressed: _cancelEditing,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF1F4FA),
+                  backgroundColor: AppColors.line,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -575,7 +575,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
               child: ElevatedButton(
                 onPressed: _saveChanges,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -660,13 +660,13 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
         color: widget.readOnly
-            ? const Color(0xFFF8FAFC)
-            : (isFieldFocused ? Colors.white : const Color(0xFFF1F5F9)),
+            ? AppColors.canvas
+            : (isFieldFocused ? Colors.white : AppColors.canvas),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFieldFocused
               ? AppColors.primaryPurple
-              : const Color(0xFFE2E8F0),
+              : AppColors.line,
           width: isFieldFocused ? 1.5 : 1.0,
         ),
       ),
@@ -682,7 +682,7 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
         maxLines: widget.maxLines,
         style: TextStyle(
           color: widget.readOnly
-              ? const Color(0xFF334155)
+              ? AppColors.textDark
               : AppColors.textDark,
           fontSize: 14,
           fontWeight: widget.readOnly ? FontWeight.w600 : FontWeight.w700,
@@ -690,7 +690,7 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF94A3B8),
+            color: AppColors.muted,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),

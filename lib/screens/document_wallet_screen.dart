@@ -93,7 +93,7 @@ class DocumentWalletScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: AppColors.line),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -132,7 +132,7 @@ class DocumentWalletScreen extends StatelessWidget {
                   'Document Uploaded',
                   'Your document has been added to your wallet.',
                   snackPosition: SnackPosition.TOP,
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   colorText: Colors.white,
                 );
               }
@@ -141,11 +141,11 @@ class DocumentWalletScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFF212074),
+                color: AppColors.navy,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF212074).withValues(alpha: 0.25),
+                    color: AppColors.navy.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -153,7 +153,7 @@ class DocumentWalletScreen extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.add_rounded,
-                color: Color(0xFFFDB022),
+                color: AppColors.amber,
                 size: 22,
               ),
             ),
@@ -170,7 +170,7 @@ class DocumentWalletScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.line),
       ),
       child: TextField(
         controller: controller.searchController,
@@ -183,12 +183,12 @@ class DocumentWalletScreen extends StatelessWidget {
         decoration: const InputDecoration(
           prefixIcon: Icon(
             Icons.search_rounded,
-            color: Color(0xFF7E97DC),
+            color: AppColors.muted,
             size: 20,
           ),
           hintText: 'Search documents',
           hintStyle: TextStyle(
-            color: Color(0xFF8B88EF),
+            color: AppColors.indigo,
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
           ),
@@ -212,17 +212,17 @@ class DocumentWalletScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF212074) : Colors.white,
+                  color: isSelected ? AppColors.navy : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF212074) : const Color(0xFFE2E8F0),
+                    color: isSelected ? AppColors.navy : AppColors.line,
                     width: 1.2,
                   ),
                 ),
                 child: Text(
                   cat,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF334155),
+                    color: isSelected ? Colors.white : AppColors.textDark,
                     fontSize: 13,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   ),
@@ -257,15 +257,11 @@ class DocumentWalletScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E2C96), Color(0xFF212074)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF212074).withValues(alpha: 0.18),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.18),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -289,7 +285,7 @@ class DocumentWalletScreen extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.badge_outlined,
-                  color: Color(0xFFFDB022),
+                  color: AppColors.amber,
                   size: 20,
                 ),
               ),
@@ -298,13 +294,13 @@ class DocumentWalletScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
+                  color: AppColors.successGreenBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
                   'Verified',
                   style: TextStyle(
-                    color: Color(0xFF15803D),
+                    color: AppColors.successGreen,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -330,7 +326,7 @@ class DocumentWalletScreen extends StatelessWidget {
               Text(
                 doc.subtitle,
                 style: const TextStyle(
-                  color: Color(0xFFC7D2FE),
+                  color: AppColors.indigoTint,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -348,7 +344,7 @@ class DocumentWalletScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,12 +358,12 @@ class DocumentWalletScreen extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF0FD),
+                  color: AppColors.indigoTint,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   doc.icon,
-                  color: const Color(0xFF4340BE),
+                  color: AppColors.indigo,
                   size: 19,
                 ),
               ),
@@ -376,13 +372,13 @@ class DocumentWalletScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
+                  color: AppColors.successGreenBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   doc.badgeText,
                   style: const TextStyle(
-                    color: Color(0xFF15803D),
+                    color: AppColors.successGreen,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -408,7 +404,7 @@ class DocumentWalletScreen extends StatelessWidget {
               Text(
                 doc.subtitle,
                 style: const TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),

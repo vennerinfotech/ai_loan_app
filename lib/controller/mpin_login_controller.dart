@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../screens/forgot_mpin_screen.dart';
 import '../screens/main_nav_screen.dart';
@@ -66,7 +67,7 @@ class MpinLoginController extends GetxController
       'Biometric Login',
       'Authenticating via fingerprint...',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF524FBA),
+      backgroundColor: AppColors.indigo,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(milliseconds: 800),

@@ -68,7 +68,7 @@ class PanNotVerifiedBody extends StatelessWidget {
                       textAlign: TextAlign.center,
                       text: TextSpan(
                         style: const TextStyle(
-                          color: Color(0xFF475569),
+                          color: AppColors.muted,
                           fontSize: 13.5,
                           height: 1.45,
                         ),
@@ -108,17 +108,17 @@ class PanNotVerifiedBody extends StatelessWidget {
       width: 114,
       height: 114,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF1EE),
+        color: AppColors.panErrorCircleBg,
         borderRadius: BorderRadius.circular(34),
         border: Border.all(
-          color: const Color(0xFFFED7D2),
+          color: AppColors.panErrorCircleBorder,
           width: 1.5,
         ),
       ),
       child: const Center(
         child: Icon(
           Icons.warning_amber_rounded,
-          color: Color(0xFFDC2626),
+          color: AppColors.panErrorIcon,
           size: 54,
         ),
       ),
@@ -133,7 +133,7 @@ class PanNotVerifiedBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -184,7 +184,7 @@ class PanNotVerifiedBody extends StatelessWidget {
           child: Text(
             text,
             style: const TextStyle(
-              color: Color(0xFF334155),
+              color: AppColors.textDark,
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
               height: 1.35,
@@ -234,7 +234,7 @@ class PanNotVerifiedBody extends StatelessWidget {
               onPressed: controller.uploadPanCardInstead,
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
-                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+                side: const BorderSide(color: AppColors.line, width: 1.2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),

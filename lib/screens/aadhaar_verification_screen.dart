@@ -128,11 +128,11 @@ class AadhaarVerificationBody extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFC7D0EE), width: 1.4),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.4),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFC7D0EE), width: 1.4),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.4),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -145,12 +145,12 @@ class AadhaarVerificationBody extends StatelessWidget {
               width: 28,
               height: 28,
               decoration: const BoxDecoration(
-                color: Color(0xFFDCFCE7),
+                color: AppColors.successGreenBg,
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.check_rounded,
-                color: Color(0xFF16A34A),
+                color: AppColors.successGreen,
                 size: 18,
               ),
             );
@@ -166,14 +166,14 @@ class AadhaarVerificationBody extends StatelessWidget {
     return Row(
       children: [
         const Expanded(
-          child: Divider(color: Color(0xFFE2E7F4), thickness: 1),
+          child: Divider(color: AppColors.line, thickness: 1),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             'OR UPLOAD CARD',
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: AppColors.muted,
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
@@ -181,7 +181,7 @@ class AadhaarVerificationBody extends StatelessWidget {
           ),
         ),
         const Expanded(
-          child: Divider(color: Color(0xFFE2E7F4), thickness: 1),
+          child: Divider(color: AppColors.line, thickness: 1),
         ),
       ],
     );
@@ -240,7 +240,7 @@ class AadhaarVerificationBody extends StatelessWidget {
         foregroundDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isUploaded ? const Color(0xFF16A34A) : AppColors.kycUploadCardBorder,
+            color: isUploaded ? AppColors.successGreen : AppColors.kycUploadCardBorder,
             width: isUploaded ? 1.8 : 1.2,
           ),
         ),
@@ -250,7 +250,7 @@ class AadhaarVerificationBody extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isUploaded
-                  ? const Color(0xFF16A34A).withValues(alpha: 0.12)
+                  ? AppColors.successGreen.withValues(alpha: 0.12)
                   : Colors.black.withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
@@ -303,7 +303,7 @@ class AadhaarVerificationBody extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.check_circle_rounded,
-                          color: Color(0xFF22C55E),
+                          color: AppColors.successGreen,
                           size: 15,
                         ),
                         const SizedBox(width: 5),
@@ -359,13 +359,13 @@ class AadhaarVerificationBody extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: isUploaded ? const Color(0xFFDCFCE7) : AppColors.kycUploadIconBg,
+                      color: isUploaded ? AppColors.successGreenBg : AppColors.kycUploadIconBg,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
                       child: Icon(
                         isUploaded ? Icons.check_circle_rounded : Icons.photo_camera_back_outlined,
-                        color: isUploaded ? const Color(0xFF16A34A) : AppColors.kycUploadIcon,
+                        color: isUploaded ? AppColors.successGreen : AppColors.kycUploadIcon,
                         size: 22,
                       ),
                     ),
@@ -385,7 +385,7 @@ class AadhaarVerificationBody extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isUploaded ? const Color(0xFF16A34A) : AppColors.textDarkSecondary,
+                      color: isUploaded ? AppColors.successGreen : AppColors.textDarkSecondary,
                       fontSize: 10.5,
                       fontWeight: isUploaded ? FontWeight.w600 : FontWeight.w400,
                     ),
@@ -401,9 +401,9 @@ class AadhaarVerificationBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD6DCF6), width: 1),
+        border: Border.all(color: AppColors.line, width: 1),
       ),
       child: Row(
         children: [
@@ -454,12 +454,12 @@ class AadhaarVerificationBody extends StatelessWidget {
           const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lock_outline_rounded, color: Color(0xFF16A34A), size: 15),
+              Icon(Icons.lock_outline_rounded, color: AppColors.successGreen, size: 15),
               SizedBox(width: 6),
               Text(
                 'Bank-grade encryption • UIDAI compliant',
                 style: TextStyle(
-                  color: Color(0xFF16A34A),
+                  color: AppColors.successGreen,
                   fontSize: 11.5,
                   fontWeight: FontWeight.w600,
                 ),
@@ -477,7 +477,7 @@ class AadhaarVerificationBody extends StatelessWidget {
                 onPressed: controller.isAadhaarValid ? controller.sendOtp : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryButtonBackground,
-                  disabledBackgroundColor: const Color(0xFF212074).withValues(alpha: 0.5),
+                  disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),

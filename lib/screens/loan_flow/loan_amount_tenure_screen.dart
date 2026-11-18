@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
@@ -41,7 +42,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEF1FD),
+                      color: AppColors.indigoTint,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -52,13 +53,13 @@ class LoanAmountTenureBody extends StatelessWidget {
                             controller.selectedLoanType.value,
                           ),
                           size: 15,
-                          color: const Color(0xFF4340BE),
+                          color: AppColors.indigo,
                         ),
                         const SizedBox(width: 6),
                         Text(
                           controller.selectedLoanType.value,
                           style: const TextStyle(
-                            color: Color(0xFF4340BE),
+                            color: AppColors.indigo,
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -72,7 +73,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                 const Text(
                   'How much do you need?',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.4,
@@ -88,7 +89,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                     const Text(
                       'Tenure',
                       style: TextStyle(
-                        color: Color(0xFF1E2127),
+                        color: AppColors.textDark,
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                       ),
@@ -118,7 +119,7 @@ class LoanAmountTenureBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -132,7 +133,7 @@ class LoanAmountTenureBody extends StatelessWidget {
           const Text(
             'Loan amount',
             style: TextStyle(
-              color: Color(0xFF6B7280),
+              color: AppColors.muted,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),
@@ -144,7 +145,7 @@ class LoanAmountTenureBody extends StatelessWidget {
             () => Text(
               controller.formatIndianCurrency(controller.loanAmount.value),
               style: const TextStyle(
-                color: Color(0xFF1E2127),
+                color: AppColors.textDark,
                 fontSize: 34,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.8,
@@ -158,15 +159,15 @@ class LoanAmountTenureBody extends StatelessWidget {
             () => SliderTheme(
               data: SliderThemeData(
                 trackHeight: 6,
-                activeTrackColor: const Color(0xFFFDB022),
-                inactiveTrackColor: const Color(0xFFE2E8F0),
-                thumbColor: const Color(0xFFFDB022),
-                overlayColor: const Color(0xFFFDB022).withValues(alpha: 0.2),
+                activeTrackColor: AppColors.amber,
+                inactiveTrackColor: AppColors.line,
+                thumbColor: AppColors.amber,
+                overlayColor: AppColors.amber.withValues(alpha: 0.2),
                 thumbShape: const _DualColorThumbShape(
                   radius: 12,
                   innerRadius: 6,
-                  outerColor: Color(0xFFFDB022),
-                  innerColor: Color(0xFF212074),
+                  outerColor: AppColors.amber,
+                  innerColor: AppColors.navy,
                 ),
               ),
               child: Slider(
@@ -188,7 +189,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                 Text(
                   '₹50K',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -196,7 +197,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                 Text(
                   '₹50L',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -233,14 +234,14 @@ class LoanAmountTenureBody extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF212074)
-                    : const Color(0xFFF1F5F9),
+                    ? AppColors.navy
+                    : AppColors.canvas,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF334155),
+                  color: isSelected ? Colors.white : AppColors.textDark,
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 ),
@@ -269,19 +270,19 @@ class LoanAmountTenureBody extends StatelessWidget {
                   height: 64,
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? const Color(0xFF4A44D1)
+                        ? AppColors.indigo
                         : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isSelected
-                          ? const Color(0xFF4A44D1)
-                          : const Color(0xFFEEF2F6),
+                          ? AppColors.indigo
+                          : AppColors.line,
                       width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isSelected
-                            ? const Color(0xFF4A44D1).withValues(alpha: 0.25)
+                            ? AppColors.indigo.withValues(alpha: 0.25)
                             : Colors.black.withValues(alpha: 0.02),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
@@ -296,7 +297,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                         style: TextStyle(
                           color: isSelected
                               ? Colors.white
-                              : const Color(0xFF1E2127),
+                              : AppColors.textDark,
                           fontSize: 17,
                           fontWeight: FontWeight.w900,
                         ),
@@ -306,8 +307,8 @@ class LoanAmountTenureBody extends StatelessWidget {
                         'years',
                         style: TextStyle(
                           color: isSelected
-                              ? const Color(0xFFC7CAE8)
-                              : const Color(0xFF6B7280),
+                              ? AppColors.indigoTint
+                              : AppColors.muted,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                         ),
@@ -328,11 +329,11 @@ class LoanAmountTenureBody extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2A8E),
+        color: AppColors.navy,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C2A8E).withValues(alpha: 0.3),
+            color: AppColors.navy.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -364,7 +365,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                       const Text(
                         'Estimated monthly EMI',
                         style: TextStyle(
-                          color: Color(0xFFC7CAE8),
+                          color: AppColors.indigoTint,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -374,7 +375,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                         () => Text(
                           controller.formatIndianCurrency(controller.estimatedMonthlyEmi),
                           style: const TextStyle(
-                            color: Color(0xFFFDB022),
+                            color: AppColors.amber,
                             fontSize: 26,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
@@ -385,7 +386,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                       const Text(
                         'Indicative at 9.5% p.a. · final rate after review',
                         style: TextStyle(
-                          color: Color(0xFFB1B6DF),
+                          color: AppColors.muted,
                           fontSize: 10.5,
                           height: 1.25,
                         ),
@@ -404,7 +405,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                         'Total\ninterest',
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          color: Color(0xFFC7CAE8),
+                          color: AppColors.indigoTint,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           height: 1.2,
@@ -448,7 +449,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFDDE3F0),
+                  color: AppColors.line,
                   width: 1.2,
                 ),
               ),
@@ -456,7 +457,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                 child: Text(
                   'Back',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -475,7 +476,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                   controller.goToStep(3);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -495,7 +496,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFFFDB022),
+                      color: AppColors.amber,
                       size: 18,
                     ),
                   ],
@@ -567,7 +568,7 @@ class _LoanEmiCosmicPainter extends CustomPainter {
     canvas.rotate(-23 * math.pi / 180);
 
     final paint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.38)
+      ..color = AppColors.indigo.withValues(alpha: 0.38)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 

@@ -109,14 +109,14 @@ class UploadPanBody extends StatelessWidget {
           height: 195,
           foregroundDecoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF10B981), width: 1.8),
+            border: Border.all(color: AppColors.successGreen, width: 1.8),
           ),
           decoration: BoxDecoration(
             color: Colors.black,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                color: AppColors.successGreen.withValues(alpha: 0.15),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -173,12 +173,12 @@ class UploadPanBody extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF10B981), width: 1),
+                    border: Border.all(color: AppColors.successGreen, width: 1),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 14),
+                      Icon(Icons.check_circle_rounded, color: AppColors.successGreen, size: 14),
                       SizedBox(width: 5),
                       Text(
                         'PAN Card Front',
@@ -263,11 +263,11 @@ class UploadPanBody extends StatelessWidget {
           height: 195,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF333099),
+            gradient: AppColors.primaryGradientDiagonal,
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF333099).withValues(alpha: 0.25),
+                color: AppColors.navy.withValues(alpha: 0.25),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -293,7 +293,7 @@ class UploadPanBody extends StatelessWidget {
                   Text(
                     'Fit the card inside the frame',
                     style: TextStyle(
-                      color: Color(0xFFC7CAE8),
+                      color: AppColors.indigoTint,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -302,7 +302,7 @@ class UploadPanBody extends StatelessWidget {
                   Text(
                     'Tap to capture or choose from gallery',
                     style: TextStyle(
-                      color: Color(0xFF9EA3D4),
+                      color: AppColors.muted,
                       fontSize: 11,
                     ),
                   ),
@@ -369,7 +369,7 @@ class UploadPanBody extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+                border: Border.all(color: AppColors.line, width: 1.2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.02),
@@ -424,13 +424,13 @@ class UploadPanBody extends StatelessWidget {
           width: 20,
           height: 20,
           decoration: const BoxDecoration(
-            color: Color(0xFFDCFCE7),
+            color: AppColors.successGreenBg,
             shape: BoxShape.circle,
           ),
           child: const Center(
             child: Icon(
               Icons.check_rounded,
-              color: Color(0xFF16A34A),
+              color: AppColors.successGreen,
               size: 13,
             ),
           ),
@@ -461,7 +461,7 @@ class UploadPanBody extends StatelessWidget {
               height: 52,
               padding: const EdgeInsets.symmetric(horizontal: 24),
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF3FC),
+                color: AppColors.inputFill,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Center(

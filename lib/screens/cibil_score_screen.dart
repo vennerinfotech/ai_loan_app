@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import '../theme/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
@@ -15,7 +16,7 @@ class CibilScoreScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: Column(
           children: [
@@ -38,7 +39,7 @@ class CibilScoreScreen extends StatelessWidget {
                       child: Text(
                         'What shapes your score',
                         style: TextStyle(
-                          color: Color(0xFF1E2127),
+                          color: AppColors.textDark,
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.3,
@@ -59,8 +60,8 @@ class CibilScoreScreen extends StatelessWidget {
                                   title: 'Payment history',
                                   value: '100%',
                                   badgeText: 'Excellent',
-                                  badgeBg: const Color(0xFFE8F7ED),
-                                  badgeTextColor: const Color(0xFF16A34A),
+                                  badgeBg: AppColors.successGreenBg,
+                                  badgeTextColor: AppColors.successGreen,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -69,8 +70,8 @@ class CibilScoreScreen extends StatelessWidget {
                                   title: 'Credit utilisation',
                                   value: '28%',
                                   badgeText: 'Good',
-                                  badgeBg: const Color(0xFFE8F7ED),
-                                  badgeTextColor: const Color(0xFF16A34A),
+                                  badgeBg: AppColors.successGreenBg,
+                                  badgeTextColor: AppColors.successGreen,
                                 ),
                               ),
                             ],
@@ -83,8 +84,8 @@ class CibilScoreScreen extends StatelessWidget {
                                   title: 'Credit age',
                                   value: '4.2 yrs',
                                   badgeText: 'Fair',
-                                  badgeBg: const Color(0xFFFEF3E2),
-                                  badgeTextColor: const Color(0xFFD97706),
+                                  badgeBg: AppColors.warningAmberBg,
+                                  badgeTextColor: AppColors.warningAmber,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -93,8 +94,8 @@ class CibilScoreScreen extends StatelessWidget {
                                   title: 'Recent enquiries',
                                   value: '2',
                                   badgeText: 'Good',
-                                  badgeBg: const Color(0xFFE8F7ED),
-                                  badgeTextColor: const Color(0xFF16A34A),
+                                  badgeBg: AppColors.successGreenBg,
+                                  badgeTextColor: AppColors.successGreen,
                                 ),
                               ),
                             ],
@@ -122,11 +123,11 @@ class CibilScoreScreen extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF3330A2),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3330A2).withValues(alpha: 0.35),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.35),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -177,7 +178,7 @@ class CibilScoreScreen extends StatelessWidget {
                     'Score Updated',
                     'Your credit score is up to date as of today.',
                     snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: const Color(0xFF212074),
+                    backgroundColor: AppColors.navy,
                     colorText: Colors.white,
                     margin: const EdgeInsets.all(16),
                     duration: const Duration(seconds: 2),
@@ -237,13 +238,13 @@ class CibilScoreScreen extends StatelessWidget {
                           axisLineStyle: AxisLineStyle(
                             thickness: strokeWidth,
                             cornerStyle: CornerStyle.bothCurve,
-                            color: const Color(0xFF4542B8),
+                            color: AppColors.indigo,
                           ),
                           pointers: <GaugePointer>[
                             RangePointer(
                               value: score,
                               width: strokeWidth,
-                              color: const Color(0xFFFDB022),
+                              color: AppColors.amber,
                               cornerStyle: CornerStyle.bothCurve,
                               enableAnimation: true,
                               animationDuration: 1300,
@@ -254,9 +255,9 @@ class CibilScoreScreen extends StatelessWidget {
                               markerType: MarkerType.circle,
                               markerHeight: markerSize,
                               markerWidth: markerSize,
-                              color: const Color(0xFF26237A),
+                              color: AppColors.navy,
                               borderWidth: strokeWidth * 0.24,
-                              borderColor: const Color(0xFFFDB022),
+                              borderColor: AppColors.amber,
                               enableAnimation: true,
                               animationDuration: 1300,
                               animationType: AnimationType.easeOutBack,
@@ -289,13 +290,13 @@ class CibilScoreScreen extends StatelessWidget {
                               vertical: 5,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFDB022),
+                              color: AppColors.amber,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Text(
                               'Good · +14 this month',
                               style: TextStyle(
-                                color: Color(0xFF212074),
+                                color: AppColors.navy,
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -312,7 +313,7 @@ class CibilScoreScreen extends StatelessWidget {
                       child: const Text(
                         '300',
                         style: TextStyle(
-                          color: Color(0xFF9E9BD6),
+                          color: AppColors.indigoTint,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -324,7 +325,7 @@ class CibilScoreScreen extends StatelessWidget {
                       child: const Text(
                         '900',
                         style: TextStyle(
-                          color: Color(0xFF9E9BD6),
+                          color: AppColors.indigoTint,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -342,7 +343,7 @@ class CibilScoreScreen extends StatelessWidget {
           const Text(
             'Powered by CIBIL · Updated 12 Nov 2026',
             style: TextStyle(
-              color: Color(0xFF9E9BD6),
+              color: AppColors.indigoTint,
               fontSize: 11.5,
               fontWeight: FontWeight.w400,
             ),
@@ -367,7 +368,7 @@ class CibilScoreScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -384,7 +385,7 @@ class CibilScoreScreen extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF6B7280),
+              color: AppColors.muted,
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
             ),
@@ -394,7 +395,7 @@ class CibilScoreScreen extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              color: Color(0xFF1E2127),
+              color: AppColors.textDark,
               fontSize: 23,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
@@ -434,7 +435,7 @@ class CibilScoreScreen extends StatelessWidget {
             Get.to(() => const ChooseLoanTypeScreen());
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4340BE),
+            backgroundColor: AppColors.indigo,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),

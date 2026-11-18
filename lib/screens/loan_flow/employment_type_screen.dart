@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
 import 'apply_loan_flow_screen.dart';
@@ -35,7 +36,7 @@ class EmploymentTypeBody extends StatelessWidget {
                 const Text(
                   'How do you earn?',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.4,
@@ -45,7 +46,7 @@ class EmploymentTypeBody extends StatelessWidget {
                 const Text(
                   'This decides which documents we\'ll ask for.',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -83,18 +84,18 @@ class EmploymentTypeBody extends StatelessWidget {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF212074) : Colors.white,
+                  color: isSelected ? AppColors.navy : Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
-                        ? const Color(0xFF212074)
-                        : const Color(0xFFEEF2F6),
+                        ? AppColors.navy
+                        : AppColors.line,
                     width: 1.4,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: isSelected
-                          ? const Color(0xFF212074).withValues(alpha: 0.22)
+                          ? AppColors.navy.withValues(alpha: 0.22)
                           : Colors.black.withValues(alpha: 0.02),
                       blurRadius: isSelected ? 10 : 6,
                       offset: const Offset(0, 3),
@@ -109,8 +110,8 @@ class EmploymentTypeBody extends StatelessWidget {
                       height: 44,
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? const Color(0xFFFDB022)
-                            : const Color(0xFFEEF1FD),
+                            ? AppColors.amber
+                            : AppColors.indigoTint,
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Center(
@@ -118,8 +119,8 @@ class EmploymentTypeBody extends StatelessWidget {
                           _getIconForEmployment(item.iconKey),
                           size: 21,
                           color: isSelected
-                              ? const Color(0xFF212074)
-                              : const Color(0xFF4340BE),
+                              ? AppColors.navy
+                              : AppColors.indigo,
                         ),
                       ),
                     ),
@@ -135,7 +136,7 @@ class EmploymentTypeBody extends StatelessWidget {
                             style: TextStyle(
                               color: isSelected
                                   ? Colors.white
-                                  : const Color(0xFF1E2127),
+                                  : AppColors.textDark,
                               fontSize: 14.5,
                               fontWeight: FontWeight.w800,
                             ),
@@ -145,8 +146,8 @@ class EmploymentTypeBody extends StatelessWidget {
                             item.subtitle,
                             style: TextStyle(
                               color: isSelected
-                                  ? const Color(0xFFD3D6F0)
-                                  : const Color(0xFF6B7280),
+                                  ? AppColors.muted
+                                  : AppColors.muted,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w400,
                               height: 1.25,
@@ -164,8 +165,8 @@ class EmploymentTypeBody extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isSelected
-                              ? const Color(0xFFFDB022)
-                              : const Color(0xFFCBD5E1),
+                              ? AppColors.amber
+                              : AppColors.line,
                           width: 2.0,
                         ),
                       ),
@@ -175,7 +176,7 @@ class EmploymentTypeBody extends StatelessWidget {
                                 width: 10,
                                 height: 10,
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFFDB022),
+                                  color: AppColors.amber,
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -198,10 +199,10 @@ class EmploymentTypeBody extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE0E5FB),
+          color: AppColors.indigoTint,
           width: 1.0,
         ),
       ),
@@ -213,7 +214,7 @@ class EmploymentTypeBody extends StatelessWidget {
             child: Icon(
               Icons.auto_awesome,
               size: 16,
-              color: Color(0xFF4A44D1),
+              color: AppColors.indigo,
             ),
           ),
           SizedBox(width: 10),
@@ -221,7 +222,7 @@ class EmploymentTypeBody extends StatelessWidget {
             child: Text(
               'Adding a co-applicant with income can improve your eligibility. You can add one on the next step.',
               style: TextStyle(
-                color: Color(0xFF334155),
+                color: AppColors.textDark,
                 fontSize: 11.5,
                 fontWeight: FontWeight.w500,
                 height: 1.35,
@@ -248,7 +249,7 @@ class EmploymentTypeBody extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFDDE3F0),
+                  color: AppColors.line,
                   width: 1.2,
                 ),
               ),
@@ -256,7 +257,7 @@ class EmploymentTypeBody extends StatelessWidget {
                 child: Text(
                   'Back',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -275,7 +276,7 @@ class EmploymentTypeBody extends StatelessWidget {
                   controller.goToStep(4);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -295,7 +296,7 @@ class EmploymentTypeBody extends StatelessWidget {
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFFFDB022),
+                      color: AppColors.amber,
                       size: 18,
                     ),
                   ],

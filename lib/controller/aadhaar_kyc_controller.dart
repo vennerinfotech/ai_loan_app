@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 import '../screens/aadhaar_otp_screen.dart';
 import '../screens/aadhaar_not_linked_screen.dart';
 import '../screens/review_aadhaar_details_screen.dart';
@@ -130,7 +131,7 @@ class AadhaarKycController extends GetxController {
         isFront ? 'Front Side Uploaded' : 'Back Side Uploaded',
         'Document selected: ${file.name}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF212074),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
@@ -197,7 +198,7 @@ class AadhaarKycController extends GetxController {
       'OTP Sent',
       'A new Aadhaar OTP has been sent by UIDAI to mobile linked with $maskedAadhaarDisplay.',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
+      backgroundColor: AppColors.navy,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
@@ -211,7 +212,7 @@ class AadhaarKycController extends GetxController {
         'Incomplete OTP',
         'Please enter the 6-digit Aadhaar OTP.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.errorRed,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
@@ -249,7 +250,7 @@ class AadhaarKycController extends GetxController {
         'Aadhaar Uploaded',
         'Document submitted: ${file.name}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF212074),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
@@ -270,7 +271,7 @@ class AadhaarKycController extends GetxController {
         'Confirmation Required',
         'Please confirm that these Aadhaar details are correct and belong to you.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.errorRed,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
@@ -295,7 +296,7 @@ class AadhaarKycController extends GetxController {
       'Edit Details',
       'You can update your communication address in application form.',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF524FBA),
+      backgroundColor: AppColors.indigo,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),

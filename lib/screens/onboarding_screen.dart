@@ -291,14 +291,7 @@ class _OnboardingHeroCard extends StatelessWidget {
       width: double.infinity,
       height: heroHeight,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.heroCardGradientTop,
-            AppColors.heroCardGradientBottom,
-          ],
-        ),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(28),
       ),
       clipBehavior: Clip.antiAlias,

@@ -92,11 +92,11 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2A8E),
+        gradient: AppColors.primaryGradientDiagonal,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C2A8E).withValues(alpha: 0.3),
+            color: AppColors.navy.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -130,7 +130,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                       () => Text(
                         controller.userInitials.value,
                         style: const TextStyle(
-                          color: Color(0xFF212074),
+                          color: AppColors.navy,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -161,7 +161,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                         () => Text(
                           controller.maskedAadhaarDisplay.value,
                           style: const TextStyle(
-                            color: Color(0xFFC7CAE8),
+                            color: AppColors.indigoTint,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -202,7 +202,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             label: 'Date of birth',
             value: controller.dob.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 16, thickness: 1),
+          const Divider(color: AppColors.line, height: 16, thickness: 1),
 
           // 2: Gender
           _buildDetailRow(
@@ -210,7 +210,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             label: 'Gender',
             value: controller.gender.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 16, thickness: 1),
+          const Divider(color: AppColors.line, height: 16, thickness: 1),
 
           // 3: Address
           _buildDetailRow(
@@ -218,7 +218,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             label: 'Address',
             value: controller.address.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 16, thickness: 1),
+          const Divider(color: AppColors.line, height: 16, thickness: 1),
 
           // 4: Mobile (linked)
           _buildDetailRow(
@@ -246,7 +246,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF1FD),
+              color: AppColors.indigoTint,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -306,7 +306,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                 border: Border.all(
                   color: controller.isConfirmChecked.value
                       ? AppColors.primaryButtonBackground
-                      : const Color(0xFFC7D0EE),
+                      : AppColors.line,
                   width: 1.5,
                 ),
               ),
@@ -349,7 +349,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+                border: Border.all(color: AppColors.line, width: 1.2),
               ),
               child: const Center(
                 child: Text(
@@ -376,7 +376,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryButtonBackground,
-                    disabledBackgroundColor: const Color(0xFF212074).withValues(alpha: 0.5),
+                    disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -423,7 +423,7 @@ class _UserCardCosmicPatternPainter extends CustomPainter {
 
     // Single distinct loop stroke matching reference
     final orbitPaint = Paint()
-      ..color = const Color(0xFF6B68D8).withValues(alpha: 0.45)
+      ..color = AppColors.indigo.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.3;
 

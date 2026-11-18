@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.line),
             ),
             child: const Icon(
               Icons.edit_outlined,
@@ -119,15 +119,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF242278), Color(0xFF3835A8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.profileCardGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF242278).withValues(alpha: 0.22),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.22),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -154,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     height: 52,
                     clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFB800),
+                      color: AppColors.amber,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -175,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         : Text(
                             profileController.initials,
                             style: const TextStyle(
-                              color: Color(0xFF1E2127),
+                              color: AppColors.textDark,
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
                             ),
@@ -211,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFDCFCE7),
+                              color: AppColors.successGreenBg,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -220,13 +216,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Icon(
                                   Icons.check_circle_rounded,
                                   size: 11,
-                                  color: Color(0xFF15803D),
+                                  color: AppColors.successGreen,
                                 ),
                                 SizedBox(width: 3),
                                 Text(
                                   'KYC Done',
                                   style: TextStyle(
-                                    color: Color(0xFF15803D),
+                                    color: AppColors.successGreen,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
                                   ),
@@ -242,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const Text(
                             '+91 98765 •••10',
                             style: TextStyle(
-                              color: Color(0xFFD6DBED),
+                              color: AppColors.line,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -252,14 +248,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             width: 3,
                             height: 3,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF94A3B8),
+                              color: AppColors.indigoTint,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const Text(
                             'Salaried',
                             style: TextStyle(
-                              color: Color(0xFFD6DBED),
+                              color: AppColors.line,
                               fontSize: 12.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -271,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         () => Text(
                           profileController.email.value,
                           style: const TextStyle(
-                            color: Color(0xFF9FA8DA),
+                            color: AppColors.indigoTint,
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -293,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFF64748B),
+        color: AppColors.muted,
         fontSize: 11.5,
         fontWeight: FontWeight.w800,
         letterSpacing: 0.8,
@@ -307,31 +303,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         children: [
           _buildActionRow(
             icon: Icons.person_outline_rounded,
-            iconBg: const Color(0xFFEEF0FD),
-            iconColor: const Color(0xFF4340BE),
+            iconBg: AppColors.indigoTint,
+            iconColor: AppColors.indigo,
             title: 'Personal details',
             onTap: () => Get.to(() => const PersonalDetailsScreen()),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
             icon: Icons.people_outline_rounded,
-            iconBg: const Color(0xFFEEF0FD),
-            iconColor: const Color(0xFF4340BE),
+            iconBg: AppColors.indigoTint,
+            iconColor: AppColors.indigo,
             title: 'Co-applicants',
             trailingText: '1 added',
             onTap: () => Get.to(() => const ApplicantDetailsScreen()),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
             icon: Icons.description_outlined,
-            iconBg: const Color(0xFFEEF0FD),
-            iconColor: const Color(0xFF4340BE),
+            iconBg: AppColors.indigoTint,
+            iconColor: AppColors.indigo,
             title: 'Document wallet',
             trailingText: '4 files',
             onTap: () {
@@ -353,48 +349,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         children: [
           _buildActionRow(
             icon: Icons.lock_outline_rounded,
-            iconBg: const Color(0xFFE8F8EE),
-            iconColor: const Color(0xFF16A34A),
+            iconBg: AppColors.successGreenBg,
+            iconColor: AppColors.successGreen,
             title: 'Change MPIN',
             onTap: () => Get.to(() => const ResetMpinScreen()),
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildToggleRow(
             icon: Icons.fingerprint_rounded,
-            iconBg: const Color(0xFFE8F8EE),
-            iconColor: const Color(0xFF16A34A),
+            iconBg: AppColors.successGreenBg,
+            iconColor: AppColors.successGreen,
             title: 'Fingerprint login',
             value: fingerprintEnabled,
             onChanged: (val) {
               setState(() => fingerprintEnabled = val);
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildToggleRow(
             icon: Icons.notifications_none_rounded,
-            iconBg: const Color(0xFFE8F8EE),
-            iconColor: const Color(0xFF16A34A),
+            iconBg: AppColors.successGreenBg,
+            iconColor: AppColors.successGreen,
             title: 'Notifications',
             value: notificationsEnabled,
             onChanged: (val) {
               setState(() => notificationsEnabled = val);
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           Obx(() {
             final profileController = Get.isRegistered<ProfileController>()
                 ? Get.find<ProfileController>()
                 : Get.put(ProfileController());
             return _buildActionRow(
               icon: Icons.translate_rounded,
-              iconBg: const Color(0xFFE8F8EE),
-              iconColor: const Color(0xFF16A34A),
+              iconBg: AppColors.successGreenBg,
+              iconColor: AppColors.successGreen,
               title: 'Language',
               trailingText: profileController.selectedLanguage.value,
               onTap: () {
@@ -413,53 +409,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         children: [
           _buildActionRow(
             icon: Icons.chat_bubble_outline_rounded,
-            iconBg: const Color(0xFFFFF1E7),
-            iconColor: const Color(0xFFEA580C),
+            iconBg: AppColors.warningAmberBg,
+            iconColor: AppColors.warningAmber,
             title: 'WhatsApp chat',
             onTap: () {
               Get.snackbar(
                 'Support',
                 'Connecting to Finsphere WhatsApp support...',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF212074),
+                backgroundColor: AppColors.navy,
                 colorText: Colors.white,
               );
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
             icon: Icons.mail_outline_rounded,
-            iconBg: const Color(0xFFFFF1E7),
-            iconColor: const Color(0xFFEA580C),
+            iconBg: AppColors.warningAmberBg,
+            iconColor: AppColors.warningAmber,
             title: 'Email us',
             onTap: () {
               Get.snackbar(
                 'Support',
                 'Support email: support@finsphere.ai',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF212074),
+                backgroundColor: AppColors.navy,
                 colorText: Colors.white,
               );
             },
           ),
-          const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
             icon: Icons.description_outlined,
-            iconBg: const Color(0xFFFFF1E7),
-            iconColor: const Color(0xFFEA580C),
+            iconBg: AppColors.warningAmberBg,
+            iconColor: AppColors.warningAmber,
             title: 'Terms & privacy',
             onTap: () {
               Get.snackbar(
                 'Terms',
                 'Finsphere is RBI-compliant and follows ISO/IEC 27001.',
                 snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF212074),
+                backgroundColor: AppColors.navy,
                 colorText: Colors.white,
               );
             },
@@ -509,7 +505,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(
                 trailingText,
                 style: const TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                 ),
@@ -518,7 +514,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
             const Icon(
               Icons.chevron_right_rounded,
-              color: Color(0xFF94A3B8),
+              color: AppColors.muted,
               size: 20,
             ),
           ],
@@ -564,9 +560,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             value: value,
             onChanged: onChanged,
             activeThumbColor: Colors.white,
-            activeTrackColor: const Color(0xFF4340BE),
+            activeTrackColor: AppColors.indigo,
             inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFCBD5E1),
+            inactiveTrackColor: AppColors.line,
           ),
         ],
       ),
@@ -580,10 +576,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         height: 44,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF1F1),
+          color: AppColors.errorRedBg,
           borderRadius: BorderRadius.circular(22),
           border: Border.all(
-            color: const Color(0xFFFFD5D5),
+            color: AppColors.errorRedBg,
             width: 1.2,
           ),
         ),
@@ -592,14 +588,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: const [
             Icon(
               Icons.logout_rounded,
-              color: Color(0xFFDC2626),
+              color: AppColors.errorRed,
               size: 17,
             ),
             SizedBox(width: 8),
             Text(
               'Log out',
               style: TextStyle(
-                color: Color(0xFFDC2626),
+                color: AppColors.errorRed,
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
               ),
@@ -623,7 +619,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF212074).withValues(alpha: 0.16),
+                color: AppColors.navy.withValues(alpha: 0.16),
                 blurRadius: 30,
                 offset: const Offset(0, 10),
               ),
@@ -637,10 +633,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 68,
                 height: 68,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF1F1),
+                  color: AppColors.errorRedBg,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xFFFFD5D5),
+                    color: AppColors.errorRedBg,
                     width: 1.5,
                   ),
                 ),
@@ -649,12 +645,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: 48,
                     height: 48,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFFFE4E4),
+                      color: AppColors.errorRedBg,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.logout_rounded,
-                      color: Color(0xFFDC2626),
+                      color: AppColors.errorRed,
                       size: 24,
                     ),
                   ),
@@ -679,7 +675,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'Are you sure you want to log out of Finsphere? You will need your MPIN to sign back in.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 13.5,
                   height: 1.45,
                 ),
@@ -696,7 +692,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: TextButton(
                         onPressed: () => Get.back(),
                         style: TextButton.styleFrom(
-                          backgroundColor: const Color(0xFFF1F5F9),
+                          backgroundColor: AppColors.canvas,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -704,7 +700,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: const Text(
                           'Cancel',
                           style: TextStyle(
-                            color: Color(0xFF475569),
+                            color: AppColors.muted,
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -725,7 +721,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Get.offAll(() => const LoginWithMpinScreen());
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFDC2626),
+                          backgroundColor: AppColors.errorRed,
                           elevation: 0,
                           shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
@@ -776,7 +772,7 @@ class _UserCardCosmicPainter extends CustomPainter {
     final anchor = Offset(size.width - 44, size.height * 0.33);
 
     final orbitPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..color = AppColors.cardOrbitLine.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
 
@@ -794,7 +790,7 @@ class _UserCardCosmicPainter extends CustomPainter {
         width: 270,
         height: 75,
       ),
-      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
+      orbitPaint..color = AppColors.cardOrbitLine.withValues(alpha: 0.32),
     );
     canvas.restore();
   }

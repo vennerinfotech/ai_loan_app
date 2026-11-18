@@ -164,18 +164,11 @@ class DashboardScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF3835A8),
-            Color(0xFF24227E),
-          ],
-        ),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF24227E).withValues(alpha: 0.3),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -207,7 +200,7 @@ class DashboardScreen extends StatelessWidget {
                           const Text(
                             'Your CIBIL score',
                             style: TextStyle(
-                              color: Color(0xFFC7CAE8),
+                              color: AppColors.indigoTint,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -250,10 +243,10 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           const Text(
-                            'Updated 12 Nov • Free monthly refresh',
+                            'Updated 12 Nov · free monthly refresh',
                             style: TextStyle(
-                              color: Color(0xFF9EA3D1),
-                              fontSize: 10.5,
+                              color: AppColors.indigoTint,
+                              fontSize: 11,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -295,7 +288,7 @@ class DashboardScreen extends StatelessWidget {
                                   Text(
                                     'Apply for a loan',
                                     style: TextStyle(
-                                      color: Color(0xFF212074),
+                                      color: AppColors.navy,
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -303,7 +296,7 @@ class DashboardScreen extends StatelessWidget {
                                   SizedBox(width: 5),
                                   Icon(
                                     Icons.arrow_forward_rounded,
-                                    color: Color(0xFF212074),
+                                    color: AppColors.navy,
                                     size: 15,
                                   ),
                                 ],
@@ -388,13 +381,13 @@ class DashboardScreen extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF2E6),
+                    color: AppColors.kycNotLinkedCircleBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.shield_outlined,
-                      color: Color(0xFFF97316),
+                      color: AppColors.warningAmber,
                       size: 19,
                     ),
                   ),
@@ -530,7 +523,7 @@ class DashboardScreen extends StatelessWidget {
             // Card 1: Apply for loan (Indigo)
             Expanded(
               child: _buildGridCard(
-                backgroundColor: const Color(0xFF524FBA),
+                backgroundColor: AppColors.indigo,
                 iconBg: Colors.white.withValues(alpha: 0.18),
                 icon: Icons.add_rounded,
                 iconColor: Colors.white,
@@ -547,13 +540,13 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: _buildGridCard(
                 backgroundColor: AppColors.accentGold,
-                iconBg: const Color(0xFF212074).withValues(alpha: 0.12),
+                iconBg: AppColors.navy.withValues(alpha: 0.12),
                 icon: Icons.auto_awesome_rounded,
-                iconColor: const Color(0xFF212074),
+                iconColor: AppColors.navy,
                 title: 'AI eligibility',
-                titleColor: const Color(0xFF212074),
+                titleColor: AppColors.navy,
                 subtitle: 'Check before you apply',
-                subtitleColor: const Color(0xFF212074).withValues(alpha: 0.8),
+                subtitleColor: AppColors.navy.withValues(alpha: 0.8),
                 onTap: () {},
               ),
             ),
@@ -566,9 +559,9 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: _buildGridCard(
                 backgroundColor: Colors.white,
-                iconBg: const Color(0xFFE8F7ED),
+                iconBg: AppColors.successGreenBg,
                 icon: Icons.bar_chart_rounded,
-                iconColor: const Color(0xFF16A34A),
+                iconColor: AppColors.successGreen,
                 title: 'Loan updates',
                 titleColor: AppColors.textDark,
                 subtitle: 'Track your application',
@@ -583,9 +576,9 @@ class DashboardScreen extends StatelessWidget {
             Expanded(
               child: _buildGridCard(
                 backgroundColor: Colors.white,
-                iconBg: const Color(0xFFFFF2E6),
+                iconBg: AppColors.kycNotLinkedCircleBg,
                 icon: Icons.account_balance_wallet_outlined,
-                iconColor: const Color(0xFFF97316),
+                iconColor: AppColors.warningAmber,
                 title: 'Other loans',
                 titleColor: AppColors.textDark,
                 subtitle: 'Track existing EMIs',
@@ -729,7 +722,7 @@ class DashboardScreen extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEEF1FD),
+                        color: AppColors.indigoTint,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Center(
@@ -791,7 +784,7 @@ class DashboardScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(3),
                   child: const LinearProgressIndicator(
                     value: 0.48,
-                    backgroundColor: Color(0xFFEAEFF8),
+                    backgroundColor: AppColors.line,
                     valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
                     minHeight: 4,
                   ),
@@ -876,7 +869,7 @@ class _CibilCosmicOrbitPainter extends CustomPainter {
     final anchor = Offset(size.width - 44, size.height * 0.33);
 
     final orbitPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..color = AppColors.cardOrbitLine.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
 
@@ -894,7 +887,7 @@ class _CibilCosmicOrbitPainter extends CustomPainter {
         width: 270,
         height: 75,
       ),
-      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
+      orbitPaint..color = AppColors.cardOrbitLine.withValues(alpha: 0.32),
     );
     canvas.restore();
   }

@@ -124,7 +124,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                 const Text(
                   'Permanent Account Number',
                   style: TextStyle(
-                    color: Color(0xFF212074),
+                    color: AppColors.navy,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -134,7 +134,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                   () => Text(
                     controller.panNumber.value,
                     style: const TextStyle(
-                      color: Color(0xFF212074),
+                      color: AppColors.navy,
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2.0,
@@ -146,7 +146,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF212074),
+                    color: AppColors.navy,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Row(
@@ -201,7 +201,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             label: 'Name on PAN',
             value: controller.nameAsPerPan.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 14, thickness: 1),
+          const Divider(color: AppColors.line, height: 14, thickness: 1),
 
           // 2: Father's name
           _buildDetailRow(
@@ -209,7 +209,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             label: 'Father\'s name',
             value: controller.fathersName.value,
           ),
-          const Divider(color: Color(0xFFF1F4FA), height: 14, thickness: 1),
+          const Divider(color: AppColors.line, height: 14, thickness: 1),
 
           // 3: Date of birth
           _buildDetailRow(
@@ -237,7 +237,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF1FD),
+              color: AppColors.indigoTint,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -281,9 +281,9 @@ class ReviewPanDetailsBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(11),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD6DCF6), width: 1),
+        border: Border.all(color: AppColors.line, width: 1),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +298,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
             child: Text(
               'Name on PAN matches your Aadhaar. You\'re good to go.',
               style: TextStyle(
-                color: Color(0xFF333099),
+                color: AppColors.navy,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 height: 1.35,
@@ -325,7 +325,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+                border: Border.all(color: AppColors.line, width: 1.2),
               ),
               child: const Center(
                 child: Text(
@@ -393,7 +393,7 @@ class _PanCardOrbitPainter extends CustomPainter {
     canvas.rotate(-23 * math.pi / 180);
 
     final paint = Paint()
-      ..color = const Color(0xFF212074).withValues(alpha: 0.24)
+      ..color = AppColors.navy.withValues(alpha: 0.24)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 

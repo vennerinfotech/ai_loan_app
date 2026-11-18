@@ -212,7 +212,7 @@ class KycHeaderWithStepper extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: const Color(0xFFE2F7D8),
+          color: AppColors.kycSuccessGreenBg,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -222,11 +222,11 @@ class KycHeaderWithStepper extends StatelessWidget {
               width: 18,
               height: 18,
               decoration: const BoxDecoration(
-                color: Color(0xFFFBC14E),
+                color: AppColors.amber,
                 shape: BoxShape.circle,
               ),
               child: const Center(
-                child: Icon(Icons.check_rounded, color: Color(0xFF212074), size: 12),
+                child: Icon(Icons.check_rounded, color: AppColors.navy, size: 12),
               ),
             ),
             const SizedBox(width: 6),

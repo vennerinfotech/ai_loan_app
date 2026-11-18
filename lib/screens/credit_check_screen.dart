@@ -81,11 +81,11 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2A8E),
+        gradient: AppColors.primaryGradientDiagonal,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C2A8E).withValues(alpha: 0.3),
+            color: AppColors.navy.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -118,7 +118,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                   child: const Center(
                     child: Icon(
                       Icons.leaderboard_rounded,
-                      color: Color(0xFF212074),
+                      color: AppColors.navy,
                       size: 24,
                     ),
                   ),
@@ -141,7 +141,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                 const Text(
                   'We\'ll pull your report from CIBIL / CRIF to find loans you qualify for.',
                   style: TextStyle(
-                    color: Color(0xFFC7CAE8),
+                    color: AppColors.indigoTint,
                     fontSize: 12.5,
                     height: 1.35,
                   ),
@@ -166,7 +166,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+              border: Border.all(color: AppColors.line, width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -183,13 +183,13 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE2F7D8),
+                    color: AppColors.successGreenBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
                     child: Icon(
                       Icons.add_rounded,
-                      color: Color(0xFF16A34A),
+                      color: AppColors.successGreen,
                       size: 21,
                     ),
                   ),
@@ -230,7 +230,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+              border: Border.all(color: AppColors.line, width: 1.2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.02),
@@ -247,7 +247,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEF1FD),
+                    color: AppColors.indigoTint,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
@@ -296,7 +296,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -328,7 +328,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                         border: Border.all(
                           color: isBureauAuthorized.value
                               ? AppColors.primaryButtonBackground
-                              : const Color(0xFFC7D0EE),
+                              : AppColors.line,
                           width: 1.5,
                         ),
                       ),
@@ -378,7 +378,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                         border: Border.all(
                           color: isWhatsAppOptIn.value
                               ? AppColors.primaryButtonBackground
-                              : const Color(0xFFC7D0EE),
+                              : AppColors.line,
                           width: 1.5,
                         ),
                       ),
@@ -425,7 +425,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+                border: Border.all(color: AppColors.line, width: 1.2),
               ),
               child: const Center(
                 child: Text(
@@ -454,7 +454,7 @@ class _CreditCheckBodyState extends State<CreditCheckBody> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryButtonBackground,
-                    disabledBackgroundColor: const Color(0xFF212074).withValues(alpha: 0.5),
+                    disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -496,7 +496,7 @@ class _CreditHeroOrbitPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final orbitPaint = Paint()
-      ..color = const Color(0xFF7E7BE6).withValues(alpha: 0.38)
+      ..color = AppColors.indigo.withValues(alpha: 0.38)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 

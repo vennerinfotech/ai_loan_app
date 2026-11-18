@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 import '../screens/reset_mpin_screen.dart';
 import '../screens/main_nav_screen.dart';
 import '../services/session_manager.dart';
@@ -97,7 +98,7 @@ class OtpVerificationController extends GetxController {
       'Code Sent',
       'A new 6-digit code has been sent to $maskedPhone',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF212074),
+      backgroundColor: AppColors.navy,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 2),
@@ -120,7 +121,7 @@ class OtpVerificationController extends GetxController {
           'Login Successful',
           'Welcome to Finsphere AI!',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF212074),
+          backgroundColor: AppColors.navy,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),

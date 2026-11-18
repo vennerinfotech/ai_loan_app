@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:dotted_border/dotted_border.dart';
 import '../../controller/apply_loan_controller.dart';
@@ -46,7 +47,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 const Text(
                   'What\'s the loan for?',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.4,
@@ -56,7 +57,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 const Text(
                   'Pick one — you can change it later.',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -116,18 +117,18 @@ class ChooseLoanTypeBody extends StatelessWidget {
           height: 118,
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF212074) : Colors.white,
+            color: isSelected ? AppColors.navy : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF212074)
-                  : const Color(0xFFEEF2F6),
+                  ? AppColors.navy
+                  : AppColors.line,
               width: 1.4,
             ),
             boxShadow: [
               BoxShadow(
                 color: isSelected
-                    ? const Color(0xFF212074).withValues(alpha: 0.25)
+                    ? AppColors.navy.withValues(alpha: 0.25)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: isSelected ? 12 : 6,
                 offset: const Offset(0, 3),
@@ -147,8 +148,8 @@ class ChooseLoanTypeBody extends StatelessWidget {
                     height: 36,
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF3B39A0)
-                          : const Color(0xFFEEF1FD),
+                          ? AppColors.indigo
+                          : AppColors.indigoTint,
                       borderRadius: BorderRadius.circular(11),
                     ),
                     child: Center(
@@ -157,7 +158,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                         size: 19,
                         color: isSelected
                             ? Colors.white
-                            : const Color(0xFF4340BE),
+                            : AppColors.indigo,
                       ),
                     ),
                   ),
@@ -166,14 +167,14 @@ class ChooseLoanTypeBody extends StatelessWidget {
                       width: 20,
                       height: 20,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFFDB022),
+                        color: AppColors.amber,
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
                         child: Icon(
                           Icons.check_rounded,
                           size: 13,
-                          color: Color(0xFF212074),
+                          color: AppColors.navy,
                         ),
                       ),
                     ),
@@ -187,7 +188,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                   Text(
                     item.title,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF1E2127),
+                      color: isSelected ? Colors.white : AppColors.textDark,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -197,8 +198,8 @@ class ChooseLoanTypeBody extends StatelessWidget {
                     item.subtitle,
                     style: TextStyle(
                       color: isSelected
-                          ? const Color(0xFFD3D6F0)
-                          : const Color(0xFF6B7280),
+                          ? AppColors.muted
+                          : AppColors.muted,
                       fontSize: 10.5,
                       fontWeight: FontWeight.w400,
                       height: 1.25,
@@ -268,7 +269,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
               }
             },
             child: DottedBorder(
-              color: const Color(0xFFC7CAE8),
+              color: AppColors.indigoTint,
               strokeWidth: 1.2,
               dashPattern: const [5, 4],
               borderType: BorderType.RRect,
@@ -277,7 +278,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 width: double.infinity,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F4FD).withValues(alpha: 0.5),
+                  color: AppColors.canvas.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -287,7 +288,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                       const Text(
                         '•••',
                         style: TextStyle(
-                          color: Color(0xFF4A44D1),
+                          color: AppColors.indigo,
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
                           letterSpacing: 1.0,
@@ -297,7 +298,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                       const Text(
                         'Other loans',
                         style: TextStyle(
-                          color: Color(0xFF4A44D1),
+                          color: AppColors.indigo,
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -305,14 +306,14 @@ class ChooseLoanTypeBody extends StatelessWidget {
                     ] else ...[
                       const Icon(
                         Icons.keyboard_arrow_up_rounded,
-                        color: Color(0xFF4A44D1),
+                        color: AppColors.indigo,
                         size: 20,
                       ),
                       const SizedBox(width: 6),
                       const Text(
                         'Show fewer loans',
                         style: TextStyle(
-                          color: Color(0xFF4A44D1),
+                          color: AppColors.indigo,
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                         ),
@@ -342,7 +343,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
               controller.goToStep(2);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF212074),
+              backgroundColor: AppColors.navy,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -362,7 +363,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.arrow_forward_rounded,
-                  color: Color(0xFFFDB022),
+                  color: AppColors.amber,
                   size: 18,
                 ),
               ],

@@ -35,7 +35,7 @@ class ImagePickerBottomSheet {
                 width: 44,
                 height: 4.5,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2E7F4),
+                  color: AppColors.line,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -101,7 +101,7 @@ class ImagePickerBottomSheet {
             _buildOptionCard(
               icon: Icons.photo_camera_rounded,
               iconColor: AppColors.primaryPurple,
-              iconBgColor: const Color(0xFFEEF1FD),
+              iconBgColor: AppColors.indigoTint,
               title: 'Take photo',
               subtitle: 'Use camera to scan your document',
               onTap: () {
@@ -117,8 +117,8 @@ class ImagePickerBottomSheet {
             // Option 2: Choose from Gallery
             _buildOptionCard(
               icon: Icons.photo_library_outlined,
-              iconColor: const Color(0xFFD97706),
-              iconBgColor: const Color(0xFFFEF3C7),
+              iconColor: AppColors.amber,
+              iconBgColor: AppColors.amber.withValues(alpha: 0.15),
               title: 'Choose from gallery',
               subtitle: 'Select existing image or PDF from device',
               onTap: () {
@@ -157,7 +157,7 @@ class ImagePickerBottomSheet {
         'Upload Unavailable',
         'Could not access the selected photo source on this device.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.errorRed,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
@@ -182,7 +182,7 @@ class ImagePickerBottomSheet {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E7F4), width: 1.2),
+          border: Border.all(color: AppColors.line, width: 1.2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),

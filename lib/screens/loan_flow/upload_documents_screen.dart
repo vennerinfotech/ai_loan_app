@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
 import 'applicant_details_screen.dart';
@@ -96,15 +97,15 @@ class UploadDocumentsBody extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 5.5,
-                    backgroundColor: const Color(0xFFE2E6F5),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4340BE)),
+                    backgroundColor: AppColors.line,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo),
                     strokeCap: StrokeCap.round,
                   ),
                 ),
                 Text(
                   '$addedCount/$totalCount',
                   style: const TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -122,7 +123,7 @@ class UploadDocumentsBody extends StatelessWidget {
                 Text(
                   'Salaried documents',
                   style: TextStyle(
-                    color: Color(0xFF1E2127),
+                    color: AppColors.textDark,
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.3,
@@ -132,7 +133,7 @@ class UploadDocumentsBody extends StatelessWidget {
                 Text(
                   'PDF, JPG or PNG · up to 5 MB each',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 12.5,
                     fontWeight: FontWeight.w400,
                   ),
@@ -177,13 +178,13 @@ class UploadDocumentsBody extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF212074),
+                  color: AppColors.navy,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
                   child: Icon(
                     icon,
-                    color: const Color(0xFFFDB022),
+                    color: AppColors.amber,
                     size: 24,
                   ),
                 ),
@@ -196,7 +197,7 @@ class UploadDocumentsBody extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Color(0xFF1E2127),
+                        color: AppColors.textDark,
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.3,
@@ -206,7 +207,7 @@ class UploadDocumentsBody extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Color(0xFF6B7280),
+                        color: AppColors.muted,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w400,
                       ),
@@ -224,8 +225,8 @@ class UploadDocumentsBody extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 5,
-              backgroundColor: const Color(0xFFE2E6F5),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4340BE)),
+              backgroundColor: AppColors.line,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo),
             ),
           ),
           const SizedBox(height: 8),
@@ -237,7 +238,7 @@ class UploadDocumentsBody extends StatelessWidget {
               Text(
                 '$addedCount of $totalCount added',
                 style: const TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: AppColors.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -245,7 +246,7 @@ class UploadDocumentsBody extends StatelessWidget {
               const Text(
                 'PDF, JPG, PNG · max 5 MB',
                 style: TextStyle(
-                  color: Color(0xFF6B7280),
+                  color: AppColors.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
@@ -280,8 +281,8 @@ class UploadDocumentsBody extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isUploading
-                    ? const Color(0xFF4340BE)
-                    : const Color(0xFFEEF2F6),
+                    ? AppColors.indigo
+                    : AppColors.line,
                 width: isUploading ? 1.4 : 1.2,
               ),
               boxShadow: [
@@ -310,7 +311,7 @@ class UploadDocumentsBody extends StatelessWidget {
                             Text(
                               doc.title,
                               style: const TextStyle(
-                                color: Color(0xFF1E2127),
+                                color: AppColors.textDark,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -320,7 +321,7 @@ class UploadDocumentsBody extends StatelessWidget {
                               const Text(
                                 'Uploading...',
                                 style: TextStyle(
-                                  color: Color(0xFF4340BE),
+                                  color: AppColors.indigo,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -329,7 +330,7 @@ class UploadDocumentsBody extends StatelessWidget {
                               Text(
                                 '${doc.fileName.value} · ${doc.fileSize.value}',
                                 style: const TextStyle(
-                                  color: Color(0xFF6B7280),
+                                  color: AppColors.muted,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -340,7 +341,7 @@ class UploadDocumentsBody extends StatelessWidget {
                                     ? doc.subtitle
                                     : 'Upload document',
                                 style: const TextStyle(
-                                  color: Color(0xFF6B7280),
+                                  color: AppColors.muted,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w400,
                                 ),
@@ -357,7 +358,7 @@ class UploadDocumentsBody extends StatelessWidget {
                             padding: EdgeInsets.all(6),
                             child: Icon(
                               Icons.delete_outline_rounded,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.muted,
                               size: 20,
                             ),
                           ),
@@ -369,7 +370,7 @@ class UploadDocumentsBody extends StatelessWidget {
                             padding: EdgeInsets.all(6),
                             child: Icon(
                               Icons.close_rounded,
-                              color: Color(0xFF6B7280),
+                              color: AppColors.muted,
                               size: 20,
                             ),
                           ),
@@ -380,7 +381,7 @@ class UploadDocumentsBody extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF212074),
+                              color: AppColors.navy,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: const Row(
@@ -416,8 +417,8 @@ class UploadDocumentsBody extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: const LinearProgressIndicator(
                         minHeight: 4,
-                        backgroundColor: Color(0xFFE2E6F5),
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4340BE)),
+                        backgroundColor: AppColors.line,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.indigo),
                       ),
                     ),
                   ),
@@ -438,13 +439,13 @@ class UploadDocumentsBody extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFE2F7D8),
+          color: AppColors.successGreenBg,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
           child: Icon(
             Icons.check_rounded,
-            color: Color(0xFF15803D),
+            color: AppColors.successGreen,
             size: 20,
           ),
         ),
@@ -454,13 +455,13 @@ class UploadDocumentsBody extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF1FD),
+          color: AppColors.indigoTint,
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Center(
           child: Icon(
             Icons.upload_rounded,
-            color: Color(0xFF4340BE),
+            color: AppColors.indigo,
             size: 20,
           ),
         ),
@@ -482,13 +483,13 @@ class UploadDocumentsBody extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF1FD),
+          color: AppColors.indigoTint,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
           child: Icon(
             icon,
-            color: const Color(0xFF4340BE),
+            color: AppColors.indigo,
             size: 20,
           ),
         ),
@@ -502,16 +503,16 @@ class UploadDocumentsBody extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF3E8),
+        color: AppColors.warningAmberBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFE0B8), width: 1.0),
+        border: Border.all(color: AppColors.warningAmberBg, width: 1.0),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.error_outline_rounded,
-            color: Color(0xFFC25D00),
+            color: AppColors.warningAmber,
             size: 18,
           ),
           SizedBox(width: 10),
@@ -519,7 +520,7 @@ class UploadDocumentsBody extends StatelessWidget {
             child: Text(
               'Make sure all four corners are visible and text is readable — blurry photos slow down approval.',
               style: TextStyle(
-                color: Color(0xFF8A3C00),
+                color: AppColors.warningAmber,
                 fontSize: 12,
                 height: 1.35,
                 fontWeight: FontWeight.w500,
@@ -559,7 +560,7 @@ class UploadDocumentsBody extends StatelessWidget {
                         'Draft Saved',
                         'Your uploaded documents have been saved as draft.',
                         snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: const Color(0xFF212074),
+                        backgroundColor: AppColors.navy,
                         colorText: Colors.white,
                         margin: const EdgeInsets.all(16),
                         duration: const Duration(seconds: 2),
@@ -569,17 +570,17 @@ class UploadDocumentsBody extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF1F6FC),
+                    backgroundColor: AppColors.inputFill,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: Color(0xFFDDE3F0), width: 1.2),
+                      side: const BorderSide(color: AppColors.line, width: 1.2),
                     ),
                     elevation: 0,
                   ),
                   child: Text(
                     leftLabel,
                     style: const TextStyle(
-                      color: Color(0xFF1E2127),
+                      color: AppColors.textDark,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -599,7 +600,7 @@ class UploadDocumentsBody extends StatelessWidget {
                     Get.to(() => const ApplicantDetailsScreen());
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF212074),
+                    backgroundColor: AppColors.navy,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -619,7 +620,7 @@ class UploadDocumentsBody extends StatelessWidget {
                       const SizedBox(width: 8),
                       const Icon(
                         Icons.arrow_forward_rounded,
-                        color: Color(0xFFFDB022),
+                        color: AppColors.amber,
                         size: 16,
                       ),
                     ],

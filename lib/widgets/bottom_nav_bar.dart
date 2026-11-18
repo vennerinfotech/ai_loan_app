@@ -39,8 +39,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 0,
             icon: Icons.home_rounded,
             isSelected: currentIndex == 0,
-            selectedBgColor: const Color(0xFF3331A8),
-            selectedIconColor: const Color(0xFFFDB022),
+            selectedBgColor: AppColors.indigo.withValues(alpha: 0.35),
+            selectedIconColor: AppColors.amber,
           ),
 
           // 1: Cards / EMIs
@@ -48,8 +48,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 1,
             icon: Icons.credit_card_rounded,
             isSelected: currentIndex == 1,
-            selectedBgColor: const Color(0xFF3331A8),
-            selectedIconColor: const Color(0xFFFDB022),
+            selectedBgColor: AppColors.indigo.withValues(alpha: 0.35),
+            selectedIconColor: AppColors.amber,
           ),
 
           // 2: Center Highlighted Add Button
@@ -58,14 +58,14 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             child: Container(
               width: 46,
               height: 46,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.bottomNavCenterButton,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x40FBC14E),
+                    color: AppColors.amber.withValues(alpha: 0.3),
                     blurRadius: 10,
-                    offset: Offset(0, 4),
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -84,8 +84,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 3,
             icon: Icons.description_outlined,
             isSelected: currentIndex == 3,
-            selectedBgColor: const Color(0xFF3331A8),
-            selectedIconColor: const Color(0xFFFDB022),
+            selectedBgColor: AppColors.indigo.withValues(alpha: 0.35),
+            selectedIconColor: AppColors.amber,
           ),
 
           // 4: Profile
@@ -93,8 +93,8 @@ class CustomFloatingBottomNavBar extends StatelessWidget {
             index: 4,
             icon: Icons.person_outline_rounded,
             isSelected: currentIndex == 4,
-            selectedBgColor: const Color(0xFF3331A8),
-            selectedIconColor: const Color(0xFFFDB022),
+            selectedBgColor: AppColors.indigo.withValues(alpha: 0.35),
+            selectedIconColor: AppColors.amber,
           ),
         ],
       ),

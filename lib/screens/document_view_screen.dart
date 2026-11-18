@@ -106,7 +106,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -145,7 +145,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.more_vert_rounded,
@@ -158,7 +158,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                 value: 'download',
                 child: Row(
                   children: [
-                    Icon(Icons.download_rounded, size: 18, color: Color(0xFF475569)),
+                    Icon(Icons.download_rounded, size: 18, color: AppColors.muted),
                     SizedBox(width: 10),
                     Text('Download PDF', style: TextStyle(fontSize: 13.5)),
                   ],
@@ -168,7 +168,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                 value: 'replace',
                 child: Row(
                   children: [
-                    Icon(Icons.sync_rounded, size: 18, color: Color(0xFF475569)),
+                    Icon(Icons.sync_rounded, size: 18, color: AppColors.muted),
                     SizedBox(width: 10),
                     Text('Replace document', style: TextStyle(fontSize: 13.5)),
                   ],
@@ -187,7 +187,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF2F6),
+          color: AppColors.line,
           borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
@@ -200,13 +200,13 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
                 decoration: BoxDecoration(
                   color: _selectedSideIndex == 0
-                      ? const Color(0xFF242278)
+                      ? AppColors.navy
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: _selectedSideIndex == 0
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF242278).withValues(alpha: 0.25),
+                            color: AppColors.navy.withValues(alpha: 0.25),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -218,7 +218,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   style: TextStyle(
                     color: _selectedSideIndex == 0
                         ? Colors.white
-                        : const Color(0xFF64748B),
+                        : AppColors.muted,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -233,13 +233,13 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 7),
                 decoration: BoxDecoration(
                   color: _selectedSideIndex == 1
-                      ? const Color(0xFF242278)
+                      ? AppColors.navy
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: _selectedSideIndex == 1
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF242278).withValues(alpha: 0.25),
+                            color: AppColors.navy.withValues(alpha: 0.25),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -251,7 +251,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   style: TextStyle(
                     color: _selectedSideIndex == 1
                         ? Colors.white
-                        : const Color(0xFF64748B),
+                        : AppColors.muted,
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -280,7 +280,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -335,7 +335,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         errorBuilder: (context, error, stackTrace) {
           return Container(
             height: 220,
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.canvas,
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -343,12 +343,12 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   Icon(
                     Icons.broken_image_rounded,
                     size: 40,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.muted,
                   ),
                   SizedBox(height: 8),
                   Text(
                     'Failed to load document image',
-                    style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                    style: TextStyle(color: AppColors.muted, fontSize: 12),
                   ),
                 ],
               ),
@@ -371,7 +371,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         // Interactive pinch & zoomable direct document image
         Container(
           constraints: const BoxConstraints(minHeight: 200, maxHeight: 260),
-          color: const Color(0xFFF8FAFC),
+          color: AppColors.canvas,
           width: double.infinity,
           alignment: Alignment.center,
           child: InteractiveViewer(
@@ -436,7 +436,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFECC8),
+                    color: AppColors.warningAmberBg,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Center(
@@ -464,7 +464,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               width: 28,
               height: 18,
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF2F6),
+                color: AppColors.line,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -482,9 +482,9 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               width: 78,
               height: 88,
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF2F6),
+                color: AppColors.line,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: Obx(() {
                 final imageBytes = profileController.profileImageBytes.value;
@@ -501,7 +501,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   child: Icon(
                     Icons.person_rounded,
                     size: 42,
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.muted,
                   ),
                 );
               }),
@@ -526,7 +526,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   const Text(
                     'DOB: 15/08/1993',
                     style: TextStyle(
-                      color: Color(0xFF64748B),
+                      color: AppColors.muted,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -535,7 +535,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   const Text(
                     'Male',
                     style: TextStyle(
-                      color: Color(0xFF64748B),
+                      color: AppColors.muted,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -548,13 +548,13 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1B4B),
+                color: AppColors.textDark,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
                 'MASKED',
                 style: TextStyle(
-                  color: Color(0xFFFBC14E),
+                  color: AppColors.amber,
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.5,
@@ -571,9 +571,9 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.canvas,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFEEF2F6)),
+              border: Border.all(color: AppColors.line),
             ),
             child: const Text(
               'XXXX  XXXX  1234',
@@ -599,7 +599,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         const Text(
           'Unique Identification Authority of India',
           style: TextStyle(
-            color: Color(0xFF64748B),
+            color: AppColors.muted,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -629,7 +629,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                           ? profileController.address.value
                           : '123, MG Road, Bengaluru, Karnataka 560001',
                       style: const TextStyle(
-                        color: Color(0xFF475569),
+                        color: AppColors.muted,
                         fontSize: 12.5,
                         height: 1.45,
                         fontWeight: FontWeight.w500,
@@ -647,14 +647,14 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
+                color: AppColors.canvas,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFCBD5E1)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.qr_code_2_rounded,
                 size: 52,
-                color: Color(0xFF334155),
+                color: AppColors.textDark,
               ),
             ),
           ],
@@ -667,14 +667,14 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.canvas,
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Center(
             child: Text(
               'www.uidai.gov.in  •  Help: 1947',
               style: TextStyle(
-                color: Color(0xFF64748B),
+                color: AppColors.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -692,7 +692,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.line),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -711,7 +711,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               const Text(
                 'Status',
                 style: TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -719,7 +719,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               Text(
                 doc.status,
                 style: const TextStyle(
-                  color: Color(0xFFD97706),
+                  color: AppColors.warningAmber,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -728,7 +728,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
           ),
 
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: AppColors.canvas),
           const SizedBox(height: 12),
 
           // Row 2: Uploaded
@@ -738,7 +738,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               const Text(
                 'Uploaded',
                 style: TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -755,7 +755,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
           ),
 
           const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: AppColors.canvas),
           const SizedBox(height: 12),
 
           // Row 3: Used in
@@ -765,7 +765,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               const Text(
                 'Used in',
                 style: TextStyle(
-                  color: Color(0xFF64748B),
+                  color: AppColors.muted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -839,11 +839,11 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          color: const Color(0xFF242278),
+          color: AppColors.navy,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF242278).withValues(alpha: 0.20),
+              color: AppColors.navy.withValues(alpha: 0.20),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -855,7 +855,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
             Icon(
               icon,
               size: 20,
-              color: const Color(0xFFFBC14E),
+              color: AppColors.amber,
             ),
             const SizedBox(height: 3),
             Text(
@@ -877,7 +877,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       'Download started',
       'Downloading ${doc.title} PDF to your device...',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFF242278),
+      backgroundColor: AppColors.navy,
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(16),
@@ -890,7 +890,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       'Share document',
       'Preparing secure share link for ${doc.title}...',
       snackPosition: SnackPosition.TOP,
-      backgroundColor: const Color(0xFF242278),
+      backgroundColor: AppColors.navy,
       colorText: Colors.white,
       duration: const Duration(seconds: 2),
       margin: const EdgeInsets.all(16),
@@ -925,7 +925,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         'Document updated',
         '${isFront ? "Front" : "Back"} image for ${doc.title} has been updated.',
         snackPosition: SnackPosition.TOP,
-        backgroundColor: const Color(0xFF242278),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         duration: const Duration(seconds: 2),
         margin: const EdgeInsets.all(16),

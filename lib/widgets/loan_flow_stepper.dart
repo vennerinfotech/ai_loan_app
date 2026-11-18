@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 
 /// Header stepper matching the exact reference image:
 /// - Left: White rounded squircle with '<' back arrow
@@ -34,7 +35,7 @@ class LoanFlowHeaderWithStepper extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: const Color(0xFFE2E8F0),
+                  color: AppColors.line,
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -49,7 +50,7 @@ class LoanFlowHeaderWithStepper extends StatelessWidget {
                 child: Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 16,
-                  color: Color(0xFF1E2127),
+                  color: AppColors.textDark,
                 ),
               ),
             ),
@@ -66,8 +67,8 @@ class LoanFlowHeaderWithStepper extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 2.5),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? const Color(0xFF4340BE)
-                      : const Color(0xFFD6DBED),
+                      ? AppColors.indigo
+                      : AppColors.line,
                   borderRadius: BorderRadius.circular(3),
                 ),
               );
@@ -78,7 +79,7 @@ class LoanFlowHeaderWithStepper extends StatelessWidget {
           Text(
             '$activeStep/$totalSteps',
             style: const TextStyle(
-              color: Color(0xFF283044),
+              color: AppColors.textDark,
               fontSize: 14.5,
               fontWeight: FontWeight.w800,
             ),

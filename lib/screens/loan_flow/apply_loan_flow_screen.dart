@@ -1,3 +1,4 @@
+import 'package:ai_loan_app/theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
@@ -39,7 +40,7 @@ class ApplyLoanFlowScreen extends StatelessWidget {
         controller.handleBack();
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF6F8FC),
+        backgroundColor: AppColors.canvas,
         body: SafeArea(
           bottom: false,
           child: Column(

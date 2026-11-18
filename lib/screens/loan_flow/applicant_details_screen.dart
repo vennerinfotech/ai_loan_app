@@ -1,7 +1,7 @@
 import 'dart:math' as math;
+import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-import '../../theme/app_colors.dart';
 import '../../controller/applicant_details_controller.dart';
 import 'add_co_applicant_screen.dart';
 import 'application_status_screen.dart';
@@ -85,7 +85,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -124,7 +124,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.all(3.5),
         decoration: BoxDecoration(
-          color: const Color(0xFFE5EAF5),
+          color: AppColors.line,
           borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
@@ -136,13 +136,13 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selectedTab == 0 ? const Color(0xFF212074) : Colors.transparent,
+                    color: selectedTab == 0 ? AppColors.navy : Colors.transparent,
                     borderRadius: BorderRadius.circular(19),
                   ),
                   child: Text(
                     'Applicant',
                     style: TextStyle(
-                      color: selectedTab == 0 ? Colors.white : const Color(0xFF475569),
+                      color: selectedTab == 0 ? Colors.white : AppColors.muted,
                       fontSize: 13.5,
                       fontWeight: selectedTab == 0 ? FontWeight.w800 : FontWeight.w600,
                     ),
@@ -158,13 +158,13 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 child: Container(
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selectedTab == 1 ? const Color(0xFF212074) : Colors.transparent,
+                    color: selectedTab == 1 ? AppColors.navy : Colors.transparent,
                     borderRadius: BorderRadius.circular(19),
                   ),
                   child: Text(
                     'Co-applicant · $coAppCount',
                     style: TextStyle(
-                      color: selectedTab == 1 ? Colors.white : const Color(0xFF475569),
+                      color: selectedTab == 1 ? Colors.white : AppColors.muted,
                       fontSize: 13.5,
                       fontWeight: selectedTab == 1 ? FontWeight.w800 : FontWeight.w600,
                     ),
@@ -196,15 +196,11 @@ class ApplicantDetailsScreen extends StatelessWidget {
         height: 84,
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF282582), Color(0xFF3835A8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: AppColors.dashboardCardGradient,
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF282582).withValues(alpha: 0.18),
+              color: AppColors.cardGradientEnd.withValues(alpha: 0.18),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -229,14 +225,14 @@ class ApplicantDetailsScreen extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFFFB800),
+                      color: AppColors.amber,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       avatarInitials,
                       style: const TextStyle(
-                        color: Color(0xFF1E2127),
+                        color: AppColors.textDark,
                         fontSize: 17,
                         fontWeight: FontWeight.w900,
                       ),
@@ -285,7 +281,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
     return Text(
       title,
       style: const TextStyle(
-        color: Color(0xFF64748B),
+        color: AppColors.muted,
         fontSize: 11.5,
         fontWeight: FontWeight.w800,
         letterSpacing: 0.8,
@@ -305,14 +301,14 @@ class ApplicantDetailsScreen extends StatelessWidget {
       final panSub = isPrimary ? 'Tax ID verified' : 'Pending verification';
       final mobileSub = isPrimary ? '+91 98765 •••10' : (coApp?.mobileNumber ?? '+91 98765 43210');
       final badgeText = isPrimary ? 'Verified' : 'Pending';
-      final badgeBg = isPrimary ? const Color(0xFFE2F7E9) : const Color(0xFFEFF3FD);
-      final badgeColor = isPrimary ? const Color(0xFF15803D) : const Color(0xFF4340BE);
+      final badgeBg = isPrimary ? AppColors.successGreenBg : AppColors.indigoTint;
+      final badgeColor = isPrimary ? AppColors.successGreen : AppColors.indigo;
 
       return Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFEEF2F6)),
+          border: Border.all(color: AppColors.line),
         ),
         child: Column(
           children: [
@@ -324,7 +320,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
               badgeBg: badgeBg,
               badgeColor: badgeColor,
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
             _buildVerificationRow(
               icon: Icons.credit_card_rounded,
               title: 'PAN card',
@@ -333,7 +329,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
               badgeBg: badgeBg,
               badgeColor: badgeColor,
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
             _buildVerificationRow(
               icon: Icons.chat_bubble_outline_rounded,
               title: 'Mobile OTP',
@@ -366,13 +362,13 @@ class ApplicantDetailsScreen extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F8EE),
+              color: AppColors.successGreenBg,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
               size: 19,
-              color: const Color(0xFF16A34A),
+              color: AppColors.successGreen,
             ),
           ),
           const SizedBox(width: 12),
@@ -394,7 +390,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: Color(0xFF64748B),
+                    color: AppColors.muted,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -443,7 +439,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFEEF2F6)),
+          border: Border.all(color: AppColors.line),
         ),
         child: Column(
           children: [
@@ -452,19 +448,19 @@ class ApplicantDetailsScreen extends StatelessWidget {
               label: 'Full name',
               value: name,
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
             _buildContactRow(
               icon: Icons.calendar_today_outlined,
               label: 'Date of birth · Gender',
               value: dobGender,
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
             _buildContactRow(
               icon: Icons.mail_outline_rounded,
               label: 'Email',
               value: email,
             ),
-            const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
             _buildContactRow(
               icon: Icons.location_on_outlined,
               label: 'Address',
@@ -492,13 +488,13 @@ class ApplicantDetailsScreen extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF0FD),
+              color: AppColors.indigoTint,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               icon,
               size: 19,
-              color: const Color(0xFF4340BE),
+              color: AppColors.indigo,
             ),
           ),
           const SizedBox(width: 12),
@@ -511,7 +507,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 Text(
                   label,
                   style: const TextStyle(
-                    color: Color(0xFF64748B),
+                    color: AppColors.muted,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -541,10 +537,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F5FD),
+          color: AppColors.indigoTint,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: const Color(0xFFC7D2FE),
+            color: AppColors.indigoTint,
             width: 1.2,
           ),
         ),
@@ -553,14 +549,14 @@ class ApplicantDetailsScreen extends StatelessWidget {
           children: const [
             Icon(
               Icons.add_rounded,
-              color: Color(0xFF4340BE),
+              color: AppColors.indigo,
               size: 19,
             ),
             SizedBox(width: 8),
             Text(
               '+ Add another co-applicant',
               style: TextStyle(
-                color: Color(0xFF4340BE),
+                color: AppColors.indigo,
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
               ),
@@ -585,7 +581,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
             Get.to(() => const ApplicationStatusScreen());
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF212074),
+            backgroundColor: AppColors.navy,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -605,7 +601,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
               SizedBox(width: 8),
               Icon(
                 Icons.arrow_forward_rounded,
-                color: Color(0xFFFDB022),
+                color: AppColors.amber,
                 size: 16,
               ),
             ],
@@ -626,7 +622,7 @@ class _BannerCosmicPainter extends CustomPainter {
     final anchor = Offset(size.width - 44, size.height * 0.33);
 
     final orbitPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..color = AppColors.indigo.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
 
@@ -644,7 +640,7 @@ class _BannerCosmicPainter extends CustomPainter {
         width: 270,
         height: 75,
       ),
-      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
+      orbitPaint..color = AppColors.indigo.withValues(alpha: 0.32),
     );
     canvas.restore();
   }

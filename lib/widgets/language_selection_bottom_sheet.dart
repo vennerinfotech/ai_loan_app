@@ -60,7 +60,7 @@ class _LanguageSelectionBottomSheetState
                 width: 42,
                 height: 4.5,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
+                  color: AppColors.line,
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -99,13 +99,13 @@ class _LanguageSelectionBottomSheetState
                     width: 32,
                     height: 32,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF1F5F9),
+                      color: AppColors.canvas,
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.close_rounded,
                       size: 18,
-                      color: Color(0xFF64748B),
+                      color: AppColors.muted,
                     ),
                   ),
                 ),
@@ -152,7 +152,7 @@ class _LanguageSelectionBottomSheetState
                   'Language updated',
                   'App language set to $_selectedLanguage',
                   snackPosition: SnackPosition.TOP,
-                  backgroundColor: const Color(0xFF242278),
+                  backgroundColor: AppColors.navy,
                   colorText: Colors.white,
                   duration: const Duration(seconds: 2),
                   margin: const EdgeInsets.all(16),
@@ -163,15 +163,11 @@ class _LanguageSelectionBottomSheetState
                 width: double.infinity,
                 height: 50,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF242278), Color(0xFF3835A8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppColors.primaryGradientDiagonal,
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF242278).withValues(alpha: 0.22),
+                      color: AppColors.navy.withValues(alpha: 0.22),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -209,18 +205,16 @@ class _LanguageSelectionBottomSheetState
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF4F5FD) : Colors.white,
+          color: isSelected ? AppColors.indigoTint : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF3835A8)
-                : const Color(0xFFE2E8F0),
+            color: isSelected ? AppColors.indigo : AppColors.line,
             width: isSelected ? 1.8 : 1.2,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF3835A8).withValues(alpha: 0.08),
+                    color: AppColors.indigo.withValues(alpha: 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -235,16 +229,14 @@ class _LanguageSelectionBottomSheetState
               width: 42,
               height: 42,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF242278)
-                    : const Color(0xFFF1F5F9),
+                color: isSelected ? AppColors.navy : AppColors.canvas,
                 borderRadius: BorderRadius.circular(12),
               ),
               alignment: Alignment.center,
               child: Text(
                 badgeText,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                  color: isSelected ? Colors.white : AppColors.muted,
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -260,9 +252,7 @@ class _LanguageSelectionBottomSheetState
                   Text(
                     title,
                     style: TextStyle(
-                      color: isSelected
-                          ? const Color(0xFF1E1B4B)
-                          : AppColors.textDark,
+                      color: isSelected ? AppColors.navy : AppColors.textDark,
                       fontSize: 15.5,
                       fontWeight: FontWeight.w700,
                     ),
@@ -287,9 +277,7 @@ class _LanguageSelectionBottomSheetState
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected
-                      ? const Color(0xFF3835A8)
-                      : const Color(0xFFCBD5E1),
+                  color: isSelected ? AppColors.indigo : AppColors.line,
                   width: isSelected ? 2 : 1.6,
                 ),
                 color: Colors.white,
@@ -301,7 +289,7 @@ class _LanguageSelectionBottomSheetState
                         height: 10,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Color(0xFF3835A8),
+                          color: AppColors.indigo,
                         ),
                       ),
                     )

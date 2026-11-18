@@ -39,14 +39,7 @@ class SplashScreen extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.splashGradientTop,
-              AppColors.splashGradientBottom,
-            ],
-          ),
+          gradient: AppColors.splashGradient,
         ),
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,

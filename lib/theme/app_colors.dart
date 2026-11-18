@@ -1,271 +1,298 @@
 import 'package:material_ui/material_ui.dart';
 
 /// Central theme colors definition for Finsphere AI.
-/// All color codes across Splash Screen and Onboarding Screen are defined here.
-/// Modifying this single file will update the entire app theme.
+/// All color codes across the entire application are defined here.
+/// Derived strictly from the official Design Tokens:
+/// - Navy: #252484
+/// - Gradient top / Indigo: #5856D1
+/// - Amber: #FFC857
+/// - Text: #212529
+/// - Muted: #5B6075
+/// - Line: #E1E6F2
+/// - Canvas: #F3F6FC
+/// - Indigo tint: #ECEBFB
+/// - Input fill: #E8F0FE
 class AppColors {
   AppColors._();
 
   // ==========================================
-  // Brand Core Colors (Royal Indigo & Golden Amber)
+  // Canonical Design Tokens (from Figma / Design System)
   // ==========================================
-  /// Primary brand indigo/purple (used for logo box, active indicator, heading highlights)
-  static const Color primaryPurple = Color(0xFF524FBA);
+  /// Deep Navy: #252484 (Used for primary CTA buttons, dark card gradient bottom, hero card base)
+  static const Color navy = Color(0xFF252484);
 
-  /// Primary accent color: Warm Golden Amber (replaces lime, used for CIBIL card, Saturn ring, accent dots)
-  static const Color accentGold = Color(0xFFFBC14E);
+  /// Primary Indigo: #5856D1 (Used for brand primary, active states, icons)
+  static const Color indigo = Color(0xFF5856D1);
 
-  /// Backward-compatibility alias
-  static const Color accentLime = accentGold;
+  /// Gradient Top: #5856D1
+  static const Color gradientTop = Color(0xFF5856D1);
+
+  /// Gradient Bottom: #252484
+  static const Color gradientBottom = navy;
+
+  /// Amber: #FFC857 (Accent warm gold for ratings, badges, CIBIL highlight, warning dots)
+  static const Color amber = Color(0xFFFFC857);
+
+  /// Text: #212529 (Primary dark typography)
+  static const Color text = Color(0xFF212529);
+
+  /// Muted Text: #5B6075 (Subtitles, captions, inactive labels)
+  static const Color muted = Color(0xFF5B6075);
+
+  /// Line / Border: #E1E6F2 (Card borders, dividers, outlines)
+  static const Color line = Color(0xFFE1E6F2);
+
+  /// Canvas / Background: #F3F6FC (Screen scaffold background)
+  static const Color canvas = Color(0xFFF3F6FC);
+
+  /// Indigo Tint: #ECEBFB (Very soft indigo tint for icon circles, pills, chips)
+  static const Color indigoTint = Color(0xFFECEBFB);
+
+  /// Input Fill: #E8F0FE (Light soft input fill for text fields, inactive chips)
+  static const Color inputFill = Color(0xFFE8F0FE);
 
   // ==========================================
-  // Splash Screen Gradients & Background
+  // Standard Gradient Tokens (Dashboard Card Gradient: #3835A8 -> #242278)
   // ==========================================
+  /// Rich Hero Card Gradients (Deep Royal Indigo #3835A8 & Midnight Navy #242278)
+  static const Color cardGradientStart = Color(0xFF3835A8);
+  static const Color cardGradientEnd = Color(0xFF242278);
+  static const Color cardOrbitLine = Color(0xFF8B88EF);
+
+  /// Golden Card Orbit Lines (Original visible amber contrast on gold cards)
+  static const Color goldenOrbitInner = Color(0xFFE2A428);
+  static const Color goldenOrbitMiddle = Color(0xFFD69415);
+  static const Color goldenOrbitDashed = Color(0xFFC78510);
+
+  /// Standard Dashboard CIBIL card gradient: #3835A8 -> #242278
+  static const LinearGradient dashboardCardGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [cardGradientStart, cardGradientEnd],
+  );
+
+  /// Consistent card gradient alias used across all cards
+  static const LinearGradient cardGradient = dashboardCardGradient;
+  static const LinearGradient profileCardGradient = dashboardCardGradient;
+
+  /// Primary 2-color brand gradient across cards
+  static const LinearGradient primaryGradient = dashboardCardGradient;
+  static const LinearGradient primaryGradientDiagonal = dashboardCardGradient;
+
+  // ==========================================
+  // Brand Core Aliases (Mapped to Canonical Tokens)
+  // ==========================================
+  static const Color primaryPurple = indigo;
+  static const Color primaryButtonBackground = navy;
+  static const Color accentGold = amber;
+  static const Color accentLime = amber;
+  static const Color lightBackground = canvas;
+  static const Color darkCardBackground = navy;
+  static const Color background = navy;
+  static const Color backgroundSecondary = navy;
+
+  // Typography
+  static const Color textDark = text;
+  static const Color textDarkSecondary = muted;
+  static const Color textMuted = muted;
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = muted;
+  static const Color headingHighlight = indigo;
+
+  // Borders & Cards
+  static const Color border = line;
+  static const Color dashboardCardBorder = line;
+  static const Color backButtonBorder = line;
+  static const Color inputBorder = line;
+  static const Color lightButtonBorder = line;
+
+  // Splash & Hero Gradients (Original Midnight/Cosmic Theme)
   static const Color splashGradientTop = Color(0xFF4846C2);
   static const Color splashGradientBottom = Color(0xFF2D2C91);
-  static const Color background = Color(0xFF2D2C91);
-  static const Color backgroundSecondary = Color(0xFF24227E);
-
-  // Splash Orbits & Cosmic Effects
+  static const Color heroCardGradientTop = Color(0xFF4846C2);
+  static const Color heroCardGradientBottom = Color(0xFF2D2C91);
   static const Color splashHaloGlow = Color(0xFF524FBA);
   static const Color splashOrbitViolet = Color(0xFF6B67C6);
-  static const Color splashDottedOrbit = Color(0xFFFBC14E);
+  static const Color splashDottedOrbit = amber;
   static const Color splashGuideRing = Color(0xFF3835A0);
   static const Color orbitWhite = Color(0xB3FFFFFF);
   static const Color splashSatellite = Colors.white;
-
-  // Splash Pill / Badge ("Your financial partner")
   static const Color pillBackground = Color(0xFF26257C);
   static const Color pillBorder = Color(0xFF42419B);
-  static const Color pillDot = Color(0xFFFBC14E);
-
-  // Splash Progress Indicator & Text
-  static const Color progressActive = Color(0xFFFBC14E);
+  static const Color pillDot = amber;
+  static const Color progressActive = amber;
   static const Color progressInactive = Color(0xFF2C288A);
   static const Color splashStatusText = Color(0xFF6E719B);
 
-  // ==========================================
-  // Onboarding Screen Colors
-  // ==========================================
-  /// Screen overall background (Light grey/white)
-  static const Color lightBackground = Color(0xFFF8F9FE);
+  /// Splash screen full background gradient
+  static const LinearGradient splashGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [splashGradientTop, splashGradientBottom],
+  );
 
-  /// Hero Card Top Container Gradient
-  static const Color heroCardGradientTop = Color(0xFF4846C2);
-  static const Color heroCardGradientBottom = Color(0xFF2D2C91);
-  static const Color darkCardBackground = Color(0xFF2D2C91);
-
-  /// Central Globe/Circle inside Hero Card (visible light violet/indigo circle)
-  static const Color globeColor = Color(0xFF4845B6);
-
-  /// Orbits & Concentric Rings inside Hero Card (luminous cosmic violet lines matching Figma)
-  static const Color heroConcentricRings = Color(0xFF6B68D8);
-  static const Color orbitViolet = Color(0xFF7E7BE6);
-
-  /// Saturn Planet & Ring
+  // Hero Card Elements
+  static const Color globeColor = indigo;
+  static const Color heroConcentricRings = indigo;
+  static const Color orbitViolet = indigo;
   static const Color saturnPlanetColor = Colors.white;
-  static const Color saturnRingColor = Color(0xFFFBC14E);
-
-  /// Feature Pills at bottom of Hero Card ("Instant approval", etc.)
-  static const Color featurePillBackground = Color(0xFF272683);
-  static const Color featurePillBorder = Color(0xFF3E3D9C);
+  static const Color saturnRingColor = amber;
+  static const Color featurePillBackground = navy;
+  static const Color featurePillBorder = indigo;
   static const Color featurePillText = Colors.white;
 
-  /// Floating Card 1: "Loan approved" (White card)
+  // Floating Cards
   static const Color loanApprovedCardBackground = Colors.white;
-  static const Color checkmarkBox = Color(0xFFFBC14E);
-  static const Color checkmarkIcon = Color(0xFF212074);
-  static const Color cardTextDark = Color(0xFF1E2127);
-  static const Color cardAmountText = Color(0xFF212074);
-  static const Color cardSubtitleText = Color(0xFF787E9E);
+  static const Color checkmarkBox = amber;
+  static const Color checkmarkIcon = navy;
+  static const Color cardTextDark = text;
+  static const Color cardAmountText = navy;
+  static const Color cardSubtitleText = muted;
 
-  /// Floating Card 2: "CIBIL score" (Golden Amber card)
-  static const Color cibilCardBackground = Color(0xFFFBC14E);
-  static const Color cibilCardText = Color(0xFF212074);
-  static const Color cibilProgressTrack = Color(0x33212074);
-  static const Color cibilProgressFill = Color(0xFF212074);
+  static const Color cibilCardBackground = amber;
+  static const Color cibilCardText = navy;
+  static const Color cibilProgressTrack = Color(0x33252484);
+  static const Color cibilProgressFill = navy;
 
-  /// Page Indicator
-  static const Color indicatorActive = Color(0xFF524FBA);
-  static const Color indicatorInactive = Color(0xFFD8DCED);
+  // Page Indicator
+  static const Color indicatorActive = indigo;
+  static const Color indicatorInactive = line;
 
-  /// Onboarding Body Text
-  static const Color textDark = Color(0xFF1E2127);
-  static const Color textDarkSecondary = Color(0xFF727681);
-  static const Color headingHighlight = Color(0xFF524FBA);
-
-  /// Primary Button ("Create free account")
-  static const Color primaryButtonBackground = Color(0xFF212074);
+  // Buttons
   static const Color primaryButtonText = Colors.white;
-  static const Color primaryButtonArrowCircle = Color(0xFFFBC14E);
-  static const Color primaryButtonArrowIcon = Color(0xFF212074);
+  static const Color primaryButtonArrowCircle = amber;
+  static const Color primaryButtonArrowIcon = navy;
+  static const Color lightButtonBackground = inputFill;
+  static const Color secondaryButtonText = text;
 
-  /// Secondary Button ("I already have an account")
-  static const Color lightButtonBackground = Color(0xFFF1F6FC);
-  static const Color lightButtonBorder = Color(0xFFE2E7F4);
-  static const Color secondaryButtonText = Color(0xFF1E2127);
-
-  // General Text Colors
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB0B3D6);
-  static const Color textMuted = Color(0xFF6E719B);
-
-  // ==========================================
-  // Registration / Create Account & OTP Screen
-  // ==========================================
-  /// Stepper pill active (Primary Purple #524FBA)
-  static const Color stepperActive = Color(0xFF524FBA);
-  /// Stepper pill inactive
-  static const Color stepperInactive = Color(0xFFDDE3F0);
-
-  /// Back button squircle
+  // Stepper & Inputs
+  static const Color stepperActive = indigo;
+  static const Color stepperInactive = line;
   static const Color backButtonBackground = Colors.white;
-  static const Color backButtonBorder = Color(0xFFE2E7F4);
-  static const Color backButtonIcon = Color(0xFF1E2127);
+  static const Color backButtonIcon = text;
+  static const Color stepCounterText = text;
 
-  /// Step counter text (e.g. "1/3")
-  static const Color stepCounterText = Color(0xFF1E2127);
-
-  /// Input fields - Focused vs Unfocused
   static const Color fieldFocusedBackground = Colors.white;
-  static const Color fieldFocusedBorder = Color(0xFF524FBA);
-  static const Color fieldUnfocusedBackground = Color(0xFFEEF3FC);
+  static const Color fieldFocusedBorder = indigo;
+  static const Color fieldUnfocusedBackground = inputFill;
   static const Color fieldUnfocusedBorder = Colors.transparent;
 
-  static const Color inputBorder = Color(0xFFE2E7F4);
   static const Color inputBackground = Colors.white;
-  static const Color inputHintIcon = Color(0xFF98A6D4);
-  static const Color inputText = Color(0xFF1E2127);
-  static const Color inputLabel = Color(0xFF727681);
+  static const Color inputHintIcon = muted;
+  static const Color inputText = text;
+  static const Color inputLabel = muted;
 
-  /// Referral container & Add button
-  static const Color referralCardBackground = Color(0xFFEEF2FA);
-  static const Color referralCardBorder = Color(0xFFDCE4F5);
-  static const Color referralIcon = Color(0xFF524FBA);
-  static const Color referralText = Color(0xFF1E2127);
+  // Referral
+  static const Color referralCardBackground = indigoTint;
+  static const Color referralCardBorder = line;
+  static const Color referralIcon = indigo;
+  static const Color referralText = text;
   static const Color referralAddButtonBg = Colors.white;
-  static const Color referralAddButtonText = Color(0xFF524FBA);
-  static const Color referralAddButtonBorder = Color(0xFFDCE4F5);
+  static const Color referralAddButtonText = indigo;
+  static const Color referralAddButtonBorder = line;
 
-  /// Checkbox active fill
-  static const Color checkboxActive = Color(0xFF212074);
-  /// Terms & link text
-  static const Color linkText = Color(0xFF524FBA);
+  // Checkbox & Links
+  static const Color checkboxActive = navy;
+  static const Color linkText = indigo;
 
-  /// OTP cells
-  static const Color otpFilledBackground = Color(0xFF212074);
+  // OTP
+  static const Color otpFilledBackground = navy;
   static const Color otpFilledText = Colors.white;
-  static const Color otpActiveBorder = Color(0xFF524FBA);
+  static const Color otpActiveBorder = indigo;
   static const Color otpActiveBackground = Colors.white;
   static const Color otpEmptyBackground = Colors.white;
-  static const Color otpEmptyBorder = Color(0xFFE2E7F4);
+  static const Color otpEmptyBorder = line;
 
-  /// Security notice container
-  static const Color securityBoxBackground = Color(0xFFEEF1FD);
-  static const Color securityIcon = Color(0xFF6C74A6);
-  static const Color securityText = Color(0xFF6C74A6);
+  // Security box
+  static const Color securityBoxBackground = indigoTint;
+  static const Color securityIcon = muted;
+  static const Color securityText = muted;
 
-  /// Number pad keys
+  // Number Pad
   static const Color numPadKeyBackground = Colors.white;
-  static const Color numPadKeyBorder = Color(0xFFE8EEF8);
-  static const Color numPadKeyText = Color(0xFF1E2127);
-  static const Color numPadActionKeyBackground = Color(0xFFEEF2F8);
+  static const Color numPadKeyBorder = line;
+  static const Color numPadKeyText = text;
+  static const Color numPadActionKeyBackground = inputFill;
+  static const Color resendTimerText = muted;
+  static const Color resendLinkText = indigo;
 
-  /// Resend timer text
-  static const Color resendTimerText = Color(0xFF727681);
-  /// Resend link active text
-  static const Color resendLinkText = Color(0xFF524FBA);
-
-  // ==========================================
-  // MPIN Screens (Create MPIN & Login with MPIN)
-  // ==========================================
-  /// Create MPIN dark gradient
-  static const Color mpinDarkBackgroundTop = Color(0xFF4846C2);
-  static const Color mpinDarkBackgroundBottom = Color(0xFF242378);
-
-  /// MPIN row container
-  static const Color mpinFieldBackground = Color(0xFF26257C);
-  static const Color mpinFieldBorder = Color(0xFF3E3D9C);
-
-  /// MPIN indicator dots
-  static const Color mpinDotFilled = Color(0xFFFBC14E);
-  static const Color mpinDotEmpty = Color(0x336B68D8);
-  static const Color mpinDotEmptyBorder = Color(0xFF6B68D8);
-
-  /// Criteria rule pills
-  static const Color mpinRuleActiveBg = Color(0x33FBC14E);
+  // MPIN Screens
+  static const Color mpinDarkBackgroundTop = gradientTop;
+  static const Color mpinDarkBackgroundBottom = gradientBottom;
+  static const Color mpinFieldBackground = navy;
+  static const Color mpinFieldBorder = indigo;
+  static const Color mpinDotFilled = amber;
+  static const Color mpinDotEmpty = Color(0x335856D1);
+  static const Color mpinDotEmptyBorder = indigo;
+  static const Color mpinRuleActiveBg = Color(0x33FFC857);
   static const Color mpinRuleInactiveBg = Color(0x22FFFFFF);
   static const Color mpinRuleActiveText = Colors.white;
-  static const Color mpinRuleInactiveText = Color(0xFFB0B3D6);
-
-  /// Dark keypad for Create MPIN
-  static const Color mpinDarkKeyBackground = Color(0xFF26257C);
-  static const Color mpinDarkKeyBorder = Color(0xFF383792);
+  static const Color mpinRuleInactiveText = indigoTint;
+  static const Color mpinDarkKeyBackground = navy;
+  static const Color mpinDarkKeyBorder = indigo;
   static const Color mpinDarkKeyText = Colors.white;
-  static const Color mpinDarkActionKeyBackground = Color(0xFF363590);
-
-  /// "Set MPIN" Button (Golden Amber with Navy Text)
-  static const Color mpinSetButtonBackground = Color(0xFFFBC14E);
-  static const Color mpinSetButtonText = Color(0xFF212074);
-
-  /// Login with MPIN Top Card & Avatar
-  static const Color mpinAvatarBackground = Color(0xFFFBC14E);
-  static const Color mpinAvatarText = Color(0xFF212074);
-  static const Color mpinBiometricBackground = Color(0xFF524FBA);
+  static const Color mpinDarkActionKeyBackground = navy;
+  static const Color mpinSetButtonBackground = amber;
+  static const Color mpinSetButtonText = navy;
+  static const Color mpinAvatarBackground = amber;
+  static const Color mpinAvatarText = navy;
+  static const Color mpinBiometricBackground = indigo;
   static const Color mpinBiometricIcon = Colors.white;
 
-  // ==========================================
-  // Dashboard & Bottom Navigation Bar
-  // ==========================================
-  static const Color bottomNavBackground = Color(0xFF212074);
-  static const Color bottomNavSelected = Color(0xFFFBC14E);
+  // Dashboard & Bottom Nav
+  static const Color bottomNavBackground = navy;
+  static const Color bottomNavSelected = amber;
   static const Color bottomNavUnselected = Color(0xFF8C90C2);
-  static const Color bottomNavCenterButton = Color(0xFFFBC14E);
-  static const Color bottomNavCenterIcon = Color(0xFF212074);
-
-  static const Color dashboardCardBorder = Color(0xFFEAEFF8);
-  static const Color cibilGoodTagBg = Color(0xFFFBC14E);
-  static const Color cibilGoodTagText = Color(0xFF212074);
+  static const Color bottomNavCenterButton = amber;
+  static const Color bottomNavCenterIcon = navy;
+  static const Color cibilGoodTagBg = amber;
+  static const Color cibilGoodTagText = navy;
   static const Color reviewPillBg = Color(0xFFFEEEDB);
   static const Color reviewPillText = Color(0xFFB45309);
 
-  // ==========================================
-  // Aadhaar KYC Verification Screens
-  // ==========================================
-  static const Color kycStepperActivePill = Color(0xFF212074);
+  // KYC
+  static const Color kycStepperActivePill = navy;
   static const Color kycStepperActivePillText = Colors.white;
-  static const Color kycStepperActiveBadge = Color(0xFFFBC14E);
-  static const Color kycStepperActiveBadgeText = Color(0xFF212074);
+  static const Color kycStepperActiveBadge = amber;
+  static const Color kycStepperActiveBadgeText = navy;
   static const Color kycStepperInactivePill = Colors.white;
-  static const Color kycStepperInactivePillBorder = Color(0xFFE2E7F4);
-  static const Color kycStepperInactivePillText = Color(0xFF727681);
-  static const Color kycStepperInactiveBadge = Color(0xFFEEF1FD);
-  static const Color kycStepperInactiveBadgeText = Color(0xFF524FBA);
-  static const Color kycStepperLine = Color(0xFFDDE3F0);
+  static const Color kycStepperInactivePillBorder = line;
+  static const Color kycStepperInactivePillText = muted;
+  static const Color kycStepperInactiveBadge = indigoTint;
+  static const Color kycStepperInactiveBadgeText = indigo;
+  static const Color kycStepperLine = line;
 
   static const Color kycUploadCardBg = Colors.white;
-  static const Color kycUploadCardBorder = Color(0xFFE2E7F4);
-  static const Color kycUploadIconBg = Color(0xFFEEF1FD);
-  static const Color kycUploadIcon = Color(0xFF524FBA);
+  static const Color kycUploadCardBorder = line;
+  static const Color kycUploadIconBg = indigoTint;
+  static const Color kycUploadIcon = indigo;
   static const Color kycSuccessGreen = Color(0xFF22C55E);
   static const Color kycSuccessGreenBg = Color(0xFFDCFCE7);
 
-  static const Color kycNotLinkedCircleBg = Color(0xFFFEEEDB);
-  static const Color kycNotLinkedCircleBorder = Color(0xFFFBD38D);
-  static const Color kycNotLinkedIcon = Color(0xFFC05621);
+  static const Color kycNotLinkedCircleBg = Color(0xFFFFF2E6);
+  static const Color kycNotLinkedCircleBorder = Color(0xFFFED7AA);
+  static const Color kycNotLinkedIcon = Color(0xFFC2410C);
 
   static const Color kycDetailsCardBg = Colors.white;
-  static const Color kycDetailsCardBorder = Color(0xFFEAEFF8);
-  static const Color kycDetailsItemIconBg = Color(0xFFEEF1FD);
-  static const Color kycDetailsItemIcon = Color(0xFF524FBA);
+  static const Color kycDetailsCardBorder = line;
+  static const Color kycDetailsItemIconBg = indigoTint;
+  static const Color kycDetailsItemIcon = indigo;
 
   // ==========================================
-  // PAN KYC Verification Screens
+  // Semantic State Colors
   // ==========================================
-  static const Color panCardGold = Color(0xFFFBBF46);
-  static const Color panErrorCircleBg = Color(0xFFFFF0ED);
-  static const Color panErrorCircleBorder = Color(0xFFFED7AA);
-  static const Color panErrorIcon = Color(0xFFB91C1C);
-  static const Color panCaptureBg = Color(0xFF333099);
-  static const Color panFrameDashedBorder = Color(0xFFFBC14E);
+  static const Color successGreen = Color(0xFF22C55E);
+  static const Color successGreenBg = Color(0xFFDCFCE7);
+  static const Color warningAmber = Color(0xFFD97706);
+  static const Color warningAmberBg = Color(0xFFFEF3C7);
+  static const Color errorRed = Color(0xFFDC2626);
+  static const Color errorRedBg = Color(0xFFFFF1EE);
+
+  // PAN
+  static const Color panCardGold = amber;
+  static const Color panErrorCircleBg = errorRedBg;
+  static const Color panErrorCircleBorder = Color(0xFFFED7D2);
+  static const Color panErrorIcon = errorRed;
+  static const Color panCaptureBg = navy;
+  static const Color panFrameDashedBorder = amber;
 }

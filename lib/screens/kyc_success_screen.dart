@@ -94,7 +94,7 @@ class KycSuccessBody extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFEEF2F6), width: 1.2),
+        border: Border.all(color: AppColors.line, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -107,15 +107,15 @@ class KycSuccessBody extends StatelessWidget {
         children: [
           // 1. Full name
           _buildInfoRow(label: 'Full name', value: name),
-          const Divider(color: Color(0xFFF3F5F9), height: 18, thickness: 1),
+          const Divider(color: AppColors.line, height: 18, thickness: 1),
 
           // 2. Date of birth
           _buildInfoRow(label: 'Date of birth', value: dob),
-          const Divider(color: Color(0xFFF3F5F9), height: 18, thickness: 1),
+          const Divider(color: AppColors.line, height: 18, thickness: 1),
 
           // 3. Aadhaar
           _buildInfoRow(label: 'Aadhaar', value: aadhaar),
-          const Divider(color: Color(0xFFF3F5F9), height: 18, thickness: 1),
+          const Divider(color: AppColors.line, height: 18, thickness: 1),
 
           // 4. PAN with "Verified" badge
           _buildPanRow(pan: pan),
@@ -131,7 +131,7 @@ class KycSuccessBody extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Color(0xFF727681),
+            color: AppColors.muted,
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
           ),
@@ -139,7 +139,7 @@ class KycSuccessBody extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-            color: Color(0xFF1E2127),
+            color: AppColors.textDark,
             fontSize: 13.5,
             fontWeight: FontWeight.w800,
           ),
@@ -155,7 +155,7 @@ class KycSuccessBody extends StatelessWidget {
         const Text(
           'PAN',
           style: TextStyle(
-            color: Color(0xFF727681),
+            color: AppColors.muted,
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
           ),
@@ -166,7 +166,7 @@ class KycSuccessBody extends StatelessWidget {
             Text(
               pan,
               style: const TextStyle(
-                color: Color(0xFF1E2127),
+                color: AppColors.textDark,
                 fontSize: 13.5,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
@@ -176,13 +176,13 @@ class KycSuccessBody extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: const Color(0xFFE2F7D8),
+                color: AppColors.successGreenBg,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
                 'Verified',
                 style: TextStyle(
-                  color: Color(0xFF15803D),
+                  color: AppColors.successGreen,
                   fontSize: 10.5,
                   fontWeight: FontWeight.w700,
                 ),
@@ -211,7 +211,7 @@ class KycSuccessBody extends StatelessWidget {
             child: Text(
               'Your data is encrypted and used only for this loan application, as per RBI KYC norms.',
               style: TextStyle(
-                color: Color(0xFF6B7280),
+                color: AppColors.muted,
                 fontSize: 11,
                 height: 1.35,
               ),
@@ -277,23 +277,23 @@ class KycSuccessBody extends StatelessWidget {
             width: double.infinity,
             height: 50,
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F6FC),
+              color: AppColors.inputFill,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFDDE3F0), width: 1.2),
+              border: Border.all(color: AppColors.line, width: 1.2),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   Icons.speed_rounded,
-                  color: Color(0xFF212074),
+                  color: AppColors.navy,
                   size: 18,
                 ),
                 SizedBox(width: 8),
                 Text(
                   'Check my credit score',
                   style: TextStyle(
-                    color: Color(0xFF212074),
+                    color: AppColors.navy,
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -311,7 +311,7 @@ class KycSuccessBody extends StatelessWidget {
               'Download Receipt',
               'KYC acknowledgement receipt saved to downloads.',
               snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: const Color(0xFF212074),
+              backgroundColor: AppColors.navy,
               colorText: Colors.white,
               margin: const EdgeInsets.all(16),
               duration: const Duration(seconds: 2),
@@ -329,14 +329,14 @@ class KycSuccessBody extends StatelessWidget {
               children: [
                 Icon(
                   Icons.download_rounded,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.muted,
                   size: 16,
                 ),
                 SizedBox(width: 6),
                 Text(
                   'Download receipt',
                   style: TextStyle(
-                    color: Color(0xFF6B7280),
+                    color: AppColors.muted,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -423,14 +423,14 @@ class _AnimatedGoldenHeroCardState extends State<_AnimatedGoldenHeroCard>
                   Container(
                     width: 98,
                     height: 98,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF212074),
+                    decoration: BoxDecoration(
+                      color: AppColors.navy,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Color(0x33212074),
+                          color: AppColors.navy.withValues(alpha: 0.2),
                           blurRadius: 16,
-                          offset: Offset(0, 6),
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
@@ -461,7 +461,7 @@ class _AnimatedGoldenHeroCardState extends State<_AnimatedGoldenHeroCard>
                         "You're verified!",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF212074),
+                          color: AppColors.navy,
                           fontSize: 27,
                           fontWeight: FontWeight.w900,
                           letterSpacing: -0.5,
@@ -487,7 +487,7 @@ class _AnimatedGoldenHeroCardState extends State<_AnimatedGoldenHeroCard>
                     'Aadhaar & PAN matched successfully',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF212074),
+                      color: AppColors.navy,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -516,14 +516,14 @@ class _SuccessCardCosmicPainter extends CustomPainter {
 
     // 1. Inner solid guide circle in warm amber with subtle breathing glow
     final innerOrbitPaint = Paint()
-      ..color = const Color(0xFFD69415).withValues(alpha: 0.48 + 0.08 * pulse)
+      ..color = AppColors.goldenOrbitInner.withValues(alpha: 0.48 + 0.08 * pulse)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.1;
     canvas.drawCircle(center, 78, innerOrbitPaint);
 
     // 2. Middle solid guide circle in warm amber
     final middleOrbitPaint = Paint()
-      ..color = const Color(0xFFD69415).withValues(alpha: 0.36 + 0.06 * pulse)
+      ..color = AppColors.goldenOrbitMiddle.withValues(alpha: 0.36 + 0.06 * pulse)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.1;
     canvas.drawCircle(center, 114, middleOrbitPaint);
@@ -534,7 +534,7 @@ class _SuccessCardCosmicPainter extends CustomPainter {
     const double tilt = -24 * math.pi / 180;
 
     final dashedOrbitPaint = Paint()
-      ..color = const Color(0xFFC78510).withValues(alpha: 0.55)
+      ..color = AppColors.goldenOrbitDashed.withValues(alpha: 0.55)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 
@@ -574,7 +574,7 @@ class _SuccessCardCosmicPainter extends CustomPainter {
     canvas.save();
     canvas.translate(posA.dx, posA.dy);
     canvas.rotate(tangentA + (math.pi / 4));
-    final blueSquarePaint = Paint()..color = const Color(0xFF2C2A8E);
+    final blueSquarePaint = Paint()..color = AppColors.navy;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset.zero, width: 13, height: 13),
@@ -602,7 +602,7 @@ class _SuccessCardCosmicPainter extends CustomPainter {
 
     // Particle C: Blue circular dot (initial phase 0.95)
     final posC = getOrbitPoint(0.95);
-    final blueDotPaint = Paint()..color = const Color(0xFF212074);
+    final blueDotPaint = Paint()..color = AppColors.navy;
     canvas.drawCircle(posC, 6.5, blueDotPaint);
   }
 
@@ -649,7 +649,7 @@ class _LeftTrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF212074)
+      ..color = AppColors.navy
       ..style = PaintingStyle.fill;
 
     final path = Path()

@@ -264,7 +264,7 @@ class ResetMpinScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: isValid ? const Color(0xFFEDEEFC) : const Color(0xFFF1F4F9),
+        color: isValid ? AppColors.indigoTint : AppColors.canvas,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isValid

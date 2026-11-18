@@ -52,7 +52,7 @@ class KycHelpBottomSheet extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF1FD),
+                  color: AppColors.indigoTint,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -145,9 +145,9 @@ class KycHelpBottomSheet extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FE),
+              color: AppColors.canvas,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              border: Border.all(color: AppColors.line, width: 1),
             ),
             child: const Row(
               children: [
@@ -212,7 +212,7 @@ class KycHelpBottomSheet extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF1FD),
+            color: AppColors.indigoTint,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 18, color: AppColors.primaryPurple),

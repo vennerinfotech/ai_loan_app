@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 import '../models/registration_step.dart';
 import '../screens/login_with_mpin_screen.dart';
 
@@ -123,7 +124,7 @@ class RegistrationController extends GetxController
         'Required',
         'Please enter your full name',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF1E2127),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
@@ -135,7 +136,7 @@ class RegistrationController extends GetxController
         'Invalid Mobile',
         'Please enter a valid 10-digit mobile number',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF1E2127),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
@@ -147,7 +148,7 @@ class RegistrationController extends GetxController
         'Terms Required',
         'Please agree to the Terms & Privacy Policy to continue',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF1E2127),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),

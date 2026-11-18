@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:get/get.dart';
 import '../../theme/app_colors.dart';
+import 'package:get/get.dart';
 import '../../controller/applicant_details_controller.dart';
 
 /// Screen for adding a new co-applicant (Reference Image Right Screen)
@@ -42,7 +42,7 @@ class AddCoApplicantScreen extends StatelessWidget {
                     const Text(
                       'A co-applicant with steady income can raise your loan eligibility.',
                       style: TextStyle(
-                        color: Color(0xFF64748B),
+                        color: AppColors.muted,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         height: 1.35,
@@ -174,7 +174,7 @@ class AddCoApplicantScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -216,17 +216,17 @@ class AddCoApplicantScreen extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF212074) : Colors.white,
+                color: isSelected ? AppColors.navy : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isSelected ? const Color(0xFF212074) : const Color(0xFFE2E8F0),
+                  color: isSelected ? AppColors.navy : AppColors.line,
                   width: 1.2,
                 ),
               ),
               child: Text(
                 rel,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF334155),
+                  color: isSelected ? Colors.white : AppColors.textDark,
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 ),
@@ -251,7 +251,7 @@ class AddCoApplicantScreen extends StatelessWidget {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF1FF),
+        color: AppColors.inputFill,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -270,7 +270,7 @@ class AddCoApplicantScreen extends StatelessWidget {
           Container(
             width: 1,
             height: 22,
-            color: const Color(0xFFCBD5E1),
+            color: AppColors.line,
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -278,14 +278,14 @@ class AddCoApplicantScreen extends StatelessWidget {
               controller: controller.mobileNumberController,
               keyboardType: TextInputType.phone,
               style: const TextStyle(
-                color: Color(0xFF4340BE),
+                color: AppColors.indigo,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
               decoration: const InputDecoration(
                 hintText: '98765 43210',
                 hintStyle: TextStyle(
-                  color: Color(0xFF7E97DC),
+                  color: AppColors.muted,
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
@@ -308,21 +308,21 @@ class AddCoApplicantScreen extends StatelessWidget {
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF1FF),
+        color: AppColors.inputFill,
         borderRadius: BorderRadius.circular(14),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         style: const TextStyle(
-          color: Color(0xFF4340BE),
+          color: AppColors.indigo,
           fontSize: 14.5,
           fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF7E97DC),
+            color: AppColors.muted,
             fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
@@ -338,7 +338,7 @@ class AddCoApplicantScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF1FE),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -346,7 +346,7 @@ class AddCoApplicantScreen extends StatelessWidget {
         children: const [
           Icon(
             Icons.shield_outlined,
-            color: Color(0xFF4340BE),
+            color: AppColors.indigo,
             size: 20,
           ),
           SizedBox(width: 12),
@@ -354,7 +354,7 @@ class AddCoApplicantScreen extends StatelessWidget {
             child: Text(
               'We\'ll send them a link to verify their own Aadhaar and PAN — you don\'t need their documents.',
               style: TextStyle(
-                color: Color(0xFF475569),
+                color: AppColors.muted,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w500,
                 height: 1.4,
@@ -384,7 +384,7 @@ class AddCoApplicantScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => Get.back(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF1F4FA),
+                  backgroundColor: AppColors.line,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -411,7 +411,7 @@ class AddCoApplicantScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: controller.addCoApplicant,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -431,7 +431,7 @@ class AddCoApplicantScreen extends StatelessWidget {
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFFFDB022),
+                      color: AppColors.amber,
                       size: 16,
                     ),
                   ],
@@ -487,10 +487,10 @@ class _CoAppFocusableFieldState extends State<_CoAppFocusableField> {
       duration: const Duration(milliseconds: 180),
       height: 50,
       decoration: BoxDecoration(
-        color: _isFocused ? Colors.white : const Color(0xFFEBF1FF),
+        color: _isFocused ? Colors.white : AppColors.inputFill,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _isFocused ? const Color(0xFF7C82F6) : Colors.transparent,
+          color: _isFocused ? AppColors.indigo : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -505,7 +505,7 @@ class _CoAppFocusableFieldState extends State<_CoAppFocusableField> {
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF7E97DC),
+            color: AppColors.muted,
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
           ),

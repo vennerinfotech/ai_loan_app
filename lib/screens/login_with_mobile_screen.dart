@@ -88,14 +88,7 @@ class LoginWithMobileScreen extends StatelessWidget {
       width: double.infinity,
       height: 245,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            AppColors.heroCardGradientTop,
-            AppColors.heroCardGradientBottom,
-          ],
-        ),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(28),
       ),
       clipBehavior: Clip.antiAlias,

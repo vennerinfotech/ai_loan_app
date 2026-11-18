@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
@@ -68,7 +69,7 @@ class ApplicationStatusScreen extends StatelessWidget {
         : Get.put(ApplyLoanController());
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FC),
+      backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: Column(
           children: [
@@ -88,7 +89,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                     const Text(
                       'Your progress',
                       style: TextStyle(
-                        color: Color(0xFF1E2127),
+                        color: AppColors.textDark,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                         letterSpacing: -0.3,
@@ -116,11 +117,11 @@ class ApplicationStatusScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2A8E),
+        color: AppColors.navy,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2C2A8E).withValues(alpha: 0.35),
+            color: AppColors.navy.withValues(alpha: 0.35),
             blurRadius: 14,
             offset: const Offset(0, 5),
           ),
@@ -195,7 +196,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                   () => Text(
                     '${controller.selectedLoanType.value} · ${controller.selectedTenureYears.value} years',
                     style: const TextStyle(
-                      color: Color(0xFFD2D6F5),
+                      color: AppColors.muted,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -228,7 +229,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                     Text(
                       '2 of 6 complete',
                       style: TextStyle(
-                        color: Color(0xFFB4B9E8),
+                        color: AppColors.muted,
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -268,7 +269,7 @@ class ApplicationStatusScreen extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isActive
-                  ? const Color(0xFFFDB022)
+                  ? AppColors.amber
                   : Colors.white.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(3),
             ),
@@ -291,9 +292,9 @@ class ApplicationStatusScreen extends StatelessWidget {
   }
 
   Widget _buildStepRow(ProgressStepItem step, bool isLast) {
-    Color lineColor = const Color(0xFFE2E6F2);
+    Color lineColor = AppColors.line;
     if (step.status == ApplicationStepStatus.done) {
-      lineColor = const Color(0xFFFDB022);
+      lineColor = AppColors.amber;
     }
 
     return IntrinsicHeight(
@@ -332,8 +333,8 @@ class ApplicationStatusScreen extends StatelessWidget {
                           step.title,
                           style: TextStyle(
                             color: step.status == ApplicationStepStatus.pending
-                                ? const Color(0xFF4B5563)
-                                : const Color(0xFF1E2127),
+                                ? AppColors.muted
+                                : AppColors.textDark,
                             fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                           ),
@@ -343,8 +344,8 @@ class ApplicationStatusScreen extends StatelessWidget {
                           step.subtitle,
                           style: TextStyle(
                             color: step.status == ApplicationStepStatus.pending
-                                ? const Color(0xFF9CA3AF)
-                                : const Color(0xFF6B7280),
+                                ? AppColors.muted
+                                : AppColors.muted,
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -373,13 +374,13 @@ class ApplicationStatusScreen extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: const BoxDecoration(
-            color: Color(0xFFFDB022),
+            color: AppColors.amber,
             shape: BoxShape.circle,
           ),
           child: const Center(
             child: Icon(
               Icons.check_rounded,
-              color: Color(0xFF212074),
+              color: AppColors.navy,
               size: 16,
             ),
           ),
@@ -389,7 +390,7 @@ class ApplicationStatusScreen extends StatelessWidget {
           width: 28,
           height: 28,
           decoration: const BoxDecoration(
-            color: Color(0xFF4340BE),
+            color: AppColors.indigo,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -411,7 +412,7 @@ class ApplicationStatusScreen extends StatelessWidget {
             color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color(0xFFD1D5DB),
+              color: AppColors.line,
               width: 1.5,
             ),
           ),
@@ -422,17 +423,17 @@ class ApplicationStatusScreen extends StatelessWidget {
   /// Status Pill Badge
   Widget _buildStatusPillBadge(ApplicationStepStatus status) {
     String text = 'Pending';
-    Color bgColor = const Color(0xFFF3F4F6);
-    Color textColor = const Color(0xFF6B7280);
+    Color bgColor = AppColors.canvas;
+    Color textColor = AppColors.muted;
 
     if (status == ApplicationStepStatus.done) {
       text = 'Done';
-      bgColor = const Color(0xFFE2F7D8);
-      textColor = const Color(0xFF15803D);
+      bgColor = AppColors.successGreenBg;
+      textColor = AppColors.successGreen;
     } else if (status == ApplicationStepStatus.inProgress) {
       text = 'In progress';
-      bgColor = const Color(0xFFEEF1FD);
-      textColor = const Color(0xFF4340BE);
+      bgColor = AppColors.indigoTint;
+      textColor = AppColors.indigo;
     }
 
     return Container(
@@ -465,7 +466,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                 'Finsphere Support',
                 'Connecting to your loan advisor...',
                 snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: const Color(0xFF212074),
+                backgroundColor: AppColors.navy,
                 colorText: Colors.white,
                 margin: const EdgeInsets.all(16),
                 duration: const Duration(seconds: 2),
@@ -478,7 +479,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFFE2E8F0),
+                  color: AppColors.line,
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -492,7 +493,7 @@ class ApplicationStatusScreen extends StatelessWidget {
               child: const Center(
                 child: Icon(
                   Icons.chat_bubble_outline_rounded,
-                  color: Color(0xFF1E2127),
+                  color: AppColors.textDark,
                   size: 20,
                 ),
               ),
@@ -509,7 +510,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                   Get.offAll(() => const MainNavScreen());
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -529,7 +530,7 @@ class ApplicationStatusScreen extends StatelessWidget {
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFFFDB022),
+                      color: AppColors.amber,
                       size: 18,
                     ),
                   ],
@@ -554,12 +555,12 @@ class _ApplicationStatusOrbitPainter extends CustomPainter {
     final anchor = Offset(size.width - 65, 38);
 
     final orbitPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..color = AppColors.indigo.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
 
     final faintPaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.16)
+      ..color = AppColors.indigo.withValues(alpha: 0.16)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -578,7 +579,7 @@ class _ApplicationStatusOrbitPainter extends CustomPainter {
         width: 290,
         height: 78,
       ),
-      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
+      orbitPaint..color = AppColors.indigo.withValues(alpha: 0.32),
     );
     canvas.restore();
   }

@@ -155,7 +155,7 @@ class ForgotMpinScreen extends StatelessWidget {
       width: 108,
       height: 108,
       decoration: BoxDecoration(
-        color: const Color(0xFF24227E),
+        color: AppColors.navy,
         borderRadius: BorderRadius.circular(28),
       ),
       alignment: Alignment.center,

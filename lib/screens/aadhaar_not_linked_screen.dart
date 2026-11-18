@@ -68,7 +68,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
                     'No problem — upload a photo of your Aadhaar card instead and we\'ll verify it manually.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF475569),
+                      color: AppColors.muted,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w500,
                       height: 1.45,
@@ -97,22 +97,22 @@ class AadhaarNotLinkedBody extends StatelessWidget {
       height: 108,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF7ED),
+        color: AppColors.kycNotLinkedCircleBg,
         shape: BoxShape.circle,
         border: Border.all(
-          color: const Color(0xFFFED7AA),
+          color: AppColors.kycNotLinkedCircleBorder,
           width: 1.5,
         ),
       ),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFFFF2E6),
+          color: AppColors.kycNotLinkedCircleBg,
           shape: BoxShape.circle,
         ),
         child: const Center(
           child: Icon(
             Icons.mobile_off_rounded,
-            color: Color(0xFFC2410C),
+            color: AppColors.kycNotLinkedIcon,
             size: 46,
           ),
         ),
@@ -139,9 +139,9 @@ class AadhaarNotLinkedBody extends StatelessWidget {
       child: Column(
         children: [
           _buildStepRow(1, 'Upload front & back of Aadhaar'),
-          const Divider(color: Color(0xFFF1F4FA), height: 22, thickness: 1),
+          const Divider(color: AppColors.line, height: 22, thickness: 1),
           _buildStepRow(2, 'Review the details we read'),
-          const Divider(color: Color(0xFFF1F4FA), height: 22, thickness: 1),
+          const Divider(color: AppColors.line, height: 22, thickness: 1),
           _buildStepRow(3, 'Our team confirms it'),
         ],
       ),
@@ -155,14 +155,14 @@ class AadhaarNotLinkedBody extends StatelessWidget {
           width: 26,
           height: 26,
           decoration: const BoxDecoration(
-            color: Color(0xFF212074),
+            color: AppColors.navy,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
               '$number',
               style: const TextStyle(
-                color: Color(0xFFFBC14E),
+                color: AppColors.amber,
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
               ),

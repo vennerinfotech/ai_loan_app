@@ -161,7 +161,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const Text(
                       'Changing your name needs a fresh KYC check. Mobile number is linked to your account.',
                       style: TextStyle(
-                        color: Color(0xFF64748B),
+                        color: AppColors.muted,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         height: 1.4,
@@ -197,7 +197,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -238,7 +238,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
-                color: const Color(0xFF7C82F6).withValues(alpha: 0.6),
+                color: AppColors.indigo.withValues(alpha: 0.6),
                 width: 1.5,
               ),
             ),
@@ -251,7 +251,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 82,
                 clipBehavior: Clip.antiAlias,
                 decoration: const BoxDecoration(
-                  color: Color(0xFFFFB800),
+                  color: AppColors.amber,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -265,7 +265,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     : const Text(
                         'AM',
                         style: TextStyle(
-                          color: Color(0xFF1E2127),
+                          color: AppColors.textDark,
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
                         ),
@@ -291,7 +291,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     'Photo Selected',
                     'Photo preview loaded.',
                     snackPosition: SnackPosition.TOP,
-                    backgroundColor: const Color(0xFF212074),
+                    backgroundColor: AppColors.navy,
                     colorText: Colors.white,
                   );
                 }
@@ -300,7 +300,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF212074),
+                  color: AppColors.navy,
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
@@ -313,7 +313,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
                 child: const Icon(
                   Icons.camera_alt_rounded,
-                  color: Color(0xFFFDB022),
+                  color: AppColors.amber,
                   size: 14,
                 ),
               ),
@@ -330,7 +330,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFEFFD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -349,13 +349,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Icon(
                 Icons.lock_outline_rounded,
                 size: 14,
-                color: Color(0xFF4340BE),
+                color: AppColors.indigo,
               ),
               SizedBox(width: 4),
               Text(
                 'Locked',
                 style: TextStyle(
-                  color: Color(0xFF4340BE),
+                  color: AppColors.indigo,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -385,7 +385,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Get.back();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF1F4FA),
+                  backgroundColor: AppColors.line,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -422,12 +422,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     'Profile Saved',
                     'Your profile details and picture have been updated.',
                     snackPosition: SnackPosition.TOP,
-                    backgroundColor: const Color(0xFF212074),
+                    backgroundColor: AppColors.navy,
                     colorText: Colors.white,
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF212074),
+                  backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -447,7 +447,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Color(0xFFFDB022),
+                      color: AppColors.amber,
                       size: 16,
                     ),
                   ],
@@ -462,8 +462,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 }
 
 /// Dynamically focusable input field:
-/// - Unfocused: Soft-blue background Color(0xFFEBF1FF) without active border
-/// - Focused: White background with active purple border Color(0xFF7C82F6)
+/// - Unfocused: Soft-blue background AppColors.inputFill without active border
+/// - Focused: White background with active purple border AppColors.indigo
 class _FocusableInputField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
@@ -507,10 +507,10 @@ class _FocusableInputFieldState extends State<_FocusableInputField> {
       duration: const Duration(milliseconds: 180),
       height: 50,
       decoration: BoxDecoration(
-        color: _isFocused ? Colors.white : const Color(0xFFEBF1FF),
+        color: _isFocused ? Colors.white : AppColors.inputFill,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _isFocused ? const Color(0xFF7C82F6) : Colors.transparent,
+          color: _isFocused ? AppColors.indigo : Colors.transparent,
           width: 1.5,
         ),
       ),
@@ -526,7 +526,7 @@ class _FocusableInputFieldState extends State<_FocusableInputField> {
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF7E97DC),
+            color: AppColors.muted,
             fontSize: 14.5,
             fontWeight: FontWeight.w600,
           ),

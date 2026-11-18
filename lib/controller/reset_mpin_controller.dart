@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../theme/app_colors.dart';
 import '../screens/login_with_mpin_screen.dart';
 
 /// GetX controller for "Reset MPIN" (Set New MPIN) screen after Forgot MPIN OTP verification.
@@ -85,7 +86,7 @@ class ResetMpinController extends GetxController {
         'MPIN Updated',
         'Your new MPIN has been set successfully. Please log in.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF212074),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),

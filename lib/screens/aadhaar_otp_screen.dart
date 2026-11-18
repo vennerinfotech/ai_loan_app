@@ -119,7 +119,7 @@ class AadhaarOtpBody extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFFC7D0EE),
+          color: AppColors.line,
           width: 1.2,
         ),
       ),
@@ -205,11 +205,11 @@ class AadhaarOtpBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF333099),
+        gradient: AppColors.primaryGradientDiagonal,
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF333099).withValues(alpha: 0.25),
+            color: AppColors.navy.withValues(alpha: 0.25),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -250,7 +250,7 @@ class AadhaarOtpBody extends StatelessWidget {
                 Text(
                   'OTP e-KYC fills your details automatically — no photos needed.',
                   style: TextStyle(
-                    color: Color(0xFFC7CAE8),
+                    color: AppColors.indigoTint,
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -268,9 +268,9 @@ class AadhaarOtpBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFD6DCF6), width: 1),
+        border: Border.all(color: AppColors.line, width: 1),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,7 +285,7 @@ class AadhaarOtpBody extends StatelessWidget {
             child: Text(
               'We only read name, DOB, gender and address from UIDAI. Your biometrics are never accessed.',
               style: TextStyle(
-                color: Color(0xFF4A4E69),
+                color: AppColors.muted,
                 fontSize: 12,
                 height: 1.4,
               ),
@@ -308,7 +308,7 @@ class AadhaarOtpBody extends StatelessWidget {
             onPressed: controller.isOtpValid ? controller.verifyOtp : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryButtonBackground,
-              disabledBackgroundColor: const Color(0xFF212074).withValues(alpha: 0.5),
+              disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),

@@ -85,7 +85,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(color: AppColors.line),
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
@@ -111,7 +111,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             () => Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF0FD),
+                color: AppColors.indigoTint,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
@@ -155,17 +155,17 @@ class ActiveApplicationsScreen extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF242278) : Colors.white,
+                      color: isSelected ? AppColors.navy : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF242278)
-                            : const Color(0xFFE2E8F0),
+                            ? AppColors.navy
+                            : AppColors.line,
                       ),
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF242278)
+                                color: AppColors.navy
                                     .withValues(alpha: 0.18),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
@@ -177,7 +177,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                       filters[index],
                       style: TextStyle(
                         color:
-                            isSelected ? Colors.white : const Color(0xFF64748B),
+                            isSelected ? Colors.white : AppColors.muted,
                         fontSize: 12.5,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -260,7 +260,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                       Text(
                         app.id,
                         style: const TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.muted,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -280,7 +280,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: AppColors.canvas,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
@@ -292,7 +292,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                       const Text(
                         'Loan amount',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.muted,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -314,7 +314,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                       const Text(
                         'Tenure',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.muted,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -336,7 +336,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                       const Text(
                         'Est. EMI',
                         style: TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: AppColors.muted,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -363,10 +363,10 @@ class ActiveApplicationsScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: app.progress,
-                backgroundColor: const Color(0xFFEAEFF8),
+                backgroundColor: AppColors.line,
                 valueColor: AlwaysStoppedAnimation<Color>(
                   app.statusType == ApplicationStatusType.approved
-                      ? const Color(0xFF16A34A)
+                      ? AppColors.successGreen
                       : AppColors.primaryPurple,
                 ),
                 minHeight: 5,
@@ -383,7 +383,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                   child: Text(
                     app.currentStep,
                     style: const TextStyle(
-                      color: Color(0xFF64748B),
+                      color: AppColors.muted,
                       fontSize: 11.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -402,7 +402,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFF1F5F9)),
+            const Divider(height: 1, color: AppColors.canvas),
             const SizedBox(height: 10),
 
             // Bottom Track Link
@@ -412,7 +412,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                 Text(
                   'Applied on ${app.appliedDate}',
                   style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: AppColors.muted,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -450,20 +450,20 @@ class ActiveApplicationsScreen extends StatelessWidget {
 
     switch (type) {
       case ApplicationStatusType.approved:
-        bg = const Color(0xFFDCFCE7);
-        textColor = const Color(0xFF15803D);
+        bg = AppColors.successGreenBg;
+        textColor = AppColors.successGreen;
         break;
       case ApplicationStatusType.inReview:
         bg = AppColors.reviewPillBg;
         textColor = AppColors.reviewPillText;
         break;
       case ApplicationStatusType.rejected:
-        bg = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFFDC2626);
+        bg = AppColors.errorRedBg;
+        textColor = AppColors.errorRed;
         break;
       case ApplicationStatusType.pending:
-        bg = const Color(0xFFF1F5F9);
-        textColor = const Color(0xFF64748B);
+        bg = AppColors.canvas;
+        textColor = AppColors.muted;
         break;
     }
 
@@ -493,7 +493,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
           Icon(
             Icons.assignment_outlined,
             size: 48,
-            color: Color(0xFFCBD5E1),
+            color: AppColors.line,
           ),
           SizedBox(height: 12),
           Text(
@@ -508,7 +508,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
           Text(
             'Try selecting another filter above',
             style: TextStyle(
-              color: Color(0xFF94A3B8),
+              color: AppColors.muted,
               fontSize: 12.5,
             ),
           ),
@@ -534,15 +534,11 @@ class ActiveApplicationsScreen extends StatelessWidget {
             width: double.infinity,
             height: 50,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF242278), Color(0xFF3835A8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              gradient: AppColors.dashboardCardGradient,
               borderRadius: BorderRadius.circular(14),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF242278).withValues(alpha: 0.22),
+                  color: AppColors.cardGradientEnd.withValues(alpha: 0.22),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -592,14 +588,14 @@ class ActiveApplicationsScreen extends StatelessWidget {
   Color _getLoanIconBg(String loanType) {
     switch (loanType.toLowerCase()) {
       case 'home_loan':
-        return const Color(0xFFEEF1FD);
+        return AppColors.indigoTint;
       case 'personal_loan':
-        return const Color(0xFFE0F2FE);
+        return AppColors.inputFill;
       case 'auto_loan':
       case 'vehicle_loan':
-        return const Color(0xFFDCFCE7);
+        return AppColors.successGreenBg;
       default:
-        return const Color(0xFFF1F5F9);
+        return AppColors.canvas;
     }
   }
 
@@ -608,10 +604,10 @@ class ActiveApplicationsScreen extends StatelessWidget {
       case 'home_loan':
         return AppColors.primaryPurple;
       case 'personal_loan':
-        return const Color(0xFF0284C7);
+        return AppColors.indigo;
       case 'auto_loan':
       case 'vehicle_loan':
-        return const Color(0xFF15803D);
+        return AppColors.successGreen;
       default:
         return AppColors.textDark;
     }

@@ -136,11 +136,11 @@ class EnterPanBody extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC7D0EE), width: 1.2),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC7D0EE), width: 1.2),
+          borderSide: const BorderSide(color: AppColors.line, width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -179,7 +179,7 @@ class EnterPanBody extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
             decoration: BoxDecoration(
-              color: const Color(0xFFEEF1FD),
+              color: AppColors.indigoTint,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -253,7 +253,7 @@ class EnterPanBody extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: const Color(0xFFB8C2EC),
+            color: AppColors.line,
             width: 1.1,
           ),
         ),
@@ -285,9 +285,9 @@ class EnterPanBody extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF1FD),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD6DCF6), width: 1),
+        border: Border.all(color: AppColors.line, width: 1),
       ),
       child: Row(
         children: [

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:ai_loan_app/theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'cibil_score_screen.dart';
@@ -77,7 +78,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2C2A8E),
+      backgroundColor: AppColors.navy,
       body: SafeArea(
         child: Column(
           children: [
@@ -138,7 +139,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
             const Text(
               'Connecting to CIBIL & CRIF bureaus...',
               style: TextStyle(
-                color: Color(0xFFC7CAE8),
+                color: AppColors.indigoTint,
                 fontSize: 13,
                 fontWeight: FontWeight.w400,
               ),
@@ -153,7 +154,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF222072).withValues(alpha: 0.72),
+                  color: AppColors.navy.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.12),
@@ -208,7 +209,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
               child: Text(
                 'Please keep the app open · View summary',
                 style: TextStyle(
-                  color: Color(0xFF9D9BC9),
+                  color: AppColors.indigoTint,
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
                 ),
@@ -247,7 +248,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
             label,
             style: TextStyle(
               color: status == _StepStatus.pending
-                  ? const Color(0xFF8E8CB8)
+                  ? AppColors.indigoTint.withValues(alpha: 0.6)
                   : Colors.white,
               fontSize: 14.5,
               fontWeight: status == _StepStatus.pending
@@ -267,26 +268,26 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
           width: 24,
           height: 24,
           decoration: const BoxDecoration(
-            color: Color(0xFFFDB022),
+            color: AppColors.amber,
             shape: BoxShape.circle,
           ),
           child: const Center(
             child: Icon(
               Icons.check_rounded,
-              color: Color(0xFF212074),
+              color: AppColors.navy,
               size: 16,
             ),
           ),
         );
 
       case _StepStatus.loading:
-        return const SizedBox(
+        return SizedBox(
           width: 24,
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            backgroundColor: Color(0xFF3835A0),
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFDB022)),
+            backgroundColor: AppColors.indigo.withValues(alpha: 0.3),
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.amber),
           ),
         );
 
@@ -297,7 +298,7 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: const Color(0xFF5D5AA8),
+              color: AppColors.indigo.withValues(alpha: 0.5),
               width: 1.8,
             ),
           ),
@@ -320,13 +321,13 @@ class _FetchingCosmicOrbitPainter extends CustomPainter {
 
     // 1. Concentric guide circles
     final guideCirclePaint1 = Paint()
-      ..color = const Color(0xFF5350B8).withValues(alpha: 0.35)
+      ..color = AppColors.indigo.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(center, 96, guideCirclePaint1);
 
     final guideCirclePaint2 = Paint()
-      ..color = const Color(0xFF5350B8).withValues(alpha: 0.22)
+      ..color = AppColors.indigo.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawCircle(center, 140, guideCirclePaint2);
@@ -337,7 +338,7 @@ class _FetchingCosmicOrbitPainter extends CustomPainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(tilt1);
     final faintEllipsePaint = Paint()
-      ..color = const Color(0xFF5653C2).withValues(alpha: 0.38)
+      ..color = AppColors.indigo.withValues(alpha: 0.38)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.15;
     canvas.drawOval(
@@ -350,7 +351,7 @@ class _FetchingCosmicOrbitPainter extends CustomPainter {
     final dotX = 150.0 * math.cos(tDot);
     final dotY = 50.0 * math.sin(tDot);
     final faintDotPaint = Paint()
-      ..color = const Color(0xFF6B68D8).withValues(alpha: 0.7)
+      ..color = AppColors.indigo.withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(dotX, dotY), 3.5, faintDotPaint);
     canvas.restore();
@@ -361,7 +362,7 @@ class _FetchingCosmicOrbitPainter extends CustomPainter {
     const double ry = 38.0;
 
     final dashedPaint = Paint()
-      ..color = const Color(0xFFFDB022).withValues(alpha: 0.52)
+      ..color = AppColors.amber.withValues(alpha: 0.52)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.25;
 
@@ -385,30 +386,30 @@ class _FetchingCosmicOrbitPainter extends CustomPainter {
 
     // Planet outer soft glow
     final planetGlowPaint = Paint()
-      ..color = const Color(0xFFFDB022).withValues(alpha: 0.32)
+      ..color = AppColors.amber.withValues(alpha: 0.32)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(planetPos, 10, planetGlowPaint);
 
     // Planet core
     final planetCorePaint = Paint()
-      ..color = const Color(0xFFFDB022)
+      ..color = AppColors.amber
       ..style = PaintingStyle.fill;
     canvas.drawCircle(planetPos, 5.0, planetCorePaint);
 
     // 4. Central circular disc with subtle shadow and white bar chart icon (larger size)
     final discShadowPaint = Paint()
-      ..color = const Color(0xFF1B195E).withValues(alpha: 0.45)
+      ..color = AppColors.navy.withValues(alpha: 0.45)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
     canvas.drawCircle(center, 58, discShadowPaint);
 
     final discPaint = Paint()
-      ..color = const Color(0xFF3835B0)
+      ..color = AppColors.indigo
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, 58, discPaint);
 
     // Central disc subtle border
     final discBorderPaint = Paint()
-      ..color = const Color(0xFF4E4BBF)
+      ..color = AppColors.indigo.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.3;
     canvas.drawCircle(center, 58, discBorderPaint);

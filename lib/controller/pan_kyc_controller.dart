@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import '../theme/app_colors.dart';
 import '../screens/upload_pan_screen.dart';
 import '../screens/pan_not_verified_screen.dart';
 import '../screens/review_pan_details_screen.dart';
@@ -156,7 +157,7 @@ class PanKycController extends GetxController {
           'Photo Captured',
           'PAN card photo captured: ${file.name}',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF212074),
+          backgroundColor: AppColors.navy,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
@@ -168,7 +169,7 @@ class PanKycController extends GetxController {
         'Camera Error',
         'Could not access camera on this device.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.errorRed,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
@@ -193,7 +194,7 @@ class PanKycController extends GetxController {
           'Image Selected',
           'PAN card image selected: ${file.name}',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFF212074),
+          backgroundColor: AppColors.navy,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
@@ -205,7 +206,7 @@ class PanKycController extends GetxController {
         'Gallery Error',
         'Could not access gallery on this device.',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
+        backgroundColor: AppColors.errorRed,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
@@ -230,7 +231,7 @@ class PanKycController extends GetxController {
         'PAN Card Selected',
         'Document added: ${file.name}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFF212074),
+        backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
@@ -255,7 +256,6 @@ class PanKycController extends GetxController {
   /// Submit action from Review PAN Details screen
   void submitPanDetails() {
     isPanCompleted.value = true;
-
     if (Get.isRegistered<KycFlowController>()) {
       Get.find<KycFlowController>().setStep(KycSubStep.nextStepPlaceholder);
     } else {
@@ -269,7 +269,7 @@ class PanKycController extends GetxController {
       'Edit PAN Details',
       'If your name on PAN has typographical errors, you can re-upload or update via NSDL/UTI portal.',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF524FBA),
+      backgroundColor: AppColors.indigo,
       colorText: Colors.white,
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 3),

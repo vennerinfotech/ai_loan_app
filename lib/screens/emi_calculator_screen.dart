@@ -87,7 +87,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: AppColors.line),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
@@ -126,15 +126,11 @@ class EmiCalculatorScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF282582), Color(0xFF3835A8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF282582).withValues(alpha: 0.22),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.22),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -167,7 +163,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                   const Text(
                     'Monthly EMI',
                     style: TextStyle(
-                      color: Color(0xFFD6DBED),
+                      color: AppColors.line,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
@@ -176,7 +172,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                   Text(
                     controller.formatCurrency(controller.monthlyEmi),
                     style: const TextStyle(
-                      color: Color(0xFFFFB800),
+                      color: AppColors.amber,
                       fontSize: 27,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
@@ -190,7 +186,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                         width: 7,
                         height: 7,
                         decoration: const BoxDecoration(
-                          color: Color(0xFFFFB800),
+                          color: AppColors.amber,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -213,7 +209,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                         width: 7,
                         height: 7,
                         decoration: const BoxDecoration(
-                          color: Color(0xFF8B88EF),
+                          color: AppColors.indigo,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -221,7 +217,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                       Text(
                         'Interest ${controller.formatCurrency(controller.totalInterest)}',
                         style: const TextStyle(
-                          color: Color(0xFFC7D2FE),
+                          color: AppColors.indigoTint,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -244,7 +240,7 @@ class EmiCalculatorScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFEEF2F6)),
+        border: Border.all(color: AppColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -344,9 +340,9 @@ class EmiCalculatorScreen extends StatelessWidget {
           data: SliderThemeData(
             trackHeight: 5,
             trackShape: const _EmiSliderTrackShape(),
-            activeTrackColor: const Color(0xFFC7D2FE),
-            inactiveTrackColor: const Color(0xFFEBF1FF),
-            thumbColor: const Color(0xFF212074),
+            activeTrackColor: AppColors.indigoTint,
+            inactiveTrackColor: AppColors.inputFill,
+            thumbColor: AppColors.navy,
             thumbShape: const _EmiSliderThumbShape(thumbRadius: 11),
             overlayShape: SliderComponentShape.noOverlay,
           ),
@@ -367,7 +363,7 @@ class EmiCalculatorScreen extends StatelessWidget {
             Text(
               minLabel,
               style: const TextStyle(
-                color: Color(0xFF94A3B8),
+                color: AppColors.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -375,7 +371,7 @@ class EmiCalculatorScreen extends StatelessWidget {
             Text(
               maxLabel,
               style: const TextStyle(
-                color: Color(0xFF94A3B8),
+                color: AppColors.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -392,7 +388,7 @@ class EmiCalculatorScreen extends StatelessWidget {
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF1FE),
+        color: AppColors.indigoTint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -401,7 +397,7 @@ class EmiCalculatorScreen extends StatelessWidget {
           const Text(
             'Total payable',
             style: TextStyle(
-              color: Color(0xFF475569),
+              color: AppColors.muted,
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
             ),
@@ -435,7 +431,7 @@ class EmiCalculatorScreen extends StatelessWidget {
           Get.to(() => const ApplyLoanFlowScreen(initialStep: 1));
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF212074),
+          backgroundColor: AppColors.navy,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -455,7 +451,7 @@ class EmiCalculatorScreen extends StatelessWidget {
             SizedBox(width: 8),
             Icon(
               Icons.arrow_forward_rounded,
-              color: Color(0xFFFDB022),
+              color: AppColors.amber,
               size: 16,
             ),
           ],
@@ -481,14 +477,14 @@ class _EmiDonutPainter extends CustomPainter {
 
     // 1. Background interest arc (Lavender / Purple)
     final interestPaint = Paint()
-      ..color = const Color(0xFF5B58E7)
+      ..color = AppColors.indigo
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
     // 2. Principal arc (Amber / Golden)
     final principalPaint = Paint()
-      ..color = const Color(0xFFFFB800)
+      ..color = AppColors.amber
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -547,13 +543,13 @@ class _EmiSliderThumbShape extends SliderComponentShape {
 
     // Outer amber border ring
     final outerPaint = Paint()
-      ..color = const Color(0xFFFFB800)
+      ..color = AppColors.amber
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, thumbRadius, outerPaint);
 
     // Inner navy circle
     final innerPaint = Paint()
-      ..color = const Color(0xFF212074)
+      ..color = AppColors.navy
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, thumbRadius - 3.5, innerPaint);
   }
