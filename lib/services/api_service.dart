@@ -119,4 +119,81 @@ class ApiService {
       return {'success': false, 'status_code': 500, 'message': e.toString()};
     }
   }
+
+  /// Set MPIN API (application/json): POST {{baseUrl}}/set-mpin
+  static Future<Map<String, dynamic>> setMpin({
+    required String mpin,
+    required String mpinConfirmation,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/mpin');
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+
+    final body = jsonEncode({
+      'mpin': mpin.trim(),
+      'mpin_confirmation': mpinConfirmation.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Set MPIN ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> jsonResponse =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      return jsonResponse;
+    } catch (e) {
+      debugPrint('Error in setMpin API: $e');
+      return {'success': false, 'status_code': 500, 'message': e.toString()};
+    }
+  }
+
+  /// Login with Phone & MPIN API (application/json): POST {{baseUrl}}/login
+  static Future<Map<String, dynamic>> login({
+    required String phone,
+    required String mpin,
+  }) async {
+    final url = Uri.parse('$baseUrl/login');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+      'mpin': mpin.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Login (Phone & MPIN) ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> jsonResponse =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      return jsonResponse;
+    } catch (e) {
+      debugPrint('Error in login API: $e');
+      return {'success': false, 'status_code': 500, 'message': e.toString()};
+    }
+  }
 }

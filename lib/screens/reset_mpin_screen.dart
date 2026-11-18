@@ -93,7 +93,7 @@ class ResetMpinScreen extends StatelessWidget {
 
                     // Subtitle
                     const Text(
-                      'A 4-digit PIN for quick, secure sign-ins.',
+                      'A 6-digit PIN for quick, secure sign-ins.',
                       style: TextStyle(
                         color: AppColors.textDarkSecondary,
                         fontSize: 13.5,
@@ -186,15 +186,15 @@ class ResetMpinScreen extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            // 4 Indicator dots (14px diameter)
+            // 6 Indicator dots (13px diameter)
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(4, (index) {
+              children: List.generate(6, (index) {
                 final isFilled = index < pin.length;
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  width: 14,
-                  height: 14,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 13,
+                  height: 13,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isFilled
@@ -220,7 +220,7 @@ class ResetMpinScreen extends StatelessWidget {
   Widget _buildValidationRules(ResetMpinController controller) {
     return Obx(() {
       final pin = controller.newMpin.value;
-      final hasLength = controller.has4Digits;
+      final hasLength = controller.has6Digits;
       final noSeq = controller.hasNoSequence && pin.length >= 2;
       final noRep = controller.hasNoRepeats && pin.length >= 2;
 
@@ -230,13 +230,13 @@ class ResetMpinScreen extends StatelessWidget {
           Row(
             children: [
               _buildRuleChip(
-                label: '4 digits',
+                label: '6 digits',
                 isValid: hasLength,
                 isCheckmark: true,
               ),
               const SizedBox(width: 8),
               _buildRuleChip(
-                label: 'No sequence (1234)',
+                label: 'No sequence (123456)',
                 isValid: noSeq,
                 isCheckmark: true,
               ),
@@ -244,7 +244,7 @@ class ResetMpinScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _buildRuleChip(
-            label: 'No repeats (1111)',
+            label: 'No repeats (111111)',
             isValid: noRep,
             isCheckmark: false,
           ),

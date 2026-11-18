@@ -32,6 +32,7 @@ class RegistrationController extends GetxController
   final authResponse = Rxn<AuthResponseModel>();
   final isVerifyingOtp = false.obs;
   final isResendingOtp = false.obs;
+  final isSettingMpin = false.obs;
   final authToken = ''.obs;
 
   // ==========================================
@@ -456,20 +457,21 @@ class RegistrationController extends GetxController
   }
 
   // ==========================================
-  // Step 3: Create MPIN Actions & Validation
+  // Step 3: Create MPIN Actions & Validation (6-digit MPIN)
   // ==========================================
   final newMpin = ''.obs;
   final confirmMpin = ''.obs;
   final activeMpinField = 'new'.obs; // 'new' or 'confirm'
 
-  bool get has4Digits => newMpin.value.length == 4;
+  bool get has6Digits => newMpin.value.length == 6;
+  bool get has4Digits => has6Digits; // Alias for compatibility
 
   bool get hasNoSequence {
     final pin = newMpin.value;
     if (pin.length < 2) return true;
     const sequences = [
-      '0123', '1234', '2345', '3456', '4567', '5678', '6789',
-      '3210', '4321', '5432', '6543', '7654', '8765', '9876',
+      '012345', '123456', '234567', '345678', '456789',
+      '543210', '654321', '765432', '876543', '987654',
     ];
     for (final seq in sequences) {
       if (pin == seq) return false;
@@ -480,18 +482,15 @@ class RegistrationController extends GetxController
   bool get hasNoRepeats {
     final pin = newMpin.value;
     if (pin.length < 2) return true;
-    if (pin.length == 4 &&
-        pin[0] == pin[1] &&
-        pin[1] == pin[2] &&
-        pin[2] == pin[3]) {
+    if (pin.length == 6 && pin.split('').every((c) => c == pin[0])) {
       return false;
     }
     return true;
   }
 
-  bool get isMpinValid => has4Digits && hasNoSequence && hasNoRepeats;
+  bool get isMpinValid => has6Digits && hasNoSequence && hasNoRepeats;
   bool get isMpinConfirmed =>
-      confirmMpin.value.length == 4 && confirmMpin.value == newMpin.value;
+      confirmMpin.value.length == 6 && confirmMpin.value == newMpin.value;
   bool get canSetMpin => isMpinValid && isMpinConfirmed;
 
   void selectMpinField(String field) {
@@ -500,14 +499,14 @@ class RegistrationController extends GetxController
 
   void enterMpinDigit(String digit) {
     if (activeMpinField.value == 'new') {
-      if (newMpin.value.length < 4) {
+      if (newMpin.value.length < 6) {
         newMpin.value += digit;
-        if (newMpin.value.length == 4) {
+        if (newMpin.value.length == 6) {
           activeMpinField.value = 'confirm';
         }
       }
     } else {
-      if (confirmMpin.value.length < 4) {
+      if (confirmMpin.value.length < 6) {
         confirmMpin.value += digit;
       }
     }
@@ -528,9 +527,97 @@ class RegistrationController extends GetxController
     }
   }
 
-  void setMpin() {
-    if (!canSetMpin) return;
-    Get.offAll(() => const LoginWithMpinScreen());
+  /// Set MPIN API: calls POST /set-mpin with mpin and mpin_confirmation
+  Future<void> setMpin() async {
+    if (!canSetMpin || isSettingMpin.value) return;
+
+    try {
+      isSettingMpin.value = true;
+      final token = authToken.value.isNotEmpty
+          ? authToken.value
+          : authResponse.value?.data?.token;
+
+      final Map<String, dynamic> response = await ApiService.setMpin(
+        mpin: newMpin.value.trim(),
+        mpinConfirmation: confirmMpin.value.trim(),
+        token: token,
+      );
+
+      isSettingMpin.value = false;
+
+      final statusCode = response['status_code'];
+      final isSuccess =
+          response['success'] == true || statusCode == 200 || statusCode == 201;
+
+      if (isSuccess) {
+        // Reuse common AuthResponseModel to update user and mpin_set status
+        final newModel = AuthResponseModel.fromJson(response);
+        final existingData = authResponse.value?.data;
+
+        authResponse.value = AuthResponseModel(
+          success: newModel.success,
+          statusCode: newModel.statusCode,
+          message: newModel.message,
+          data: AuthData(
+            userId: newModel.data?.userId ??
+                newModel.data?.user?.id ??
+                existingData?.userId,
+            token: existingData?.token,
+            tokenType: existingData?.tokenType,
+            phone: newModel.data?.user?.phone ?? existingData?.phone,
+            otp: existingData?.otp,
+            otpExpiresAt: existingData?.otpExpiresAt,
+            csrfToken: existingData?.csrfToken,
+            user: newModel.data?.user ?? existingData?.user,
+          ),
+          errors: newModel.errors,
+        );
+
+        debugPrint(
+            'MPIN Set Successfully. Current mpin_set status: ${authResponse.value?.data?.user?.mpinSet}');
+
+        Get.snackbar(
+          'Success',
+          newModel.message.isNotEmpty
+              ? newModel.message
+              : 'MPIN set successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+
+        // Transition to LoginWithMpinScreen
+        await Future.delayed(const Duration(milliseconds: 500));
+        Get.offAll(() => const LoginWithMpinScreen());
+      } else {
+        final errorMsg =
+            response['message']?.toString() ?? 'Failed to set MPIN';
+        debugPrint('Set MPIN Error: $errorMsg');
+        Get.snackbar(
+          'Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isSettingMpin.value = false;
+      debugPrint('Set MPIN Exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to set MPIN: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   /// Format countdown seconds to MM:SS

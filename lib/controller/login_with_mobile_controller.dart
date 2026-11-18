@@ -51,7 +51,10 @@ class LoginWithMobileController extends GetxController
   }
 
   void signInWithMpin() {
-    Get.to(() => const LoginWithMpinScreen());
+    final phone = mobileNumber.value.trim();
+    Get.to(() => LoginWithMpinScreen(
+          phoneNumber: phone.isNotEmpty ? phone : null,
+        ));
   }
 
   void createAccount() {

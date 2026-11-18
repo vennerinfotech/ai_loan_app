@@ -103,6 +103,7 @@ class AuthUser {
   final String? name;
   final String? phone;
   final String? email;
+  final String? role;
   final int? currentStep;
   final bool? mpinSet;
 
@@ -111,6 +112,7 @@ class AuthUser {
     this.name,
     this.phone,
     this.email,
+    this.role,
     this.currentStep,
     this.mpinSet,
   });
@@ -123,6 +125,7 @@ class AuthUser {
       name: json['name']?.toString(),
       phone: json['phone']?.toString(),
       email: json['email']?.toString(),
+      role: json['role']?.toString(),
       currentStep: json['current_step'] is int
           ? json['current_step']
           : int.tryParse(json['current_step']?.toString() ?? ''),
@@ -138,6 +141,7 @@ class AuthUser {
       'name': name,
       'phone': phone,
       'email': email,
+      'role': role,
       'current_step': currentStep,
       'mpin_set': mpinSet,
     };

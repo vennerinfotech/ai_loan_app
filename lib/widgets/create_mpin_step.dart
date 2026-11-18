@@ -60,7 +60,7 @@ class CreateMpinStep extends StatelessWidget {
 
                 // Subtitle
                 const Text(
-                  'A 4-digit PIN for quick, secure sign-ins.',
+                  'A 6-digit PIN for quick, secure sign-ins.',
                   style: TextStyle(
                     color: AppColors.textDarkSecondary,
                     fontSize: 13.5,
@@ -151,15 +151,15 @@ class CreateMpinStep extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            // 4 Indicator dots (14px diameter)
+            // 6 Indicator dots (13px diameter)
             Row(
               mainAxisSize: MainAxisSize.min,
-              children: List.generate(4, (index) {
+              children: List.generate(6, (index) {
                 final isFilled = index < pin.length;
                 return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  width: 14,
-                  height: 14,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 13,
+                  height: 13,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: isFilled
@@ -185,7 +185,7 @@ class CreateMpinStep extends StatelessWidget {
   Widget _buildValidationRules() {
     return Obx(() {
       final pin = controller.newMpin.value;
-      final hasLength = controller.has4Digits;
+      final hasLength = controller.has6Digits;
       final noSeq = controller.hasNoSequence && pin.length >= 2;
       final noRep = controller.hasNoRepeats && pin.length >= 2;
 
@@ -195,13 +195,13 @@ class CreateMpinStep extends StatelessWidget {
           Row(
             children: [
               _buildRuleChip(
-                label: '4 digits',
+                label: '6 digits',
                 isValid: hasLength,
                 isCheckmark: true,
               ),
               const SizedBox(width: 8),
               _buildRuleChip(
-                label: 'No sequence (1234)',
+                label: 'No sequence (123456)',
                 isValid: noSeq,
                 isCheckmark: true,
               ),
@@ -209,7 +209,7 @@ class CreateMpinStep extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _buildRuleChip(
-            label: 'No repeats (1111)',
+            label: 'No repeats (111111)',
             isValid: noRep,
             isCheckmark: false,
           ),
@@ -318,7 +318,8 @@ class CreateMpinStep extends StatelessWidget {
   /// Consistent Primary Elevated "Set MPIN" button (Navy button with white text)
   Widget _buildSetMpinButton() {
     return Obx(() {
-      final enabled = controller.canSetMpin;
+      final enabled = controller.canSetMpin && !controller.isSettingMpin.value;
+      final isSetting = controller.isSettingMpin.value;
 
       return InkWell(
         onTap: enabled ? controller.setMpin : null,
@@ -333,17 +334,26 @@ class CreateMpinStep extends StatelessWidget {
                 : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Text(
-            'Set MPIN',
-            style: TextStyle(
-              color: enabled
-                  ? AppColors.primaryButtonText
-                  : AppColors.primaryButtonText.withValues(alpha: 0.7),
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
-          ),
+          child: isSetting
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Set MPIN',
+                  style: TextStyle(
+                    color: enabled
+                        ? AppColors.primaryButtonText
+                        : AppColors.primaryButtonText.withValues(alpha: 0.7),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
         ),
       );
     });

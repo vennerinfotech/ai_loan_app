@@ -6,9 +6,14 @@ class SessionManager {
   static const String keyIsLogin = 'is_login';
   static const String keyUserPhone = 'user_phone';
   static const String keyUserName = 'user_name';
+  static const String keyAuthToken = 'auth_token';
 
   /// Save login session into SharedPreferences using setString
-  static Future<void> saveLoginSession({String? phone, String? name}) async {
+  static Future<void> saveLoginSession({
+    String? phone,
+    String? name,
+    String? token,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyIsLogin, 'true');
     if (phone != null && phone.trim().isNotEmpty) {
@@ -17,6 +22,15 @@ class SessionManager {
     if (name != null && name.trim().isNotEmpty) {
       await prefs.setString(keyUserName, name.trim());
     }
+    if (token != null && token.trim().isNotEmpty) {
+      await prefs.setString(keyAuthToken, token.trim());
+    }
+  }
+
+  /// Get saved auth token
+  static Future<String> getAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyAuthToken) ?? '';
   }
 
   /// Check whether user is already logged in using getString

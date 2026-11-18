@@ -10,14 +10,15 @@ class ResetMpinController extends GetxController {
   final activeMpinField = 'new'.obs; // 'new' or 'confirm'
   final isSubmitting = false.obs;
 
-  bool get has4Digits => newMpin.value.length == 4;
+  bool get has6Digits => newMpin.value.length == 6;
+  bool get has4Digits => has6Digits;
 
   bool get hasNoSequence {
     final pin = newMpin.value;
     if (pin.length < 2) return true;
     const sequences = [
-      '0123', '1234', '2345', '3456', '4567', '5678', '6789',
-      '3210', '4321', '5432', '6543', '7654', '8765', '9876',
+      '012345', '123456', '234567', '345678', '456789',
+      '543210', '654321', '765432', '876543', '987654',
     ];
     for (final seq in sequences) {
       if (pin == seq) return false;
@@ -28,18 +29,15 @@ class ResetMpinController extends GetxController {
   bool get hasNoRepeats {
     final pin = newMpin.value;
     if (pin.length < 2) return true;
-    if (pin.length == 4 &&
-        pin[0] == pin[1] &&
-        pin[1] == pin[2] &&
-        pin[2] == pin[3]) {
+    if (pin.length == 6 && pin.split('').every((c) => c == pin[0])) {
       return false;
     }
     return true;
   }
 
-  bool get isMpinValid => has4Digits && hasNoSequence && hasNoRepeats;
+  bool get isMpinValid => has6Digits && hasNoSequence && hasNoRepeats;
   bool get isMpinConfirmed =>
-      confirmMpin.value.length == 4 && confirmMpin.value == newMpin.value;
+      confirmMpin.value.length == 6 && confirmMpin.value == newMpin.value;
   bool get canSetMpin => isMpinValid && isMpinConfirmed;
 
   void selectMpinField(String field) {
@@ -48,14 +46,14 @@ class ResetMpinController extends GetxController {
 
   void enterMpinDigit(String digit) {
     if (activeMpinField.value == 'new') {
-      if (newMpin.value.length < 4) {
+      if (newMpin.value.length < 6) {
         newMpin.value += digit;
-        if (newMpin.value.length == 4) {
+        if (newMpin.value.length == 6) {
           activeMpinField.value = 'confirm';
         }
       }
     } else {
-      if (confirmMpin.value.length < 4) {
+      if (confirmMpin.value.length < 6) {
         confirmMpin.value += digit;
       }
     }

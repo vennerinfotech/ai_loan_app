@@ -10,11 +10,16 @@ import '../theme/theme.dart';
 /// 4 MPIN indicator dots, and responsive numeric keypad with biometric button.
 /// Exact pixel-perfect match to Figma reference design.
 class LoginWithMpinScreen extends StatelessWidget {
-  const LoginWithMpinScreen({super.key});
+  final String? phoneNumber;
+
+  const LoginWithMpinScreen({super.key, this.phoneNumber});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(MpinLoginController());
+    if (phoneNumber != null && phoneNumber!.isNotEmpty) {
+      controller.setPhoneNumber(phoneNumber!);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -119,14 +124,14 @@ class LoginWithMpinScreen extends StatelessWidget {
                   )),
               const SizedBox(height: 16),
 
-              // 4 MPIN indicator dots
+              // 6 MPIN indicator dots
               Obx(() => Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: List.generate(4, (index) {
+                    children: List.generate(6, (index) {
                       final isFilled = index < controller.mpin.value.length;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        margin: const EdgeInsets.symmetric(horizontal: 5),
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
@@ -146,9 +151,9 @@ class LoginWithMpinScreen extends StatelessWidget {
                   )),
               const SizedBox(height: 10),
 
-              // "Enter your 4-digit MPIN"
+              // "Enter your 6-digit MPIN"
               const Text(
-                'Enter your 4-digit MPIN',
+                'Enter your 6-digit MPIN',
                 style: TextStyle(
                   color: AppColors.inputHintIcon,
                   fontSize: 12.5,
