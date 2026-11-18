@@ -622,37 +622,31 @@ class _BannerCosmicPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokePaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.32)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.25;
+    // Anchor centered on the right side, matching dashboard CIBIL card
+    final anchor = Offset(size.width - 44, size.height * 0.33);
 
-    // Tilted cosmic ellipse on the right side
+    final orbitPaint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.15;
+
+    // 1. Concentric guide rings (same as dashboard top card)
+    canvas.drawCircle(anchor, 58, orbitPaint);
+    canvas.drawCircle(anchor, 105, orbitPaint);
+
+    // 2. Wide flat tilted cosmic orbit ellipse
     canvas.save();
-    canvas.translate(size.width - 35, size.height * 0.5);
-    canvas.rotate(-26 * math.pi / 180);
+    canvas.translate(anchor.dx, anchor.dy);
+    canvas.rotate(-28 * math.pi / 180);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset.zero,
-        width: 140,
-        height: 60,
+        width: 270,
+        height: 75,
       ),
-      strokePaint,
+      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
     );
     canvas.restore();
-
-    // Sweeping intersecting curve
-    final path = Path();
-    path.moveTo(size.width * 0.65, 0);
-    path.cubicTo(
-      size.width * 0.72,
-      size.height * 0.35,
-      size.width * 0.85,
-      size.height * 0.75,
-      size.width,
-      size.height * 0.9,
-    );
-    canvas.drawPath(path, strokePaint);
   }
 
   @override

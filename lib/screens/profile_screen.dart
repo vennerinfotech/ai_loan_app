@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
@@ -765,43 +766,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-/// Cosmic orbit line painter for the user profile card
+/// Cosmic orbit line painter for the user profile card matching dashboard top card
 class _UserCardCosmicPainter extends CustomPainter {
   const _UserCardCosmicPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokePaint = Paint()
-      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.32)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.25;
+    // Anchor centered on the right side, matching dashboard CIBIL card
+    final anchor = Offset(size.width - 44, size.height * 0.33);
 
-    // Tilted cosmic orbit ellipse on the right side of the card
+    final orbitPaint = Paint()
+      ..color = const Color(0xFF8B88EF).withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.15;
+
+    // 1. Concentric guide rings (same as dashboard top card)
+    canvas.drawCircle(anchor, 58, orbitPaint);
+    canvas.drawCircle(anchor, 105, orbitPaint);
+
+    // 2. Wide flat tilted cosmic orbit ellipse
     canvas.save();
-    canvas.translate(size.width - 36, size.height * 0.45);
-    canvas.rotate(-26 * 3.1415926535 / 180);
+    canvas.translate(anchor.dx, anchor.dy);
+    canvas.rotate(-28 * math.pi / 180);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset.zero,
-        width: 140,
-        height: 60,
+        width: 270,
+        height: 75,
       ),
-      strokePaint,
+      orbitPaint..color = const Color(0xFF8B88EF).withValues(alpha: 0.32),
     );
     canvas.restore();
-
-    // Sweeping intersecting curve from top right
-    final path = Path();
-    path.moveTo(size.width * 0.65, 0);
-    path.cubicTo(
-      size.width * 0.72,
-      size.height * 0.35,
-      size.width * 0.86,
-      size.height * 0.75,
-      size.width,
-      size.height * 0.9,
-    );
-    canvas.drawPath(path, strokePaint);
   }
 
   @override
