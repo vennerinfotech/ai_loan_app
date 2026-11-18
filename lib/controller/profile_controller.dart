@@ -6,7 +6,7 @@ class ProfileController extends GetxController {
   final firstName = 'Aarav'.obs;
   final lastName = 'Mehta'.obs;
   final email = 'aarav@example.com'.obs;
-  final phone = '+91 98765 •••10'.obs;
+  final phone = '+91 98765 43210'.obs;
   final address = '123, MG Road, Bengaluru 560001'.obs;
 
   // Saved profile image
@@ -16,6 +16,13 @@ class ProfileController extends GetxController {
   // Staged profile image during editing in Edit Profile screen
   final tempImageBytes = Rxn<Uint8List>();
   final tempImagePath = ''.obs;
+
+  // Selected language preference
+  final selectedLanguage = 'English'.obs;
+
+  void setLanguage(String lang) {
+    selectedLanguage.value = lang;
+  }
 
   String get fullName => '${firstName.value} ${lastName.value}'.trim();
 

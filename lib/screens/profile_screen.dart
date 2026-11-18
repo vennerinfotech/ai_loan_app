@@ -7,9 +7,10 @@ import '../controller/dashboard_controller.dart';
 import '../controller/profile_controller.dart';
 import 'loan_flow/applicant_details_screen.dart';
 import 'document_wallet_screen.dart';
-import 'edit_profile_screen.dart';
+import 'personal_details_screen.dart';
 import 'reset_mpin_screen.dart';
 import 'login_with_mpin_screen.dart';
+import '../widgets/language_selection_bottom_sheet.dart';
 
 /// Screen displaying user profile, account settings, security, and support (Reference Image 2)
 class ProfileScreen extends StatefulWidget {
@@ -90,7 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         GestureDetector(
           onTap: () {
-            Get.to(() => const EditProfileScreen());
+            Get.to(() => const PersonalDetailsScreen(initiallyEditing: true));
           },
           child: Container(
             width: 40,
@@ -315,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconBg: const Color(0xFFEEF0FD),
             iconColor: const Color(0xFF4340BE),
             title: 'Personal details',
-            onTap: () => Get.to(() => const ApplicantDetailsScreen()),
+            onTap: () => Get.to(() => const PersonalDetailsScreen()),
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
           _buildActionRow(
@@ -386,22 +387,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
-          _buildActionRow(
-            icon: Icons.translate_rounded,
-            iconBg: const Color(0xFFE8F8EE),
-            iconColor: const Color(0xFF16A34A),
-            title: 'Language',
-            trailingText: 'English',
-            onTap: () {
-              Get.snackbar(
-                'Language',
-                'English is currently set as your default language.',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: const Color(0xFF212074),
-                colorText: Colors.white,
-              );
-            },
-          ),
+          Obx(() {
+            final profileController = Get.isRegistered<ProfileController>()
+                ? Get.find<ProfileController>()
+                : Get.put(ProfileController());
+            return _buildActionRow(
+              icon: Icons.translate_rounded,
+              iconBg: const Color(0xFFE8F8EE),
+              iconColor: const Color(0xFF16A34A),
+              title: 'Language',
+              trailingText: profileController.selectedLanguage.value,
+              onTap: () {
+                LanguageSelectionBottomSheet.show(context);
+              },
+            );
+          }),
         ],
       ),
     );
