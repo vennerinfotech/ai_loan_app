@@ -1,25 +1,8 @@
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-
-class WalletDocumentModel {
-  final String id;
-  final String title;
-  final String subtitle;
-  final String category; // 'KYC', 'Income', 'Loan'
-  final String badgeText;
-  final IconData icon;
-  final bool isFeatured; // true for Aadhaar (dark blue card)
-
-  WalletDocumentModel({
-    required this.id,
-    required this.title,
-    required this.subtitle,
-    required this.category,
-    required this.badgeText,
-    required this.icon,
-    this.isFeatured = false,
-  });
-}
+import '../models/wallet_document_model.dart';
+export '../models/wallet_document_model.dart';
 
 class DocumentWalletController extends GetxController {
   final selectedCategory = 'All · 6'.obs;
@@ -99,5 +82,17 @@ class DocumentWalletController extends GetxController {
 
   void onSearchChanged(String val) {
     searchQuery.value = val;
+  }
+
+  /// Updates or replaces the document image (front or back) for direct image rendering
+  void updateDocumentImage(String id, Uint8List bytes, {bool isFront = true}) {
+    final index = documents.indexWhere((d) => d.id == id);
+    if (index != -1) {
+      final doc = documents[index];
+      documents[index] = doc.copyWith(
+        frontImageBytes: isFront ? bytes : doc.frontImageBytes,
+        backImageBytes: !isFront ? bytes : doc.backImageBytes,
+      );
+    }
   }
 }

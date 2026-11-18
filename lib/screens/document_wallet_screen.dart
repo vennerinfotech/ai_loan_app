@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../controller/document_wallet_controller.dart';
 import '../controller/dashboard_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import 'document_view_screen.dart';
 
 /// Screen displaying user's saved verification & loan documents (Reference Image 1)
 class DocumentWalletScreen extends StatelessWidget {
@@ -236,97 +237,112 @@ class DocumentWalletScreen extends StatelessWidget {
 
   /// Single document card (Aadhaar has featured dark-navy styling, others are white)
   Widget _buildDocumentCard(BuildContext context, WalletDocumentModel doc) {
-    if (doc.isFeatured) {
-      // Featured Royal Navy Card (Aadhaar Card)
-      return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2E2C96), Color(0xFF212074)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    final cardWidget = doc.isFeatured
+        ? _buildFeaturedCard(doc)
+        : _buildStandardCard(doc);
+
+    return GestureDetector(
+      onTap: () {
+        Get.to(
+          () => DocumentViewScreen(document: doc),
+          transition: Transition.noTransition,
+          duration: Duration.zero,
+        );
+      },
+      child: cardWidget,
+    );
+  }
+
+  Widget _buildFeaturedCard(WalletDocumentModel doc) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2E2C96), Color(0xFF212074)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF212074).withValues(alpha: 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF212074).withValues(alpha: 0.18),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Top Row: Icon + Badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Amber ID Icon
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.badge_outlined,
-                    color: Color(0xFFFDB022),
-                    size: 20,
-                  ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Top Row: Icon + Badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Amber ID Icon
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Icon(
+                  Icons.badge_outlined,
+                  color: Color(0xFFFDB022),
+                  size: 20,
+                ),
+              ),
 
-                // Green "Verified" Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCFCE7),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Verified',
-                    style: TextStyle(
-                      color: Color(0xFF15803D),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+              // Green "Verified" Badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
-            ),
-
-            // Bottom Column: Title + Subtitle
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  doc.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  doc.subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFFC7D2FE),
+                child: const Text(
+                  'Verified',
+                  style: TextStyle(
+                    color: Color(0xFF15803D),
                     fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
+              ),
+            ],
+          ),
 
-    // Standard White Document Card
+          // Bottom Column: Title + Subtitle
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                doc.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                doc.subtitle,
+                style: const TextStyle(
+                  color: Color(0xFFC7D2FE),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStandardCard(WalletDocumentModel doc) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
