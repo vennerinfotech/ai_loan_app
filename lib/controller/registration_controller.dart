@@ -3,8 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../models/registration_step.dart';
-import '../models/register_response_model.dart';
-import '../models/verify_otp_response_model.dart';
+import '../models/auth_response_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../screens/login_with_mpin_screen.dart';
@@ -27,12 +26,12 @@ class RegistrationController extends GetxController
   ];
 
   // ==========================================
-  // API State & Response
+  // API State & Response (Single Common Auth Model)
   // ==========================================
   final isLoading = false.obs;
-  final registerResponse = Rxn<RegisterResponseModel>();
+  final authResponse = Rxn<AuthResponseModel>();
   final isVerifyingOtp = false.obs;
-  final verifyOtpResponse = Rxn<VerifyOtpResponseModel>();
+  final isResendingOtp = false.obs;
   final authToken = ''.obs;
 
   // ==========================================
@@ -180,9 +179,9 @@ class RegistrationController extends GetxController
           response['success'] == true || statusCode == 200 || statusCode == 201;
 
       if (isSuccess) {
-        // Store data in model class
-        final model = RegisterResponseModel.fromJson(response);
-        registerResponse.value = model;
+        // Store data in common auth model
+        final model = AuthResponseModel.fromJson(response);
+        authResponse.value = model;
 
         // Update mobile number if returned by API
         if (model.data?.phone != null && model.data!.phone!.isNotEmpty) {
@@ -280,10 +279,92 @@ class RegistrationController extends GetxController
     });
   }
 
-  void resendOtp() {
-    if (!canResend.value) return;
-    otpController.clear();
-    _startResendTimer();
+  /// Resend OTP API: calls POST /resend-otp with user's registered phone number
+  Future<void> resendOtp() async {
+    if (!canResend.value || isResendingOtp.value) return;
+
+    final phone = mobileNumber.value.trim();
+    if (phone.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Mobile number is missing',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      );
+      return;
+    }
+
+    try {
+      isResendingOtp.value = true;
+      final Map<String, dynamic> response =
+          await ApiService.resendOtp(phone: phone);
+      isResendingOtp.value = false;
+
+      final statusCode = response['status_code'];
+      final isSuccess =
+          response['success'] == true || statusCode == 200 || statusCode == 201;
+
+      if (isSuccess) {
+        final model = AuthResponseModel.fromJson(response);
+        authResponse.value = model;
+
+        // Auto-fill resent OTP for testing
+        if (model.data?.otp != null) {
+          final otp = model.data!.otp.toString();
+          otpController.value = TextEditingValue(
+            text: otp,
+            selection: TextSelection.collapsed(offset: otp.length),
+          );
+          otpCode.value = otp;
+          debugPrint('Auto-filled resent OTP: $otp');
+        } else {
+          otpController.clear();
+          otpCode.value = '';
+        }
+
+        _startResendTimer();
+
+        Get.snackbar(
+          'Success',
+          model.message.isNotEmpty
+              ? model.message
+              : 'OTP resent successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        final errorMsg =
+            response['message']?.toString() ?? 'Failed to resend OTP';
+        debugPrint('Resend OTP Error: $errorMsg');
+        Get.snackbar(
+          'Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isResendingOtp.value = false;
+      debugPrint('Resend OTP Exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to resend OTP: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   /// Verify OTP API: calls POST /verify-otp with phone and otp
@@ -318,9 +399,9 @@ class RegistrationController extends GetxController
           response['success'] == true || statusCode == 200 || statusCode == 201;
 
       if (isSuccess) {
-        // Store data in model class
-        final model = VerifyOtpResponseModel.fromJson(response);
-        verifyOtpResponse.value = model;
+        // Store data in common auth model
+        final model = AuthResponseModel.fromJson(response);
+        authResponse.value = model;
 
         if (model.data?.token != null && model.data!.token!.isNotEmpty) {
           authToken.value = model.data!.token!;

@@ -214,17 +214,29 @@ class VerifyOtpStep extends StatelessWidget {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: controller.canResend.value ? controller.resendOtp : null,
-              child: Text(
-                'Resend code',
-                style: TextStyle(
-                  color: controller.canResend.value
-                      ? AppColors.resendLinkText
-                      : AppColors.resendTimerText,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              onTap: (controller.canResend.value &&
+                      !controller.isResendingOtp.value)
+                  ? controller.resendOtp
+                  : null,
+              child: controller.isResendingOtp.value
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.resendLinkText,
+                      ),
+                    )
+                  : Text(
+                      'Resend code',
+                      style: TextStyle(
+                        color: controller.canResend.value
+                            ? AppColors.resendLinkText
+                            : AppColors.resendTimerText,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
           ],
         ));

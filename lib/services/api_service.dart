@@ -86,4 +86,37 @@ class ApiService {
       return {'success': false, 'status_code': 500, 'message': e.toString()};
     }
   }
+
+  /// Resend OTP API (application/json): POST {{baseUrl}}/resend-otp
+  static Future<Map<String, dynamic>> resendOtp({
+    required String phone,
+  }) async {
+    final url = Uri.parse('$baseUrl/resend-otp');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Resend OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> jsonResponse =
+          jsonDecode(response.body) as Map<String, dynamic>;
+
+      return jsonResponse;
+    } catch (e) {
+      debugPrint('Error in resendOtp API: $e');
+      return {'success': false, 'status_code': 500, 'message': e.toString()};
+    }
+  }
 }
