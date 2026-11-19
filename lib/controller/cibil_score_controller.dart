@@ -41,11 +41,15 @@ class CibilScoreController extends GetxController {
     return DateFormat('MMM dd, yyyy').format(target);
   }
 
-  /// Calculates rating string from numerical score
+  /// Calculates rating string from numerical score:
+  /// - Below 650: Poor
+  /// - 650–699: Average
+  /// - 700–749: Good
+  /// - 750–900: Excellent
   String getRatingForScore(int score) {
     if (score >= 750) return 'Excellent';
     if (score >= 700) return 'Good';
-    if (score >= 650) return 'Fair';
+    if (score >= 650) return 'Average';
     return 'Poor';
   }
 

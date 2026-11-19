@@ -40,14 +40,16 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
       duration: const Duration(seconds: 16),
     )..repeat();
 
-    // 2. Trigger real CIBIL score API call in background
+    // 2. Register CibilScoreController and fetch report on this loading screen
     final cibilController = Get.isRegistered<CibilScoreController>()
         ? Get.find<CibilScoreController>()
-        : Get.put(CibilScoreController());
-    cibilController.fetchCibilScore();
+        : Get.put(CibilScoreController(), permanent: true);
 
-    // 3. Simulated multi-step API loading progression
-    // Phase 1 -> Phase 2: After 1.8 seconds, "Reading credit history" succeeds and "Building your score summary" starts
+    _fetchReportAndProgress(cibilController);
+  }
+
+  Future<void> _fetchReportAndProgress(CibilScoreController cibilController) async {
+    // Phase 1 -> Phase 2: After 1.8 seconds, "Reading credit history" succeeds
     _phaseTimer1 = Timer(const Duration(milliseconds: 1800), () {
       if (mounted) {
         setState(() {
@@ -56,17 +58,21 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
       }
     });
 
-    // Phase 2 -> Phase 3: After 3.4 seconds, all 3 steps show success tick marks
-    _phaseTimer2 = Timer(const Duration(milliseconds: 3400), () {
-      if (mounted) {
-        setState(() {
-          _currentPhase = FetchingPhase.allComplete;
-        });
-      }
+    // Trigger CIBIL score API call here on loading screen
+    final apiFuture = cibilController.fetchCibilScore();
+    final minDelayFuture = Future.delayed(const Duration(milliseconds: 3200));
+
+    await Future.wait([apiFuture, minDelayFuture]);
+
+    if (!mounted) return;
+
+    // Phase 2 -> Phase 3: All complete (all 3 show success checkmarks)
+    setState(() {
+      _currentPhase = FetchingPhase.allComplete;
     });
 
-    // Phase 3 -> Navigate to CIBIL Score Screen after 4.2 seconds
-    _navigationTimer = Timer(const Duration(milliseconds: 4200), () {
+    // Phase 3 -> Navigate to CIBIL Score Screen after showing completion
+    _navigationTimer = Timer(const Duration(milliseconds: 900), () {
       if (mounted) {
         Get.off(() => const CibilScoreScreen());
       }

@@ -20,13 +20,6 @@ class CibilScoreScreen extends StatelessWidget {
         ? Get.find<CibilScoreController>()
         : Get.put(CibilScoreController());
 
-    // Auto-fetch if not loaded yet
-    if (controller.cibilData.value == null && !controller.isLoading.value) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.fetchCibilScore();
-      });
-    }
-
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -148,7 +141,7 @@ class CibilScoreScreen extends StatelessWidget {
   Widget _buildHeroScoreCard(BuildContext context, CibilScoreController controller) {
     return Obx(() {
       final currentScore = score ?? controller.cibilScore.value.toDouble();
-      final rating = controller.scoreRating.value;
+      final rating = controller.getRatingForScore(currentScore.toInt());
       final reportDate = controller.reportDate.value.isNotEmpty
           ? controller.reportDate.value
           : CibilScoreController.formatReportDate(DateTime.now());
