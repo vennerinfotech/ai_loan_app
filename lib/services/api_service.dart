@@ -651,4 +651,81 @@ class ApiService {
       };
     }
   }
+
+  /// Update Onboarding Step API: POST {{baseUrl}}/update-onboarding-step
+  /// Request: { "step": 5 }
+  static Future<Map<String, dynamic>> updateOnboardingStep({
+    required int step,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/update-onboarding-step');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'step': step,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Update Onboarding Step ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in updateOnboardingStep: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to update onboarding step. Please try again.',
+      };
+    }
+  }
+
+  /// Download Verification Receipt API: GET {{baseUrl}}/download-verification-receipt
+  static Future<Map<String, dynamic>> downloadVerificationReceipt({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/download-verification-receipt');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      debugPrint('========== Download Verification Receipt ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in downloadVerificationReceipt: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to download verification receipt. Please try again.',
+      };
+    }
+  }
 }

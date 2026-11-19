@@ -43,6 +43,9 @@ class AadhaarKycController extends GetxController {
   final backUploadedFilename = ''.obs;
   final isVerifyingOtp = false.obs;
   final isResendingOtp = false.obs;
+  final isUpdatingStep = false.obs;
+  final isDownloadingReceipt = false.obs;
+  final receiptUser = Rxn<Map<String, dynamic>>();
 
   // Step 2: Aadhaar OTP
   final otpCode = ''.obs;
@@ -62,14 +65,14 @@ class AadhaarKycController extends GetxController {
   // Global KYC state
   final isAadhaarVerified = false.obs;
 
-  // Dynamic Aadhaar User Details from UIDAI
-  final userName = 'Aarav Mehta'.obs;
-  final userInitials = 'AM'.obs;
-  final maskedAadhaarDisplay = 'XXXX XXXX XXXX'.obs;
-  final dob = '15 Aug 1993'.obs;
-  final gender = 'Male'.obs;
-  final address = '123, MG Road, Bengaluru, Karnataka – 560001'.obs;
-  final linkedMobile = '+91 98765 •••10'.obs;
+  // Dynamic Aadhaar User Details from UIDAI (starts empty, populated dynamically from API)
+  final userName = ''.obs;
+  final userInitials = ''.obs;
+  final maskedAadhaarDisplay = ''.obs;
+  final dob = ''.obs;
+  final gender = ''.obs;
+  final address = ''.obs;
+  final linkedMobile = ''.obs;
 
   bool get isAadhaarValid => aadhaarNumber.value.length == 12;
   bool get isOtpValid => otpCode.value.length == 6;
@@ -464,6 +467,9 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 201;
 
       if (isSuccess) {
+        // Fetch verified user receipt details so ReviewAadhaarDetailsScreen shows live backend data
+        await fetchVerificationReceiptDetails();
+
         Get.snackbar(
           'OTP Verified',
           response['message']?.toString() ?? 'Aadhaar OTP verified successfully.',
@@ -587,6 +593,99 @@ class AadhaarKycController extends GetxController {
     }
   }
 
+  /// Update onboarding step API: POST {{baseUrl}}/update-onboarding-step
+  Future<Map<String, dynamic>> updateOnboardingStep({int step = 5}) async {
+    isUpdatingStep.value = true;
+    try {
+      final response = await ApiService.updateOnboardingStep(step: step);
+      isUpdatingStep.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200;
+
+      if (isSuccess) {
+        final currentStep = response['data']?['current_step'] ?? step;
+        await SessionManager.saveCurrentStep(
+          currentStep is int ? currentStep : int.tryParse(currentStep.toString()) ?? step,
+        );
+      }
+      return response;
+    } catch (e) {
+      isUpdatingStep.value = false;
+      debugPrint('updateOnboardingStep exception: $e');
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
+    }
+  }
+
+  /// Fetch verified user details from GET {{baseUrl}}/download-verification-receipt
+  /// to populate the "Check your details" (Review Aadhaar Details) screen dynamically.
+  Future<void> fetchVerificationReceiptDetails({BuildContext? context}) async {
+    if (isDownloadingReceipt.value) return;
+    isDownloadingReceipt.value = true;
+
+    try {
+      final response = await ApiService.downloadVerificationReceipt();
+      isDownloadingReceipt.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200;
+
+      if (isSuccess && response['data'] != null) {
+        final rawUser = response['data']['user'];
+        if (rawUser != null && rawUser is Map) {
+          final userData = Map<String, dynamic>.from(rawUser);
+          receiptUser.value = userData;
+
+          // 1. Full name & initials
+          final name = userData['name']?.toString().trim() ?? '';
+          if (name.isNotEmpty) {
+            userName.value = name;
+            final parts = name.split(RegExp(r'\s+'));
+            if (parts.length > 1 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+              userInitials.value = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+            } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+              userInitials.value = parts[0][0].toUpperCase();
+            }
+          }
+
+          // 2. Mobile number
+          final phone = userData['phone']?.toString().trim() ?? '';
+          if (phone.isNotEmpty) {
+            linkedMobile.value = phone.startsWith('+91') ? phone : '+91 $phone';
+          }
+
+          // 3. Optional KYC attributes if returned by backend
+          if (userData['dob'] != null && userData['dob'].toString().trim().isNotEmpty) {
+            dob.value = userData['dob'].toString().trim();
+          }
+          if (userData['gender'] != null && userData['gender'].toString().trim().isNotEmpty) {
+            gender.value = userData['gender'].toString().trim();
+          }
+          if (userData['address'] != null && userData['address'].toString().trim().isNotEmpty) {
+            address.value = userData['address'].toString().trim();
+          }
+
+          // 4. Ensure masked Aadhaar is formatted
+          if (maskedAadhaarDisplay.value.isEmpty || maskedAadhaarDisplay.value == 'N/A') {
+            if (aadhaarNumber.value.length == 12) {
+              maskedAadhaarDisplay.value = 'XXXX XXXX ${aadhaarNumber.value.substring(8)}';
+            }
+          }
+        }
+      }
+    } catch (e) {
+      isDownloadingReceipt.value = false;
+      debugPrint('fetchVerificationReceiptDetails exception: $e');
+    }
+  }
+
+  /// Alias for backward compatibility
+  Future<void> downloadVerificationReceipt({BuildContext? context}) =>
+      fetchVerificationReceiptDetails(context: context);
+
   /// Confirm & continue after reviewing Aadhaar details
   void confirmAndContinue() {
     if (!isConfirmChecked.value) {
@@ -602,6 +701,9 @@ class AadhaarKycController extends GetxController {
     }
 
     isAadhaarVerified.value = true;
+
+    // Advance onboarding step to 5 (Aadhaar KYC completed)
+    updateOnboardingStep(step: 5);
 
     final panController = Get.put(PanKycController());
     panController.setTargetFeature(targetFeature.value);

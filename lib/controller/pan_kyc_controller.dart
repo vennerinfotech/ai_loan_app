@@ -23,13 +23,12 @@ class PanKycController extends GetxController {
   // Originally selected feature from Dashboard (e.g. 'Apply for loan')
   final targetFeature = 'Apply for loan'.obs;
 
-  // PAN Input
-  final panNumber = 'ABCDE1234F'.obs;
-  TextEditingController panController = TextEditingController(text: 'ABCDE1234F');
+  // PAN Input (starts empty, dynamic input)
+  final panNumber = ''.obs;
+  TextEditingController panController = TextEditingController();
 
   // Branching toggle: is PAN verified with Income Tax records?
-  // Defaults to true, can be toggled to test both branches
-  final isPanVerified = true.obs;
+  final isPanVerified = false.obs;
 
   // Upload PAN Card state
   final isCardUploaded = false.obs;
@@ -37,11 +36,11 @@ class PanKycController extends GetxController {
   final panImagePath = ''.obs;
   final panImageBytes = Rxn<Uint8List>();
 
-  // Extracted PAN details (dummy data matching reference)
-  final nameAsPerPan = 'AARAV MEHTA'.obs;
-  final fathersName = 'RAJESH MEHTA'.obs;
-  final dob = '15 Aug 1993'.obs;
-  final matchesAadhaar = true.obs;
+  // Extracted PAN details (dynamic)
+  final nameAsPerPan = ''.obs;
+  final fathersName = ''.obs;
+  final dob = ''.obs;
+  final matchesAadhaar = false.obs;
 
   // Overall PAN completion status
   final isPanCompleted = false.obs;

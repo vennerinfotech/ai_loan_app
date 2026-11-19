@@ -235,7 +235,7 @@ class SplashScreen extends StatelessWidget {
             'Keep smiling — quick loans for every need.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondary2,
               fontSize: subtitleFontSize,
               fontWeight: FontWeight.w400,
             ),

@@ -7,6 +7,7 @@ class SessionManager {
   static const String keyUserPhone = 'user_phone';
   static const String keyUserName = 'user_name';
   static const String keyAuthToken = 'auth_token';
+  static const String keyCurrentStep = 'current_step';
 
   /// Save login session into SharedPreferences using setString
   static Future<void> saveLoginSession({
@@ -57,5 +58,17 @@ class SessionManager {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyIsLogin, 'false');
     await prefs.remove(keyAuthToken);
+  }
+
+  /// Save current onboarding step
+  static Future<void> saveCurrentStep(int step) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(keyCurrentStep, step);
+  }
+
+  /// Get current onboarding step
+  static Future<int> getCurrentStep() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(keyCurrentStep) ?? 0;
   }
 }

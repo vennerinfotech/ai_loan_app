@@ -38,13 +38,6 @@ class KycSuccessBody extends StatelessWidget {
         ? Get.find<PanKycController>()
         : Get.put(PanKycController());
 
-    // Masked PAN display: ABCDE••••F
-    String maskedPan = 'ABCDE••••F';
-    final pan = panController.panNumber.value.trim().toUpperCase();
-    if (pan.length == 10) {
-      maskedPan = '${pan.substring(0, 5)}••••${pan.substring(9)}';
-    }
-
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -55,17 +48,29 @@ class KycSuccessBody extends StatelessWidget {
           const SizedBox(height: 16),
 
           // 2. Summary Details Card (Full name, DOB, Aadhaar, PAN)
-          _buildSummaryDetailsCard(
-            name: aadhaarController.userName.value.isNotEmpty
-                ? aadhaarController.userName.value
-                : 'Aarav Mehta',
-            dob: aadhaarController.dob.value.isNotEmpty
-                ? aadhaarController.dob.value
-                : '15 Aug 1993',
-            aadhaar: aadhaarController.maskedAadhaarDisplay.value.isNotEmpty
-                ? aadhaarController.maskedAadhaarDisplay.value
-                : 'XXXX XXXX 1234',
-            pan: maskedPan,
+          Obx(
+            () {
+              final rawName = aadhaarController.userName.value.trim();
+              final name = rawName.isNotEmpty ? rawName : 'N/A';
+
+              final rawDob = aadhaarController.dob.value.trim();
+              final dob = rawDob.isNotEmpty ? rawDob : 'N/A';
+
+              final rawAadhaar = aadhaarController.maskedAadhaarDisplay.value.trim();
+              final aadhaar = rawAadhaar.isNotEmpty ? rawAadhaar : 'N/A';
+
+              final rawPan = panController.panNumber.value.trim().toUpperCase();
+              final pan = rawPan.length == 10
+                  ? '${rawPan.substring(0, 5)}••••${rawPan.substring(9)}'
+                  : (rawPan.isNotEmpty ? rawPan : 'N/A');
+
+              return _buildSummaryDetailsCard(
+                name: name,
+                dob: dob,
+                aadhaar: aadhaar,
+                pan: pan,
+              );
+            },
           ),
           const SizedBox(height: 14),
 
@@ -149,6 +154,8 @@ class KycSuccessBody extends StatelessWidget {
   }
 
   Widget _buildPanRow({required String pan}) {
+    final isVerified = pan != 'N/A';
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -172,22 +179,24 @@ class KycSuccessBody extends StatelessWidget {
                 letterSpacing: 0.5,
               ),
             ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.successGreenBg,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'Verified',
-                style: TextStyle(
-                  color: AppColors.successGreen,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
+            if (isVerified) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.successGreenBg,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Verified',
+                  style: TextStyle(
+                    color: AppColors.successGreen,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ],
@@ -224,6 +233,10 @@ class KycSuccessBody extends StatelessWidget {
 
   /// Bottom action buttons
   Widget _buildActionButtons(BuildContext context) {
+    final aadhaarController = Get.isRegistered<AadhaarKycController>()
+        ? Get.find<AadhaarKycController>()
+        : Get.put(AadhaarKycController());
+
     return Column(
       children: [
         // 1. Primary Button: "Choose loan type" (Proceed directly to apply for loan)
@@ -305,43 +318,48 @@ class KycSuccessBody extends StatelessWidget {
         const SizedBox(height: 8),
 
         // 3. Download Receipt Button
-        GestureDetector(
-          onTap: () {
-            Get.snackbar(
-              'Download Receipt',
-              'KYC acknowledgement receipt saved to downloads.',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppColors.navy,
-              colorText: Colors.white,
-              margin: const EdgeInsets.all(16),
-              duration: const Duration(seconds: 2),
-            );
-          },
-          child: Container(
-            width: double.infinity,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.download_rounded,
-                  color: AppColors.muted,
-                  size: 16,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'Download receipt',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+        Obx(
+          () => GestureDetector(
+            onTap: aadhaarController.isDownloadingReceipt.value
+                ? null
+                : () => aadhaarController.downloadVerificationReceipt(context: context),
+            child: Container(
+              width: double.infinity,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: aadhaarController.isDownloadingReceipt.value
+                  ? const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryPurple,
+                        ),
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.download_rounded,
+                          color: AppColors.muted,
+                          size: 16,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Download receipt',
+                          style: TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),

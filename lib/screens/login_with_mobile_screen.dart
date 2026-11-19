@@ -178,7 +178,7 @@ class LoginWithMobileScreen extends StatelessWidget {
                 const Text(
                   'Sign in to continue your application.',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textSecondary2,
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),

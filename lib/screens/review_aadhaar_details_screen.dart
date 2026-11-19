@@ -36,6 +36,13 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
         ? Get.find<AadhaarKycController>()
         : Get.put(AadhaarKycController());
 
+    // Automatically fetch verified user details from GET /download-verification-receipt if not loaded yet
+    if (controller.receiptUser.value == null && !controller.isDownloadingReceipt.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.fetchVerificationReceiptDetails();
+      });
+    }
+
     return Column(
       children: [
         // Scrollable Content
@@ -129,14 +136,17 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                   ),
                   child: Center(
                     child: Obx(
-                      () => Text(
-                        controller.userInitials.value,
-                        style: const TextStyle(
-                          color: AppColors.navy,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
+                      () {
+                        final initials = controller.userInitials.value.trim();
+                        return Text(
+                          initials.isNotEmpty ? initials : 'N/A',
+                          style: TextStyle(
+                            color: AppColors.navy,
+                            fontSize: initials.length > 2 ? 14 : 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -148,26 +158,32 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Obx(
-                        () => Text(
-                          controller.userName.value,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
+                        () {
+                          final name = controller.userName.value.trim();
+                          return Text(
+                            name.isNotEmpty ? name : 'N/A',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 2),
                       Obx(
-                        () => Text(
-                          controller.maskedAadhaarDisplay.value,
-                          style: const TextStyle(
-                            color: AppColors.indigoTint,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        () {
+                          final aadhaar = controller.maskedAadhaarDisplay.value.trim();
+                          return Text(
+                            aadhaar.isNotEmpty ? aadhaar : 'N/A',
+                            style: const TextStyle(
+                              color: AppColors.indigoTint,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -203,7 +219,9 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             _buildDetailRow(
               icon: Icons.calendar_today_rounded,
               label: 'Date of birth',
-              value: controller.dob.value,
+              value: controller.dob.value.trim().isNotEmpty
+                  ? controller.dob.value.trim()
+                  : 'N/A',
             ),
             const Divider(color: AppColors.line, height: 16, thickness: 1),
 
@@ -211,7 +229,9 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             _buildDetailRow(
               icon: Icons.person_outline_rounded,
               label: 'Gender',
-              value: controller.gender.value,
+              value: controller.gender.value.trim().isNotEmpty
+                  ? controller.gender.value.trim()
+                  : 'N/A',
             ),
             const Divider(color: AppColors.line, height: 16, thickness: 1),
 
@@ -219,7 +239,9 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             _buildDetailRow(
               icon: Icons.location_on_outlined,
               label: 'Address',
-              value: controller.address.value,
+              value: controller.address.value.trim().isNotEmpty
+                  ? controller.address.value.trim()
+                  : 'N/A',
             ),
             const Divider(color: AppColors.line, height: 16, thickness: 1),
 
@@ -227,7 +249,9 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
             _buildDetailRow(
               icon: Icons.smartphone_rounded,
               label: 'Mobile (linked)',
-              value: controller.linkedMobile.value,
+              value: controller.linkedMobile.value.trim().isNotEmpty
+                  ? controller.linkedMobile.value.trim()
+                  : 'N/A',
             ),
           ],
         ),
