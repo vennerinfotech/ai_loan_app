@@ -430,7 +430,7 @@ class CibilScoreScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'See loans you qualify for',
+                'View loans you qualify for',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 15,
