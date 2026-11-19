@@ -463,4 +463,192 @@ class ApiService {
       };
     }
   }
+
+  /// Store Aadhaar API: POST {{baseUrl}}/store-aadhaar
+  static Future<Map<String, dynamic>> storeAadhaar({
+    required String aadhaarNumber,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/store-aadhaar');
+
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'aadhaar_number': aadhaarNumber.replaceAll(RegExp(r'\D'), '').trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Store Aadhaar ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in storeAadhaar: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Upload Aadhaar Card Image API: POST {{baseUrl}}/upload-aadhaar
+  /// Multipart form-data with key 'aadhar_card_image'
+  static Future<Map<String, dynamic>> uploadAadhaar({
+    required String filePath,
+    Uint8List? fileBytes,
+    String? filename,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/upload-aadhaar');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+
+      request.headers.addAll({
+        'Accept': 'application/json',
+        if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+      });
+
+      if (fileBytes != null && fileBytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'aadhar_card_image',
+            fileBytes,
+            filename: filename ?? 'aadhaar_card.jpg',
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'aadhar_card_image',
+            filePath,
+          ),
+        );
+      }
+
+      debugPrint('========== Upload Aadhaar Card ==========');
+      debugPrint('--> POST (Multipart) $url');
+      debugPrint('File Path: $filePath');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in uploadAadhaar: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to upload Aadhaar document. Please try again.',
+      };
+    }
+  }
+
+  /// Verify Aadhaar OTP API: POST {{baseUrl}}/verify-aadhaar-otp
+  /// Request: { "otp": otp, "document_id": document_id }
+  static Future<Map<String, dynamic>> verifyAadhaarOtp({
+    required String otp,
+    required dynamic documentId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/verify-aadhaar-otp');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'otp': otp.trim(),
+      'document_id': documentId,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Verify Aadhaar OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in verifyAadhaarOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to verify OTP. Please try again.',
+      };
+    }
+  }
+
+  /// Resend Aadhaar OTP API: POST {{baseUrl}}/resend-aadhaar-otp
+  static Future<Map<String, dynamic>> resendAadhaarOtp({
+    dynamic documentId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/resend-aadhaar-otp');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      if (documentId != null) 'document_id': documentId,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Resend Aadhaar OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in resendAadhaarOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to resend Aadhaar OTP. Please try again.',
+      };
+    }
+  }
 }

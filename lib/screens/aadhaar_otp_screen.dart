@@ -32,7 +32,9 @@ class AadhaarOtpBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AadhaarKycController>();
+    final controller = Get.isRegistered<AadhaarKycController>()
+        ? Get.find<AadhaarKycController>()
+        : Get.put(AadhaarKycController());
 
     return Column(
       children: [
@@ -185,15 +187,42 @@ class AadhaarOtpBody extends StatelessWidget {
             ),
           ),
         ),
-        GestureDetector(
-          onTap: controller.resendOtp,
-          child: const Text(
-            'Didn\'t get it?',
-            style: TextStyle(
-              color: AppColors.primaryPurple,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-            ),
+        Obx(
+          () => GestureDetector(
+            onTap: (controller.isResendingOtp.value || controller.isVerifyingOtp.value)
+                ? null
+                : controller.resendOtp,
+            child: controller.isResendingOtp.value
+                ? const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.8,
+                          color: AppColors.primaryPurple,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Sending...',
+                        style: TextStyle(
+                          color: AppColors.primaryPurple,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  )
+                : const Text(
+                    'Didn\'t get it?',
+                    style: TextStyle(
+                      color: AppColors.primaryPurple,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
           ),
         ),
       ],
@@ -301,40 +330,54 @@ class AadhaarOtpBody extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
       child: Obx(
-        () => SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: controller.isOtpValid ? controller.verifyOtp : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryButtonBackground,
-              disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        () {
+          final isBusy = controller.isVerifyingOtp.value;
+          final isEnabled = controller.isOtpValid && !isBusy;
+
+          return SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: isEnabled ? controller.verifyOtp : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryButtonBackground,
+                disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
+              child: isBusy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Verify OTP',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AppColors.accentGold,
+                          size: 16,
+                        ),
+                      ],
+                    ),
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Verify OTP',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                SizedBox(width: 8),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  color: AppColors.accentGold,
-                  size: 16,
-                ),
-              ],
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

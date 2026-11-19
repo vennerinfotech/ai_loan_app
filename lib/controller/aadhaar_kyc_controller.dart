@@ -10,6 +10,8 @@ import '../screens/enter_pan_screen.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
 
 /// GetX controller for Aadhaar KYC Verification flow.
 /// Implements full flow:
@@ -22,14 +24,25 @@ class AadhaarKycController extends GetxController {
   final targetFeature = 'Apply for loan'.obs;
 
   // Step 1: Aadhaar Number
-  final aadhaarNumber = '482177301234'.obs; // 12-digit raw
-  TextEditingController aadhaarController = TextEditingController(text: '4821 7730 1234');
+  final aadhaarNumber = ''.obs; // 12-digit raw
+  TextEditingController aadhaarController = TextEditingController();
   final frontUploaded = false.obs;
   final backUploaded = false.obs;
   final frontImagePath = ''.obs;
   final backImagePath = ''.obs;
   final frontImageBytes = Rxn<Uint8List>();
   final backImageBytes = Rxn<Uint8List>();
+
+  // API State
+  final isSendingOtp = false.obs;
+  final documentId = RxnInt();
+  final otpExpiresAt = ''.obs;
+  final isUploadingFront = false.obs;
+  final isUploadingBack = false.obs;
+  final frontUploadedFilename = ''.obs;
+  final backUploadedFilename = ''.obs;
+  final isVerifyingOtp = false.obs;
+  final isResendingOtp = false.obs;
 
   // Step 2: Aadhaar OTP
   final otpCode = ''.obs;
@@ -49,10 +62,10 @@ class AadhaarKycController extends GetxController {
   // Global KYC state
   final isAadhaarVerified = false.obs;
 
-  // Dummy Aadhaar User Details from UIDAI
+  // Dynamic Aadhaar User Details from UIDAI
   final userName = 'Aarav Mehta'.obs;
   final userInitials = 'AM'.obs;
-  final maskedAadhaarDisplay = 'XXXX XXXX 1234'.obs;
+  final maskedAadhaarDisplay = 'XXXX XXXX XXXX'.obs;
   final dob = '15 Aug 1993'.obs;
   final gender = 'Male'.obs;
   final address = '123, MG Road, Bengaluru, Karnataka – 560001'.obs;
@@ -64,9 +77,6 @@ class AadhaarKycController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Default pre-filled 12-digit Aadhaar for smooth demo as shown in reference: 4821 7730 1234
-    aadhaarNumber.value = '482177301234';
-    aadhaarController.text = '4821 7730 1234';
   }
 
   @override
@@ -86,6 +96,13 @@ class AadhaarKycController extends GetxController {
     final limited = digitsOnly.length > 12 ? digitsOnly.substring(0, 12) : digitsOnly;
     aadhaarNumber.value = limited;
 
+    // Dynamically update masked display
+    if (limited.length == 12) {
+      maskedAadhaarDisplay.value = 'XXXX XXXX ${limited.substring(8)}';
+    } else if (limited.isNotEmpty) {
+      maskedAadhaarDisplay.value = 'XXXX XXXX XXXX';
+    }
+
     // Format with spaces
     final buffer = StringBuffer();
     for (int i = 0; i < limited.length; i++) {
@@ -102,6 +119,7 @@ class AadhaarKycController extends GetxController {
   }
 
   /// Pick Aadhaar document (Front or Back) using camera or gallery via ImagePickerBottomSheet
+  /// and automatically uploads it via POST /upload-aadhaar
   Future<void> pickAadhaarDocument({
     required bool isFront,
     BuildContext? context,
@@ -115,24 +133,82 @@ class AadhaarKycController extends GetxController {
     if (file != null) {
       final bytes = await file.readAsBytes();
       if (isFront) {
-        frontUploaded.value = true;
         frontImagePath.value = file.path;
         frontImageBytes.value = bytes;
+        isUploadingFront.value = true;
       } else {
-        backUploaded.value = true;
         backImagePath.value = file.path;
         backImageBytes.value = bytes;
+        isUploadingBack.value = true;
       }
 
-      Get.snackbar(
-        isFront ? 'Front Side Uploaded' : 'Back Side Uploaded',
-        'Document selected: ${file.name}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
+      try {
+        final response = await ApiService.uploadAadhaar(
+          filePath: file.path,
+          fileBytes: bytes,
+          filename: file.name,
+        );
+
+        if (isFront) {
+          isUploadingFront.value = false;
+        } else {
+          isUploadingBack.value = false;
+        }
+
+        final isSuccess = response['success'] == true ||
+            response['status_code'] == 200 ||
+            response['status_code'] == 201;
+
+        if (isSuccess) {
+          final filename =
+              response['data']?['filename']?.toString() ?? file.name;
+          if (isFront) {
+            frontUploaded.value = true;
+            frontUploadedFilename.value = filename;
+          } else {
+            backUploaded.value = true;
+            backUploadedFilename.value = filename;
+          }
+
+          Get.snackbar(
+            isFront ? 'Front Side Uploaded' : 'Back Side Uploaded',
+            response['message']?.toString() ??
+                'Aadhaar document uploaded successfully.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.navy,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 2),
+          );
+        } else {
+          final errorMsg = ApiService.getErrorMessage(response);
+          Get.snackbar(
+            'Upload Failed',
+            errorMsg,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.shade800,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          );
+        }
+      } catch (e) {
+        if (isFront) {
+          isUploadingFront.value = false;
+        } else {
+          isUploadingBack.value = false;
+        }
+        debugPrint('uploadAadhaar exception: $e');
+        Get.snackbar(
+          'Upload Error',
+          'Failed to upload Aadhaar: ${e.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
     }
   }
 
@@ -149,24 +225,126 @@ class AadhaarKycController extends GetxController {
     }
   }
 
-  /// Send OTP to registered mobile number
-  void sendOtp() {
-    if (!isAadhaarValid) {
-      Get.snackbar(
-        'Invalid Aadhaar',
-        'Please enter a valid 12-digit Aadhaar number.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade700,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
+  /// Send OTP to registered mobile number via POST /store-aadhaar
+  /// Also ensures any selected documents are uploaded via POST /upload-aadhaar
+  Future<void> sendOtp() async {
+    if (!isAadhaarValid || isSendingOtp.value) {
+      if (!isAadhaarValid) {
+        Get.snackbar(
+          'Invalid Aadhaar',
+          'Please enter a valid 12-digit Aadhaar number.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade700,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }
       return;
     }
-    startResendTimer();
-    if (Get.isRegistered<KycFlowController>()) {
-      Get.find<KycFlowController>().setStep(KycSubStep.aadhaarOtp);
-    } else {
-      Get.to(() => const AadhaarOtpScreen());
+
+    try {
+      isSendingOtp.value = true;
+
+      // 1. If front document was selected but upload hasn't completed, upload it
+      if (frontImagePath.value.isNotEmpty && !frontUploaded.value) {
+        final frontRes = await ApiService.uploadAadhaar(
+          filePath: frontImagePath.value,
+          fileBytes: frontImageBytes.value,
+        );
+        if (frontRes['success'] == true || frontRes['status_code'] == 201) {
+          frontUploaded.value = true;
+          frontUploadedFilename.value =
+              frontRes['data']?['filename']?.toString() ?? '';
+        }
+      }
+
+      // 2. If back document was selected but upload hasn't completed, upload it
+      if (backImagePath.value.isNotEmpty && !backUploaded.value) {
+        final backRes = await ApiService.uploadAadhaar(
+          filePath: backImagePath.value,
+          fileBytes: backImageBytes.value,
+        );
+        if (backRes['success'] == true || backRes['status_code'] == 201) {
+          backUploaded.value = true;
+          backUploadedFilename.value =
+              backRes['data']?['filename']?.toString() ?? '';
+        }
+      }
+
+      // 3. Store Aadhaar number and send OTP
+      final response = await ApiService.storeAadhaar(
+        aadhaarNumber: aadhaarNumber.value,
+      );
+      isSendingOtp.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        final data = response['data'] is Map<String, dynamic>
+            ? response['data'] as Map<String, dynamic>
+            : null;
+
+        if (data != null) {
+          documentId.value = data['document_id'] is int
+              ? data['document_id']
+              : int.tryParse(data['document_id']?.toString() ?? '');
+          otpExpiresAt.value = data['expires_at']?.toString() ?? '';
+
+          final testOtp = data['otp']?.toString();
+          if (testOtp != null && testOtp.isNotEmpty) {
+            otpCode.value = testOtp;
+            otpController.value = TextEditingValue(
+              text: testOtp,
+              selection: TextSelection.collapsed(offset: testOtp.length),
+            );
+            debugPrint('Auto-filled test Aadhaar OTP: $testOtp');
+          }
+        }
+
+        Get.snackbar(
+          'OTP Sent',
+          response['message']?.toString() ??
+              'Aadhaar OTP sent for verification.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+
+        startResendTimer();
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarOtp);
+        } else {
+          Get.to(() => const AadhaarOtpScreen());
+        }
+      } else {
+        final errorMsg = ApiService.getErrorMessage(response);
+        debugPrint('Store Aadhaar Error: $errorMsg');
+        Get.snackbar(
+          'Submission Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isSendingOtp.value = false;
+      debugPrint('Store Aadhaar Exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to store Aadhaar: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -188,22 +366,77 @@ class AadhaarKycController extends GetxController {
     otpCode.value = val;
   }
 
-  void resendOtp() {
-    if (!canResend.value) return;
-    startResendTimer();
-    Get.snackbar(
-      'OTP Sent',
-      'A new Aadhaar OTP has been sent by UIDAI to mobile linked with $maskedAadhaarDisplay.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.navy,
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 2),
-    );
+  Future<void> resendOtp() async {
+    if (isResendingOtp.value) return;
+    isResendingOtp.value = true;
+
+    try {
+      final response = await ApiService.resendAadhaarOtp(
+        documentId: documentId.value,
+      );
+      isResendingOtp.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        if (response['data'] != null) {
+          if (response['data']['document_id'] != null) {
+            documentId.value = response['data']['document_id'] is int
+                ? response['data']['document_id']
+                : int.tryParse(response['data']['document_id'].toString());
+          }
+          if (response['data']['expires_at'] != null) {
+            otpExpiresAt.value = response['data']['expires_at'].toString();
+          }
+          if (response['data']['otp'] != null) {
+            final testOtp = response['data']['otp'].toString();
+            otpController.text = testOtp;
+            otpCode.value = testOtp;
+          }
+        }
+
+        startResendTimer();
+        Get.snackbar(
+          'OTP Sent',
+          response['message']?.toString() ??
+              'A new Aadhaar OTP has been sent by UIDAI to mobile linked with ${maskedAadhaarDisplay.value}.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      } else {
+        final errorMsg = ApiService.getErrorMessage(response);
+        Get.snackbar(
+          'Failed to Resend',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isResendingOtp.value = false;
+      debugPrint('resendAadhaarOtp exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to resend Aadhaar OTP: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   /// Verify OTP and branch based on whether mobile is linked
-  void verifyOtp() {
+  Future<void> verifyOtp() async {
     if (!isOtpValid) {
       Get.snackbar(
         'Incomplete OTP',
@@ -216,16 +449,66 @@ class AadhaarKycController extends GetxController {
       return;
     }
 
-    if (Get.isRegistered<KycFlowController>()) {
-      Get.find<KycFlowController>().setStep(
-        isMobileLinked.value ? KycSubStep.aadhaarReview : KycSubStep.aadhaarNotLinked,
+    if (isVerifyingOtp.value) return;
+    isVerifyingOtp.value = true;
+
+    try {
+      final response = await ApiService.verifyAadhaarOtp(
+        otp: otpCode.value.trim(),
+        documentId: documentId.value ?? 1,
       );
-    } else {
-      if (isMobileLinked.value) {
-        Get.to(() => const ReviewAadhaarDetailsScreen());
+      isVerifyingOtp.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        Get.snackbar(
+          'OTP Verified',
+          response['message']?.toString() ?? 'Aadhaar OTP verified successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(
+            isMobileLinked.value ? KycSubStep.aadhaarReview : KycSubStep.aadhaarNotLinked,
+          );
+        } else {
+          if (isMobileLinked.value) {
+            Get.to(() => const ReviewAadhaarDetailsScreen());
+          } else {
+            Get.to(() => const AadhaarNotLinkedScreen());
+          }
+        }
       } else {
-        Get.to(() => const AadhaarNotLinkedScreen());
+        final errorMsg = ApiService.getErrorMessage(response);
+        Get.snackbar(
+          'Verification Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
       }
+    } catch (e) {
+      isVerifyingOtp.value = false;
+      debugPrint('verifyAadhaarOtp exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to verify OTP: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -239,24 +522,67 @@ class AadhaarKycController extends GetxController {
 
     if (file != null) {
       final bytes = await file.readAsBytes();
-      frontUploaded.value = true;
       frontImagePath.value = file.path;
       frontImageBytes.value = bytes;
+      isUploadingFront.value = true;
 
-      Get.snackbar(
-        'Aadhaar Uploaded',
-        'Document submitted: ${file.name}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
+      try {
+        final response = await ApiService.uploadAadhaar(
+          filePath: file.path,
+          fileBytes: bytes,
+          filename: file.name,
+        );
+        isUploadingFront.value = false;
 
-      if (Get.isRegistered<KycFlowController>()) {
-        Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
-      } else {
-        Get.to(() => const ReviewAadhaarDetailsScreen());
+        final isSuccess = response['success'] == true ||
+            response['status_code'] == 200 ||
+            response['status_code'] == 201;
+
+        if (isSuccess) {
+          frontUploaded.value = true;
+          frontUploadedFilename.value =
+              response['data']?['filename']?.toString() ?? file.name;
+
+          Get.snackbar(
+            'Aadhaar Uploaded',
+            response['message']?.toString() ??
+                'Aadhaar document uploaded successfully.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.navy,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 2),
+          );
+
+          if (Get.isRegistered<KycFlowController>()) {
+            Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
+          } else {
+            Get.to(() => const ReviewAadhaarDetailsScreen());
+          }
+        } else {
+          final errorMsg = ApiService.getErrorMessage(response);
+          Get.snackbar(
+            'Upload Failed',
+            errorMsg,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.shade800,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 3),
+          );
+        }
+      } catch (e) {
+        isUploadingFront.value = false;
+        debugPrint('uploadAadhaarManually exception: $e');
+        Get.snackbar(
+          'Error',
+          'Failed to upload Aadhaar: ${e.toString()}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
       }
     }
   }

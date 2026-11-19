@@ -198,8 +198,13 @@ class AadhaarVerificationBody extends StatelessWidget {
           child: Obx(
             () => _buildUploadCard(
               title: 'Front side',
-              subtitle: controller.frontUploaded.value ? 'Uploaded ✓' : 'Camera or gallery',
+              subtitle: controller.isUploadingFront.value
+                  ? 'Uploading...'
+                  : (controller.frontUploaded.value
+                      ? 'Uploaded ✓'
+                      : 'Camera or gallery'),
               isUploaded: controller.frontUploaded.value,
+              isUploading: controller.isUploadingFront.value,
               imagePath: controller.frontImagePath.value,
               imageBytes: controller.frontImageBytes.value,
               onTap: () => controller.pickAadhaarDocument(isFront: true, context: context),
@@ -213,8 +218,13 @@ class AadhaarVerificationBody extends StatelessWidget {
           child: Obx(
             () => _buildUploadCard(
               title: 'Back side',
-              subtitle: controller.backUploaded.value ? 'Uploaded ✓' : 'Camera or gallery',
+              subtitle: controller.isUploadingBack.value
+                  ? 'Uploading...'
+                  : (controller.backUploaded.value
+                      ? 'Uploaded ✓'
+                      : 'Camera or gallery'),
               isUploaded: controller.backUploaded.value,
+              isUploading: controller.isUploadingBack.value,
               imagePath: controller.backImagePath.value,
               imageBytes: controller.backImageBytes.value,
               onTap: () => controller.pickAadhaarDocument(isFront: false, context: context),
@@ -229,6 +239,7 @@ class AadhaarVerificationBody extends StatelessWidget {
     required String title,
     required String subtitle,
     required bool isUploaded,
+    bool isUploading = false,
     required String imagePath,
     Uint8List? imageBytes,
     required VoidCallback onTap,
@@ -361,15 +372,32 @@ class AadhaarVerificationBody extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: isUploaded ? AppColors.successGreenBg : AppColors.kycUploadIconBg,
+                      color: isUploading
+                          ? AppColors.indigoTint
+                          : (isUploaded
+                              ? AppColors.successGreenBg
+                              : AppColors.kycUploadIconBg),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Icon(
-                        isUploaded ? Icons.check_circle_rounded : Icons.photo_camera_back_outlined,
-                        color: isUploaded ? AppColors.successGreen : AppColors.kycUploadIcon,
-                        size: 22,
-                      ),
+                      child: isUploading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: AppColors.indigo,
+                              ),
+                            )
+                          : Icon(
+                              isUploaded
+                                  ? Icons.check_circle_rounded
+                                  : Icons.photo_camera_back_outlined,
+                              color: isUploaded
+                                  ? AppColors.successGreen
+                                  : AppColors.kycUploadIcon,
+                              size: 22,
+                            ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -387,9 +415,15 @@ class AadhaarVerificationBody extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isUploaded ? AppColors.successGreen : AppColors.textDarkSecondary,
+                      color: isUploading
+                          ? AppColors.indigo
+                          : (isUploaded
+                              ? AppColors.successGreen
+                              : AppColors.textDarkSecondary),
                       fontSize: 10.5,
-                      fontWeight: isUploaded ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isUploaded || isUploading
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
                 ],
@@ -472,40 +506,55 @@ class AadhaarVerificationBody extends StatelessWidget {
 
           // Send OTP Button
           Obx(
-            () => SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: controller.isAadhaarValid ? controller.sendOtp : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryButtonBackground,
-                  disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            () {
+              final isSending = controller.isSendingOtp.value;
+              final isValid = controller.isAadhaarValid;
+
+              return SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: (isValid && !isSending) ? controller.sendOtp : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryButtonBackground,
+                    disabledBackgroundColor:
+                        AppColors.navy.withValues(alpha: 0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
+                  child: isSending
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Send OTP',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.accentGold,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Send OTP',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.accentGold,
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),

@@ -32,7 +32,9 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AadhaarKycController>();
+    final controller = Get.isRegistered<AadhaarKycController>()
+        ? Get.find<AadhaarKycController>()
+        : Get.put(AadhaarKycController());
 
     return Column(
       children: [
@@ -180,53 +182,55 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
 
   /// White details card with 4 items
   Widget _buildDetailsCard(AadhaarKycController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // 1: Date of birth
-          _buildDetailRow(
-            icon: Icons.calendar_today_rounded,
-            label: 'Date of birth',
-            value: controller.dob.value,
-          ),
-          const Divider(color: AppColors.line, height: 16, thickness: 1),
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 1: Date of birth
+            _buildDetailRow(
+              icon: Icons.calendar_today_rounded,
+              label: 'Date of birth',
+              value: controller.dob.value,
+            ),
+            const Divider(color: AppColors.line, height: 16, thickness: 1),
 
-          // 2: Gender
-          _buildDetailRow(
-            icon: Icons.person_outline_rounded,
-            label: 'Gender',
-            value: controller.gender.value,
-          ),
-          const Divider(color: AppColors.line, height: 16, thickness: 1),
+            // 2: Gender
+            _buildDetailRow(
+              icon: Icons.person_outline_rounded,
+              label: 'Gender',
+              value: controller.gender.value,
+            ),
+            const Divider(color: AppColors.line, height: 16, thickness: 1),
 
-          // 3: Address
-          _buildDetailRow(
-            icon: Icons.location_on_outlined,
-            label: 'Address',
-            value: controller.address.value,
-          ),
-          const Divider(color: AppColors.line, height: 16, thickness: 1),
+            // 3: Address
+            _buildDetailRow(
+              icon: Icons.location_on_outlined,
+              label: 'Address',
+              value: controller.address.value,
+            ),
+            const Divider(color: AppColors.line, height: 16, thickness: 1),
 
-          // 4: Mobile (linked)
-          _buildDetailRow(
-            icon: Icons.smartphone_rounded,
-            label: 'Mobile (linked)',
-            value: controller.linkedMobile.value,
-          ),
-        ],
+            // 4: Mobile (linked)
+            _buildDetailRow(
+              icon: Icons.smartphone_rounded,
+              label: 'Mobile (linked)',
+              value: controller.linkedMobile.value,
+            ),
+          ],
+        ),
       ),
     );
   }
