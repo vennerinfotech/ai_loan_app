@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'session_manager.dart';
 
 /// Central API Service for handling network requests across Finsphere AI Loan App.
 /// Always returns the decoded response Map for both success and error responses.
@@ -48,6 +49,41 @@ class ApiService {
     }
 
     return msg ?? 'Something went wrong. Please try again.';
+  }
+
+  /// Check Mobile Registered API: POST {{baseUrl}}/check-mobile-login
+  static Future<Map<String, dynamic>> checkMobileLogin({
+    required String phone,
+  }) async {
+    final url = Uri.parse('$baseUrl/check-mobile-login');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Check Mobile Login ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in checkMobileLogin: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
   }
 
   /// Register User API: POST {{baseUrl}}/register
@@ -384,6 +420,42 @@ class ApiService {
       return data;
     } catch (e) {
       debugPrint('Exception in resetMpin: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Logout API: POST {{baseUrl}}/logout
+  static Future<Map<String, dynamic>> logout({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/logout');
+
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+      );
+
+      debugPrint('========== Logout ==========');
+      debugPrint('--> POST $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in logout: $e');
       return {
         'success': false,
         'status_code': 500,

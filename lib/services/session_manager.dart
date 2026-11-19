@@ -56,5 +56,6 @@ class SessionManager {
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyIsLogin, 'false');
+    await prefs.remove(keyAuthToken);
   }
 }

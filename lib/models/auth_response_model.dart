@@ -54,6 +54,8 @@ class AuthData {
   final String? token;
   final String? tokenType;
   final String? csrfToken;
+  final bool? isRegistered;
+  final String? role;
 
   AuthData({
     this.userId,
@@ -64,6 +66,8 @@ class AuthData {
     this.token,
     this.tokenType,
     this.csrfToken,
+    this.isRegistered,
+    this.role,
   });
 
   factory AuthData.fromJson(Map<String, dynamic> json) {
@@ -81,6 +85,11 @@ class AuthData {
       token: json['token']?.toString(),
       tokenType: json['token_type']?.toString(),
       csrfToken: json['csrf_token']?.toString(),
+      isRegistered: json['is_registered'] is bool
+          ? json['is_registered']
+          : (json['is_registered']?.toString() == 'true' ||
+              json['is_registered'] == 1),
+      role: json['role']?.toString(),
     );
   }
 
@@ -94,6 +103,8 @@ class AuthData {
       'token': token,
       'token_type': tokenType,
       'csrf_token': csrfToken,
+      'is_registered': isRegistered,
+      'role': role,
     };
   }
 }

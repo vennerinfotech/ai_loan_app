@@ -97,6 +97,9 @@ class AppColors {
   static const Color textMuted = muted;
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = muted;
+  /// Light grey secondary text color for dark cards / secondary subtitles
+  static const Color textSecondary2 = Color(0xFFBAC2D6);
+  static const Color secondaryTextColor2 = textSecondary2;
   static const Color headingHighlight = indigo;
 
   // Borders & Cards
@@ -219,6 +222,7 @@ class AppColors {
   // MPIN Screens
   static const Color mpinDarkBackgroundTop = gradientTop;
   static const Color mpinDarkBackgroundBottom = gradientBottom;
+  static const Color mpinCardSubtitle = textSecondary2;
   static const Color mpinFieldBackground = navy;
   static const Color mpinFieldBorder = indigo;
   static const Color mpinDotFilled = amber;

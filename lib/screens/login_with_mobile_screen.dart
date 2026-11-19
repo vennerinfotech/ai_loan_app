@@ -10,11 +10,19 @@ import '../theme/theme.dart';
 /// mobile number input, "Get OTP →" button, "Sign in with MPIN", and registration link.
 /// Pixel-perfect match to Figma reference design.
 class LoginWithMobileScreen extends StatelessWidget {
-  const LoginWithMobileScreen({super.key});
+  final String? initialPhone;
+
+  const LoginWithMobileScreen({super.key, this.initialPhone});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(LoginWithMobileController());
+    if (initialPhone != null &&
+        initialPhone!.isNotEmpty &&
+        controller.mobileNumber.value.isEmpty) {
+      controller.mobileNumber.value = initialPhone!;
+      controller.mobileController.text = initialPhone!;
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -170,7 +178,7 @@ class LoginWithMobileScreen extends StatelessWidget {
                 const Text(
                   'Sign in to continue your application.',
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textPrimary,
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
@@ -305,9 +313,10 @@ class LoginWithMobileScreen extends StatelessWidget {
   Widget _buildGetOtpButton(LoginWithMobileController controller) {
     return Obx(() {
       final canSubmit = controller.canSubmit;
+      final isLoading = controller.isLoading.value;
 
       return InkWell(
-        onTap: canSubmit ? controller.getOtp : null,
+        onTap: (canSubmit && !isLoading) ? controller.getOtp : null,
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -319,28 +328,37 @@ class LoginWithMobileScreen extends StatelessWidget {
                 : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Get OTP',
-                style: TextStyle(
-                  color: canSubmit
-                      ? AppColors.primaryButtonText
-                      : AppColors.primaryButtonText.withValues(alpha: 0.7),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.1,
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.2,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Get OTP',
+                      style: TextStyle(
+                        color: canSubmit
+                            ? AppColors.primaryButtonText
+                            : AppColors.primaryButtonText.withValues(alpha: 0.7),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.accentGold,
+                      size: 18,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.accentGold,
-                size: 18,
-              ),
-            ],
-          ),
         ),
       );
     });

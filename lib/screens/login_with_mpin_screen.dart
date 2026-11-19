@@ -105,7 +105,7 @@ class LoginWithMpinScreen extends StatelessWidget {
               const Text(
                 'Welcome back',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textSecondary2,
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                 ),
@@ -155,7 +155,7 @@ class LoginWithMpinScreen extends StatelessWidget {
               const Text(
                 'Enter your 6-digit MPIN',
                 style: TextStyle(
-                  color: AppColors.inputHintIcon,
+                  color: AppColors.textSecondary2,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
                 ),
