@@ -2,6 +2,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../screens/login_with_mpin_screen.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
+import '../models/auth_response_model.dart';
 
 /// GetX controller for "Reset MPIN" (Set New MPIN) screen after Forgot MPIN OTP verification.
 class ResetMpinController extends GetxController {
@@ -10,9 +13,14 @@ class ResetMpinController extends GetxController {
   final activeMpinField = 'new'.obs; // 'new' or 'confirm'
   final isSubmitting = false.obs;
   final userPhone = ''.obs;
+  final userOtp = ''.obs;
 
   void setPhoneNumber(String phone) {
     userPhone.value = phone.trim();
+  }
+
+  void setOtp(String otp) {
+    userOtp.value = otp.trim();
   }
 
   bool get has6Digits => newMpin.value.length == 6;
@@ -79,22 +87,74 @@ class ResetMpinController extends GetxController {
     }
   }
 
-  void setMpin() {
-    if (!canSetMpin) return;
+  Future<void> setMpin() async {
+    if (!canSetMpin || isSubmitting.value) return;
 
-    isSubmitting.value = true;
-    Future.delayed(const Duration(milliseconds: 400), () {
+    try {
+      isSubmitting.value = true;
+      final response = await ApiService.resetMpin(
+        phone: userPhone.value,
+        otp: userOtp.value,
+        mpin: newMpin.value,
+        mpinConfirmation: confirmMpin.value,
+      );
       isSubmitting.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        final model = AuthResponseModel.fromJson(response);
+        final token = model.data?.token;
+        final name = model.data?.user?.name;
+        final phone = model.data?.user?.phone ?? userPhone.value;
+
+        if (token != null && token.isNotEmpty) {
+          await SessionManager.saveLoginSession(
+            phone: phone,
+            name: name,
+            token: token,
+          );
+        }
+
+        Get.snackbar(
+          'Success',
+          model.message.isNotEmpty
+              ? model.message
+              : 'MPIN reset successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+        Get.offAll(() => LoginWithMpinScreen(phoneNumber: phone));
+      } else {
+        final errorMsg = ApiService.getErrorMessage(response);
+        debugPrint('Reset MPIN Error: $errorMsg');
+        Get.snackbar(
+          'Reset Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      isSubmitting.value = false;
+      debugPrint('Reset MPIN Exception: $e');
       Get.snackbar(
-        'MPIN Updated',
-        'Your new MPIN has been set successfully. Please log in.',
+        'Error',
+        'Failed to reset MPIN: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
+        backgroundColor: Colors.red.shade800,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
       );
-      Get.offAll(() => const LoginWithMpinScreen());
-    });
+    }
   }
 }

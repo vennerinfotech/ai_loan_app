@@ -169,7 +169,7 @@ class ApiService {
     required String mpinConfirmation,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/set-mpin');
+    final url = Uri.parse('$baseUrl/mpin');
 
     final headers = {
       'Content-Type': 'application/json',
@@ -343,6 +343,47 @@ class ApiService {
       return data;
     } catch (e) {
       debugPrint('Exception in forgotMpinResend: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Reset MPIN API: POST {{baseUrl}}/reset-mpin
+  static Future<Map<String, dynamic>> resetMpin({
+    required String phone,
+    required String otp,
+    required String mpin,
+    required String mpinConfirmation,
+  }) async {
+    final url = Uri.parse('$baseUrl/reset-mpin');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+      'otp': otp.trim(),
+      'mpin': mpin.trim(),
+      'mpin_confirmation': mpinConfirmation.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Reset MPIN ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in resetMpin: $e');
       return {
         'success': false,
         'status_code': 500,

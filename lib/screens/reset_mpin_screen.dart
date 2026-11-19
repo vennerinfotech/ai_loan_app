@@ -9,14 +9,22 @@ import '../theme/theme.dart';
 /// Clean light theme with validation chips, numeric pad, and "Set MPIN" button.
 class ResetMpinScreen extends StatelessWidget {
   final String? phoneNumber;
+  final String? otp;
 
-  const ResetMpinScreen({super.key, this.phoneNumber});
+  const ResetMpinScreen({
+    super.key,
+    this.phoneNumber,
+    this.otp,
+  });
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ResetMpinController());
     if (phoneNumber != null && phoneNumber!.isNotEmpty) {
       controller.setPhoneNumber(phoneNumber!);
+    }
+    if (otp != null && otp!.isNotEmpty) {
+      controller.setOtp(otp!);
     }
 
     return Scaffold(

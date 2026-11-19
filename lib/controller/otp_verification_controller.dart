@@ -211,7 +211,10 @@ class OtpVerificationController extends GetxController {
             duration: const Duration(seconds: 2),
           );
 
-          Get.off(() => ResetMpinScreen(phoneNumber: phoneNumber));
+          Get.off(() => ResetMpinScreen(
+                phoneNumber: phoneNumber,
+                otp: enteredOtp,
+              ));
         } else {
           final errorMsg = ApiService.getErrorMessage(response);
           debugPrint('Forgot MPIN Verify Error: $errorMsg');
