@@ -3,112 +3,51 @@ import '../theme/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
+import '../controller/cibil_score_controller.dart';
 
-/// Screen displaying the retrieved CIBIL / CRIF score matching Reference Image 2
+/// Screen displaying the retrieved CIBIL / CRIF score matching updated full-height design
 class CibilScoreScreen extends StatelessWidget {
-  final double score;
+  final double? score;
 
   const CibilScoreScreen({
     super.key,
-    this.score = 762,
+    this.score,
   });
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.isRegistered<CibilScoreController>()
+        ? Get.find<CibilScoreController>()
+        : Get.put(CibilScoreController());
+
+    // Auto-fetch if not loaded yet
+    if (controller.cibilData.value == null && !controller.isLoading.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.fetchCibilScore();
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
         child: Column(
           children: [
-            // Scrollable Content
+            // 1. Separate Top Header (Back, Title, Refresh)
+            _buildTopHeader(controller),
+
+            const SizedBox(height: 8),
+
+            // 2. Full-height Royal Blue Hero Card till bottom button with centered chart
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Top Royal Blue Hero Card with Gauge
-                    _buildHeroScoreCard(context),
-
-                    const SizedBox(height: 22),
-
-                    // 2. Section Heading: "What shapes your score"
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        'What shapes your score',
-                        style: TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // 3. 2x2 Factor Cards Grid
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 18),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFactorCard(
-                                  title: 'Payment history',
-                                  value: '100%',
-                                  badgeText: 'Excellent',
-                                  badgeBg: AppColors.successGreenBg,
-                                  badgeTextColor: AppColors.successGreen,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildFactorCard(
-                                  title: 'Credit utilisation',
-                                  value: '28%',
-                                  badgeText: 'Good',
-                                  badgeBg: AppColors.successGreenBg,
-                                  badgeTextColor: AppColors.successGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildFactorCard(
-                                  title: 'Credit age',
-                                  value: '4.2 yrs',
-                                  badgeText: 'Fair',
-                                  badgeBg: AppColors.warningAmberBg,
-                                  badgeTextColor: AppColors.warningAmber,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: _buildFactorCard(
-                                  title: 'Recent enquiries',
-                                  value: '2',
-                                  badgeText: 'Good',
-                                  badgeBg: AppColors.successGreenBg,
-                                  badgeTextColor: AppColors.successGreen,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildHeroScoreCard(context, controller),
               ),
             ),
 
-            // 4. Bottom Action: "See loans you qualify for ->"
+            const SizedBox(height: 12),
+
+            // 3. Bottom CTA: "See loans you qualify for ->"
             _buildBottomCta(context),
           ],
         ),
@@ -116,307 +55,360 @@ class CibilScoreScreen extends StatelessWidget {
     );
   }
 
-  /// Top Hero Card with Speedometer Semicircular Gauge
-  Widget _buildHeroScoreCard(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
-      decoration: BoxDecoration(
-        gradient: AppColors.dashboardCardGradient,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardGradientEnd.withValues(alpha: 0.35),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
+  /// Separate Top Header Bar outside the card
+  Widget _buildTopHeader(CibilScoreController controller) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Header Row: Back button, Title, Refresh button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Back Button
-              GestureDetector(
-                onTap: () => Get.back(),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+          // Back Button
+          GestureDetector(
+            onTap: () => Get.back(),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.line, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
+                ],
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textDark,
+                  size: 16,
                 ),
               ),
-
-              // Title
-              const Text(
-                'Credit score',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-
-              // Refresh Button
-              GestureDetector(
-                onTap: () {
-                  Get.snackbar(
-                    'Score Updated',
-                    'Your credit score is up to date as of today.',
-                    snackPosition: SnackPosition.BOTTOM,
-                    backgroundColor: AppColors.navy,
-                    colorText: Colors.white,
-                    margin: const EdgeInsets.all(16),
-                    duration: const Duration(seconds: 2),
-                  );
-                },
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.refresh_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
 
-          const SizedBox(height: 2),
+          // Header Title
+          const Text(
+            'Credit score',
+            style: TextStyle(
+              color: AppColors.textDark,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
+            ),
+          ),
 
-          // Speedometer Semicircular Gauge (using syncfusion_flutter_gauges package with fully responsive layout)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              final gaugeHeight = width * 0.58;
-              final strokeWidth = (width * 0.046).clamp(13.0, 18.0);
-              final markerSize = (width * 0.065).clamp(18.0, 24.0);
-              final centerTop = gaugeHeight * 0.34;
-              final scoreFontSize = (width * 0.155).clamp(44.0, 56.0);
-              final labelsTop = gaugeHeight * 0.86;
-              final labelsInset = width * 0.142;
-
-              return SizedBox(
-                width: width,
-                height: gaugeHeight,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // 1. Large Gauge Arc powered by syncfusion_flutter_gauges package
-                    SfRadialGauge(
-                      axes: <RadialAxis>[
-                        RadialAxis(
-                          minimum: 300,
-                          maximum: 900,
-                          startAngle: 180,
-                          endAngle: 0,
-                          showLabels: false,
-                          showTicks: false,
-                          canScaleToFit: true,
-                          radiusFactor: 1.0,
-                          axisLineStyle: AxisLineStyle(
-                            thickness: strokeWidth,
-                            cornerStyle: CornerStyle.bothCurve,
-                            color: AppColors.indigo,
-                          ),
-                          pointers: <GaugePointer>[
-                            RangePointer(
-                              value: score,
-                              width: strokeWidth,
-                              color: AppColors.amber,
-                              cornerStyle: CornerStyle.bothCurve,
-                              enableAnimation: true,
-                              animationDuration: 1300,
-                              animationType: AnimationType.easeOutBack,
-                            ),
-                            MarkerPointer(
-                              value: score,
-                              markerType: MarkerType.circle,
-                              markerHeight: markerSize,
-                              markerWidth: markerSize,
-                              color: AppColors.navy,
-                              borderWidth: strokeWidth * 0.24,
-                              borderColor: AppColors.amber,
-                              enableAnimation: true,
-                              animationDuration: 1300,
-                              animationType: AnimationType.easeOutBack,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    // 2. Score & Rating Chip strictly centered inside the arch (responsive)
-                    Positioned(
-                      top: centerTop,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${score.toInt()}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: scoreFontSize,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -1.2,
-                              height: 1.0,
-                            ),
-                          ),
-                          SizedBox(height: width * 0.024),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.amber,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Text(
-                              'Good · +14 this month',
-                              style: TextStyle(
-                                color: AppColors.navy,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // 3. Scale Range Numbers: "300" on left, "900" on right (responsive to any screen width)
-                    Positioned(
-                      left: labelsInset,
-                      top: labelsTop,
-                      child: const Text(
-                        '300',
-                        style: TextStyle(
-                          color: AppColors.indigoTint,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: labelsInset,
-                      top: labelsTop,
-                      child: const Text(
-                        '900',
-                        style: TextStyle(
-                          color: AppColors.indigoTint,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+          // Refresh Button
+          Obx(
+            () => GestureDetector(
+              onTap: controller.isLoading.value ? null : () => controller.fetchCibilScore(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.line, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-
-          const SizedBox(height: 12),
-
-          // Footer info text
-          const Text(
-            'Powered by CIBIL · Updated 12 Nov 2026',
-            style: TextStyle(
-              color: AppColors.indigoTint,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w400,
+                child: Center(
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.navy,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh_rounded,
+                          color: AppColors.textDark,
+                          size: 20,
+                        ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 2),
         ],
       ),
     );
   }
 
-  /// Individual Factor Card (e.g. Payment history, Credit utilisation, etc.)
-  Widget _buildFactorCard({
-    required String title,
-    required String value,
-    required String badgeText,
-    required Color badgeBg,
-    required Color badgeTextColor,
-  }) {
+  /// Full-Height Hero Card with Speedometer Semicircular Gauge centered
+  Widget _buildHeroScoreCard(BuildContext context, CibilScoreController controller) {
+    return Obx(() {
+      final currentScore = score ?? controller.cibilScore.value.toDouble();
+      final rating = controller.scoreRating.value;
+      final reportDate = controller.reportDate.value.isNotEmpty
+          ? controller.reportDate.value
+          : CibilScoreController.formatReportDate(DateTime.now());
+
+      return Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: AppColors.dashboardCardGradient,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.cardGradientEnd.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            const SizedBox(height: 42),
+
+            // Top Title & Subtitle inside Hero Card
+            const Text(
+              'CIBIL Score',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 26,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Official credit health report from bureau',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.82),
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.1,
+              ),
+            ),
+
+            const Spacer(),
+
+            // Centered Speedometer Semicircular Gauge
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final gaugeHeight = width * 0.58;
+                  final strokeWidth = (width * 0.046).clamp(14.0, 20.0);
+                  final markerSize = (width * 0.065).clamp(20.0, 26.0);
+                  final centerTop = gaugeHeight * 0.44;
+                  final scoreFontSize = (width * 0.16).clamp(46.0, 58.0);
+                  final labelsTop = gaugeHeight * 0.86;
+                  final labelsInset = width * 0.142;
+
+                  return SizedBox(
+                    width: width,
+                    height: gaugeHeight,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // 1. Large Gauge Arc powered by syncfusion_flutter_gauges
+                        SfRadialGauge(
+                          axes: <RadialAxis>[
+                            RadialAxis(
+                              minimum: 300,
+                              maximum: 900,
+                              startAngle: 180,
+                              endAngle: 0,
+                              showLabels: false,
+                              showTicks: false,
+                              canScaleToFit: true,
+                              radiusFactor: 1.0,
+                              axisLineStyle: AxisLineStyle(
+                                thickness: strokeWidth,
+                                cornerStyle: CornerStyle.bothCurve,
+                                color: AppColors.indigo,
+                              ),
+                              pointers: <GaugePointer>[
+                                RangePointer(
+                                  value: currentScore,
+                                  width: strokeWidth,
+                                  color: AppColors.amber,
+                                  cornerStyle: CornerStyle.bothCurve,
+                                  enableAnimation: true,
+                                  animationDuration: 1300,
+                                  animationType: AnimationType.easeOutBack,
+                                ),
+                                MarkerPointer(
+                                  value: currentScore,
+                                  markerType: MarkerType.circle,
+                                  markerHeight: markerSize,
+                                  markerWidth: markerSize,
+                                  color: AppColors.navy,
+                                  borderWidth: strokeWidth * 0.24,
+                                  borderColor: AppColors.amber,
+                                  enableAnimation: true,
+                                  animationDuration: 1300,
+                                  animationType: AnimationType.easeOutBack,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+
+                        // 2. Score & Rating Chip (Only status text, removed +14 this month)
+                        Positioned(
+                          top: centerTop,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '${currentScore.toInt()}',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: scoreFontSize,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -1.2,
+                                  height: 1.0,
+                                ),
+                              ),
+                              SizedBox(height: width * 0.024),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.amber,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Text(
+                                  rating, // ONLY show status
+                                  style: const TextStyle(
+                                    color: AppColors.navy,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 3. Scale Range Numbers: "300" on left, "900" on right
+                        Positioned(
+                          left: labelsInset,
+                          top: labelsTop,
+                          child: const Text(
+                            '300',
+                            style: TextStyle(
+                              color: AppColors.indigoTint,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: labelsInset,
+                          top: labelsTop,
+                          child: const Text(
+                            '900',
+                            style: TextStyle(
+                              color: AppColors.indigoTint,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const Spacer(),
+
+            // Bottom details card (Report Date & Bureau Source: CIBIL TransUnion)
+            _buildReportDetailsCard(reportDate),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Bottom details card displaying Report Date (from current DateTime.now) and Bureau Source (CIBIL TransUnion)
+  Widget _buildReportDetailsCard(String reportDate) {
     return Container(
-      height: 116,
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line, width: 1.2),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Title
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.muted,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
-          // Metric Value
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 23,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ),
-
-          // Status Badge Pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-            decoration: BoxDecoration(
-              color: badgeBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              badgeText,
-              style: TextStyle(
-                color: badgeTextColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Report Date',
+                style: TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
+              Text(
+                reportDate,
+                style: const TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(
+              color: AppColors.line,
+              height: 1,
+              thickness: 1,
             ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text(
+                'Bureau Source',
+                style: TextStyle(
+                  color: AppColors.textDarkSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'CIBIL TransUnion',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -426,7 +418,7 @@ class CibilScoreScreen extends StatelessWidget {
   /// Bottom CTA Button: "See loans you qualify for ->"
   Widget _buildBottomCta(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: SizedBox(
         width: double.infinity,
         height: 52,

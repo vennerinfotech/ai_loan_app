@@ -4,6 +4,7 @@ import 'package:ai_loan_app/theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'cibil_score_screen.dart';
+import '../controller/cibil_score_controller.dart';
 
 /// Loading phase progression for fetching CIBIL & CRIF report
 enum FetchingPhase {
@@ -39,7 +40,13 @@ class _FetchingReportScreenState extends State<FetchingReportScreen>
       duration: const Duration(seconds: 16),
     )..repeat();
 
-    // 2. Simulated multi-step API loading progression
+    // 2. Trigger real CIBIL score API call in background
+    final cibilController = Get.isRegistered<CibilScoreController>()
+        ? Get.find<CibilScoreController>()
+        : Get.put(CibilScoreController());
+    cibilController.fetchCibilScore();
+
+    // 3. Simulated multi-step API loading progression
     // Phase 1 -> Phase 2: After 1.8 seconds, "Reading credit history" succeeds and "Building your score summary" starts
     _phaseTimer1 = Timer(const Duration(milliseconds: 1800), () {
       if (mounted) {

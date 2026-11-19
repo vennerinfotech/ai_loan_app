@@ -829,4 +829,48 @@ class ApiService {
       };
     }
   }
+
+  /// Fetch CIBIL Credit Score API: POST {{baseUrl}}/loan/cibil-score
+  /// Request body: { "pan_number": "ABCDE1234F" }
+  static Future<Map<String, dynamic>> fetchCibilScore({
+    String? panNumber,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan/cibil-score');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final cleanPan = panNumber?.trim().toUpperCase();
+    final body = jsonEncode({
+      if (cleanPan != null && cleanPan.isNotEmpty) 'pan_number': cleanPan,
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Fetch CIBIL Score ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in fetchCibilScore: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch CIBIL score. Please try again.',
+      };
+    }
+  }
 }
