@@ -9,6 +9,11 @@ class ResetMpinController extends GetxController {
   final confirmMpin = ''.obs;
   final activeMpinField = 'new'.obs; // 'new' or 'confirm'
   final isSubmitting = false.obs;
+  final userPhone = ''.obs;
+
+  void setPhoneNumber(String phone) {
+    userPhone.value = phone.trim();
+  }
 
   bool get has6Digits => newMpin.value.length == 6;
   bool get has4Digits => has6Digits;

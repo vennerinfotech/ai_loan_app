@@ -291,7 +291,8 @@ class ForgotMpinScreen extends StatelessWidget {
   /// "Send OTP →" Primary Action Button
   Widget _buildSendOtpButton(ForgotMpinController controller) {
     return Obx(() {
-      final canSubmit = controller.canSubmit;
+      final canSubmit = controller.canSubmit && !controller.isSendingOtp.value;
+      final isSending = controller.isSendingOtp.value;
 
       return InkWell(
         onTap: canSubmit ? controller.sendOtp : null,
@@ -306,28 +307,35 @@ class ForgotMpinScreen extends StatelessWidget {
                 : AppColors.primaryButtonBackground.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Send OTP',
-                style: TextStyle(
-                  color: canSubmit
-                      ? AppColors.primaryButtonText
-                      : AppColors.primaryButtonText.withValues(alpha: 0.7),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.1,
+          child: isSending
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Send OTP',
+                      style: TextStyle(
+                        color: AppColors.primaryButtonText,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: AppColors.accentGold,
+                      size: 18,
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.accentGold,
-                size: 18,
-              ),
-            ],
-          ),
         ),
       );
     });

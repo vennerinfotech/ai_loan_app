@@ -11,11 +11,13 @@ import '../theme/theme.dart';
 class OtpVerificationScreen extends StatelessWidget {
   final String phoneNumber;
   final OtpVerificationType type;
+  final String? initialOtp;
 
   const OtpVerificationScreen({
     super.key,
     required this.phoneNumber,
     this.type = OtpVerificationType.forgotMpin,
+    this.initialOtp,
   });
 
   @override
@@ -25,6 +27,7 @@ class OtpVerificationScreen extends StatelessWidget {
       OtpVerificationController(
         phoneNumber: phoneNumber,
         type: type,
+        initialOtp: initialOtp,
       ),
       tag: '${type.name}_$phoneNumber',
     );
@@ -264,17 +267,29 @@ class OtpVerificationScreen extends StatelessWidget {
             ),
             const Spacer(),
             GestureDetector(
-              onTap: controller.canResend.value ? controller.resendCode : null,
-              child: Text(
-                'Resend code',
-                style: TextStyle(
-                  color: controller.canResend.value
-                      ? AppColors.resendLinkText
-                      : AppColors.resendTimerText.withValues(alpha: 0.5),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              onTap: (controller.canResend.value &&
+                      !controller.isResending.value)
+                  ? controller.resendCode
+                  : null,
+              child: controller.isResending.value
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.resendLinkText,
+                      ),
+                    )
+                  : Text(
+                      'Resend code',
+                      style: TextStyle(
+                        color: controller.canResend.value
+                            ? AppColors.resendLinkText
+                            : AppColors.resendTimerText.withValues(alpha: 0.5),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
           ],
         ));

@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+
 import '../theme/app_colors.dart';
 import '../models/registration_step.dart';
 import '../models/auth_response_model.dart';
@@ -16,7 +18,8 @@ class RegistrationController extends GetxController
   // ==========================================
   // Step Management
   // ==========================================
-  final RxInt currentStep = 0.obs; // 0 = Create Account, 1 = Verify OTP, 2 = (future step)
+  final RxInt currentStep =
+      0.obs; // 0 = Create Account, 1 = Verify OTP, 2 = (future step)
   static const int totalSteps = 3;
 
   final List<RegistrationStep> steps = const [
@@ -166,7 +169,7 @@ class RegistrationController extends GetxController
 
     try {
       isLoading.value = true;
-      final Map<String, dynamic> response = await ApiService.register(
+      final response = await ApiService.register(
         name: fullName.value.trim(),
         phone: mobileNumber.value.trim(),
         email: email.value.trim(),
@@ -175,9 +178,9 @@ class RegistrationController extends GetxController
 
       isLoading.value = false;
 
-      final statusCode = response['status_code'];
-      final isSuccess =
-          response['success'] == true || statusCode == 200 || statusCode == 201;
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
 
       if (isSuccess) {
         // Store data in common auth model
@@ -216,8 +219,7 @@ class RegistrationController extends GetxController
         currentStep.value = 1;
         _startResendTimer();
       } else {
-        final errorMsg =
-            response['message']?.toString() ?? 'Registration failed';
+        final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Registration Error: $errorMsg');
         Get.snackbar(
           'Registration Failed',
@@ -260,8 +262,10 @@ class RegistrationController extends GetxController
 
   void deleteOtpDigit() {
     if (otpController.text.isNotEmpty) {
-      otpController.text =
-          otpController.text.substring(0, otpController.text.length - 1);
+      otpController.text = otpController.text.substring(
+        0,
+        otpController.text.length - 1,
+      );
       otpCode.value = otpController.text;
     }
   }
@@ -300,13 +304,14 @@ class RegistrationController extends GetxController
 
     try {
       isResendingOtp.value = true;
-      final Map<String, dynamic> response =
-          await ApiService.resendOtp(phone: phone);
+      final response = await ApiService.resendOtp(
+        phone: phone,
+      );
       isResendingOtp.value = false;
 
-      final statusCode = response['status_code'];
-      final isSuccess =
-          response['success'] == true || statusCode == 200 || statusCode == 201;
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
 
       if (isSuccess) {
         final model = AuthResponseModel.fromJson(response);
@@ -330,9 +335,7 @@ class RegistrationController extends GetxController
 
         Get.snackbar(
           'Success',
-          model.message.isNotEmpty
-              ? model.message
-              : 'OTP resent successfully.',
+          model.message.isNotEmpty ? model.message : 'OTP resent successfully.',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: AppColors.navy,
           colorText: Colors.white,
@@ -340,8 +343,7 @@ class RegistrationController extends GetxController
           duration: const Duration(seconds: 3),
         );
       } else {
-        final errorMsg =
-            response['message']?.toString() ?? 'Failed to resend OTP';
+        final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Resend OTP Error: $errorMsg');
         Get.snackbar(
           'Failed',
@@ -388,16 +390,16 @@ class RegistrationController extends GetxController
       isVerifyingOtp.value = true;
       final phone = mobileNumber.value.trim();
 
-      final Map<String, dynamic> response = await ApiService.verifyOtp(
+      final response = await ApiService.verifyOtp(
         phone: phone,
         otp: enteredOtp,
       );
 
       isVerifyingOtp.value = false;
 
-      final statusCode = response['status_code'];
-      final isSuccess =
-          response['success'] == true || statusCode == 200 || statusCode == 201;
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
 
       if (isSuccess) {
         // Store data in common auth model
@@ -428,8 +430,7 @@ class RegistrationController extends GetxController
         // Advance to Step 3 (Create MPIN)
         currentStep.value = 2;
       } else {
-        final errorMsg =
-            response['message']?.toString() ?? 'OTP verification failed';
+        final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Verify OTP Error: $errorMsg');
         Get.snackbar(
           'Verification Failed',
@@ -470,8 +471,16 @@ class RegistrationController extends GetxController
     final pin = newMpin.value;
     if (pin.length < 2) return true;
     const sequences = [
-      '012345', '123456', '234567', '345678', '456789',
-      '543210', '654321', '765432', '876543', '987654',
+      '012345',
+      '123456',
+      '234567',
+      '345678',
+      '456789',
+      '543210',
+      '654321',
+      '765432',
+      '876543',
+      '987654',
     ];
     for (final seq in sequences) {
       if (pin == seq) return false;
@@ -515,8 +524,10 @@ class RegistrationController extends GetxController
   void deleteMpinDigit() {
     if (activeMpinField.value == 'confirm') {
       if (confirmMpin.value.isNotEmpty) {
-        confirmMpin.value =
-            confirmMpin.value.substring(0, confirmMpin.value.length - 1);
+        confirmMpin.value = confirmMpin.value.substring(
+          0,
+          confirmMpin.value.length - 1,
+        );
       } else {
         activeMpinField.value = 'new';
       }
@@ -537,7 +548,7 @@ class RegistrationController extends GetxController
           ? authToken.value
           : authResponse.value?.data?.token;
 
-      final Map<String, dynamic> response = await ApiService.setMpin(
+      final response = await ApiService.setMpin(
         mpin: newMpin.value.trim(),
         mpinConfirmation: confirmMpin.value.trim(),
         token: token,
@@ -545,9 +556,9 @@ class RegistrationController extends GetxController
 
       isSettingMpin.value = false;
 
-      final statusCode = response['status_code'];
-      final isSuccess =
-          response['success'] == true || statusCode == 200 || statusCode == 201;
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
 
       if (isSuccess) {
         // Reuse common AuthResponseModel to update user and mpin_set status
@@ -559,7 +570,8 @@ class RegistrationController extends GetxController
           statusCode: newModel.statusCode,
           message: newModel.message,
           data: AuthData(
-            userId: newModel.data?.userId ??
+            userId:
+                newModel.data?.userId ??
                 newModel.data?.user?.id ??
                 existingData?.userId,
             token: existingData?.token,
@@ -574,7 +586,8 @@ class RegistrationController extends GetxController
         );
 
         debugPrint(
-            'MPIN Set Successfully. Current mpin_set status: ${authResponse.value?.data?.user?.mpinSet}');
+          'MPIN Set Successfully. Current mpin_set status: ${authResponse.value?.data?.user?.mpinSet}',
+        );
 
         Get.snackbar(
           'Success',
@@ -592,8 +605,7 @@ class RegistrationController extends GetxController
         await Future.delayed(const Duration(milliseconds: 500));
         Get.offAll(() => const LoginWithMpinScreen());
       } else {
-        final errorMsg =
-            response['message']?.toString() ?? 'Failed to set MPIN';
+        final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Set MPIN Error: $errorMsg');
         Get.snackbar(
           'Failed',

@@ -8,11 +8,16 @@ import '../theme/theme.dart';
 /// Navigated to after successful OTP verification in the Forgot MPIN flow.
 /// Clean light theme with validation chips, numeric pad, and "Set MPIN" button.
 class ResetMpinScreen extends StatelessWidget {
-  const ResetMpinScreen({super.key});
+  final String? phoneNumber;
+
+  const ResetMpinScreen({super.key, this.phoneNumber});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ResetMpinController());
+    if (phoneNumber != null && phoneNumber!.isNotEmpty) {
+      controller.setPhoneNumber(phoneNumber!);
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,

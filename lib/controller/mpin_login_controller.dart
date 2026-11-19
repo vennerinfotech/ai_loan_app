@@ -1,6 +1,8 @@
 import 'dart:math' as math;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+
 import '../theme/app_colors.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../screens/forgot_mpin_screen.dart';
@@ -113,15 +115,12 @@ class MpinLoginController extends GetxController
 
     try {
       isSubmitting.value = true;
-      final Map<String, dynamic> response = await ApiService.login(
-        phone: phone,
-        mpin: enteredMpin,
-      );
+      final response = await ApiService.login(phone: phone, mpin: enteredMpin);
       isSubmitting.value = false;
 
-      final statusCode = response['status_code'];
-      final isSuccess =
-          response['success'] == true || statusCode == 200 || statusCode == 201;
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
 
       if (isSuccess) {
         final model = AuthResponseModel.fromJson(response);
@@ -150,7 +149,7 @@ class MpinLoginController extends GetxController
         Get.offAll(() => const MainNavScreen());
       } else {
         mpin.value = '';
-        final errorMsg = response['message']?.toString() ?? 'Invalid MPIN';
+        final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Login Error: $errorMsg');
         Get.snackbar(
           'Login Failed',

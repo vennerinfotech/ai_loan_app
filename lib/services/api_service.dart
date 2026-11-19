@@ -1,23 +1,56 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 /// Central API Service for handling network requests across Finsphere AI Loan App.
-/// Base URL is kept as a common variable that can be changed anytime.
+/// Always returns the decoded response Map for both success and error responses.
 class ApiService {
   ApiService._();
 
-  /// Common base URL for all API calls - can be changed or switched for environments
+  /// Common base URL for all API calls
   static String baseUrl = 'https://app.crm.finsphereai.com/api';
 
   /// Standard HTTP headers
   static Map<String, String> get defaultHeaders => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
 
-  /// Register User API (application/json): POST {{baseUrl}}/register
+  /// Extracts the exact error message from Finsphere API response:
+  /// Handles both formats:
+  /// 1. errors: { "otp": ["Invalid OTP. Please try again."] } -> returns "Invalid OTP. Please try again."
+  /// 2. message: "Invalid MPIN." -> returns "Invalid MPIN."
+  static String getErrorMessage(Map<String, dynamic>? response) {
+    if (response == null) {
+      return 'Something went wrong. Please try again.';
+    }
+
+    // 1. Check nested errors dictionary first (e.g. { "otp": ["..."], "phone": ["..."] })
+    if (response['errors'] is Map) {
+      final errorsMap = response['errors'] as Map;
+      for (final key in errorsMap.keys) {
+        final val = errorsMap[key];
+        if (val is List && val.isNotEmpty) {
+          final firstError = val.first?.toString().trim();
+          if (firstError != null && firstError.isNotEmpty) {
+            return firstError;
+          }
+        } else if (val is String && val.trim().isNotEmpty) {
+          return val.trim();
+        }
+      }
+    }
+
+    // 2. Check main response message
+    final msg = response['message']?.toString().trim();
+    if (msg != null && msg.isNotEmpty && msg != 'Validation failed.') {
+      return msg;
+    }
+
+    return msg ?? 'Something went wrong. Please try again.';
+  }
+
+  /// Register User API: POST {{baseUrl}}/register
   static Future<Map<String, dynamic>> register({
     required String name,
     required String phone,
@@ -40,21 +73,25 @@ class ApiService {
         body: body,
       );
 
-      debugPrint('==========Register==========');
+      debugPrint('========== Register ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      return jsonResponse;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
     } catch (e) {
-      debugPrint('Error in register API: $e');
-      return {'success': false, 'status_code': 500, 'message': e.toString()};
+      debugPrint('Exception in register: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
     }
   }
 
-  /// Verify Registration OTP API (application/json): POST {{baseUrl}}/verify-otp
+  /// Verify Registration OTP API: POST {{baseUrl}}/verify-otp
   static Future<Map<String, dynamic>> verifyOtp({
     required String phone,
     required String otp,
@@ -73,21 +110,25 @@ class ApiService {
         body: body,
       );
 
-      debugPrint('==========Verify OTP ==========');
+      debugPrint('========== Verify OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      return jsonResponse;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
     } catch (e) {
-      debugPrint('Error in verifyOtp API: $e');
-      return {'success': false, 'status_code': 500, 'message': e.toString()};
+      debugPrint('Exception in verifyOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
     }
   }
 
-  /// Resend OTP API (application/json): POST {{baseUrl}}/resend-otp
+  /// Resend Registration OTP API: POST {{baseUrl}}/resend-otp
   static Future<Map<String, dynamic>> resendOtp({
     required String phone,
   }) async {
@@ -110,23 +151,25 @@ class ApiService {
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      return jsonResponse;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
     } catch (e) {
-      debugPrint('Error in resendOtp API: $e');
-      return {'success': false, 'status_code': 500, 'message': e.toString()};
+      debugPrint('Exception in resendOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
     }
   }
 
-  /// Set MPIN API (application/json): POST {{baseUrl}}/set-mpin
+  /// Set MPIN API: POST {{baseUrl}}/set-mpin
   static Future<Map<String, dynamic>> setMpin({
     required String mpin,
     required String mpinConfirmation,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/mpin');
+    final url = Uri.parse('$baseUrl/set-mpin');
 
     final headers = {
       'Content-Type': 'application/json',
@@ -152,17 +195,19 @@ class ApiService {
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      return jsonResponse;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
     } catch (e) {
-      debugPrint('Error in setMpin API: $e');
-      return {'success': false, 'status_code': 500, 'message': e.toString()};
+      debugPrint('Exception in setMpin: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
     }
   }
 
-  /// Login with Phone & MPIN API (application/json): POST {{baseUrl}}/login
+  /// Login with Phone & MPIN API: POST {{baseUrl}}/login
   static Future<Map<String, dynamic>> login({
     required String phone,
     required String mpin,
@@ -187,13 +232,122 @@ class ApiService {
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
-      final Map<String, dynamic> jsonResponse =
-          jsonDecode(response.body) as Map<String, dynamic>;
-
-      return jsonResponse;
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
     } catch (e) {
-      debugPrint('Error in login API: $e');
-      return {'success': false, 'status_code': 500, 'message': e.toString()};
+      debugPrint('Exception in login: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Forgot MPIN OTP API: POST {{baseUrl}}/forgot-mpin-otp
+  static Future<Map<String, dynamic>> forgotMpinOtp({
+    required String phone,
+  }) async {
+    final url = Uri.parse('$baseUrl/forgot-mpin-otp');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Forgot MPIN OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in forgotMpinOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Forgot MPIN Verify OTP API: POST {{baseUrl}}/forgot-mpin-verify
+  static Future<Map<String, dynamic>> forgotMpinVerify({
+    required String phone,
+    required String otp,
+  }) async {
+    final url = Uri.parse('$baseUrl/forgot-mpin-verify');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+      'otp': otp.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Forgot MPIN Verify ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in forgotMpinVerify: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Forgot MPIN Resend OTP API: POST {{baseUrl}}/forgot-mpin-resend
+  static Future<Map<String, dynamic>> forgotMpinResend({
+    required String phone,
+  }) async {
+    final url = Uri.parse('$baseUrl/forgot-mpin-resend');
+
+    final body = jsonEncode({
+      'phone': phone.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: defaultHeaders,
+        body: body,
+      );
+
+      debugPrint('========== Forgot MPIN Resend ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in forgotMpinResend: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
     }
   }
 }
