@@ -186,7 +186,7 @@ class ApplyLoanController extends GetxController {
   final quickAmountPresets = const [100000.0, 300000.0, 450000.0, 1000000.0, 2500000.0];
 
   void setLoanAmount(double amount) {
-    loanAmount.value = amount.clamp(50000.0, 5000000.0);
+    loanAmount.value = amount;
   }
 
   void setTenureYears(int years) {

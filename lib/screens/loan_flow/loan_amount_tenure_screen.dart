@@ -16,98 +16,153 @@ class LoanAmountTenureScreen extends StatelessWidget {
 }
 
 /// Content body of "Loan amount + Tenure" (used within sticky-header Loan Flow)
-class LoanAmountTenureBody extends StatelessWidget {
+class LoanAmountTenureBody extends StatefulWidget {
   const LoanAmountTenureBody({super.key});
+
+  @override
+  State<LoanAmountTenureBody> createState() => _LoanAmountTenureBodyState();
+}
+
+class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
+  late final TextEditingController _amountController;
+  late final FocusNode _amountFocusNode;
+  bool _isEditingAmount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = Get.find<ApplyLoanController>();
+    _amountController = TextEditingController(
+      text: controller.loanAmount.value.toInt().toString(),
+    );
+    _amountFocusNode = FocusNode();
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus && _isEditingAmount) {
+        _finishEditing(controller);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _amountFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _finishEditing(ApplyLoanController controller) {
+    final clean = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (clean.isNotEmpty) {
+      final parsed = double.tryParse(clean);
+      if (parsed != null) {
+        controller.setLoanAmount(parsed);
+      }
+    }
+    _amountFocusNode.unfocus();
+    setState(() {
+      _isEditingAmount = false;
+      _amountController.text = controller.loanAmount.value.toInt().toString();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ApplyLoanController>();
 
-    return Column(
-      children: [
-        // Scrollable Content
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Selected Loan Type Chip Badge
-                Obx(
-                  () => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.indigoTint,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          controller.getIconForLoanType(
-                            controller.selectedLoanType.value,
-                          ),
-                          size: 15,
-                          color: AppColors.indigo,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          controller.selectedLoanType.value,
-                          style: const TextStyle(
+    return GestureDetector(
+      onTap: () {
+        if (_isEditingAmount) {
+          _finishEditing(controller);
+        }
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Column(
+        children: [
+          // Scrollable Content
+          Expanded(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Selected Loan Type Chip Badge
+                  Obx(
+                    () => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.indigoTint,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            controller.getIconForLoanType(
+                              controller.selectedLoanType.value,
+                            ),
+                            size: 15,
                             color: AppColors.indigo,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                // Title
-                const Text(
-                  'How much do you need?',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                    const SizedBox(height: 16),
-
-                    // 1. Interactive Loan Amount Card
-                    _buildLoanAmountCard(controller),
-                    const SizedBox(height: 20),
-
-                    // 2. Tenure Selection
-                    const Text(
-                      'Tenure',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                          const SizedBox(width: 6),
+                          Text(
+                            controller.selectedLoanType.value,
+                            style: const TextStyle(
+                              color: AppColors.indigo,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    _buildTenureSelector(controller),
-                    const SizedBox(height: 18),
+                  ),
 
-                    // 3. Estimated EMI Hero Banner Card
-                    _buildEmiBannerCard(controller),
-                  ],
-                ),
+                  // Title
+                  const Text(
+                    'How much do you need?',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 1. Interactive Loan Amount Card
+                  _buildLoanAmountCard(controller),
+                  const SizedBox(height: 20),
+
+                  // 2. Tenure Selection
+                  const Text(
+                    'Tenure',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTenureSelector(controller),
+                  const SizedBox(height: 18),
+
+                  // 3. Estimated EMI Hero Banner Card
+                  _buildEmiBannerCard(controller),
+                ],
               ),
             ),
+          ),
 
-        // Bottom Actions: "Back" & "Next step ->"
-        _buildBottomButtons(context, controller),
-      ],
+          // Bottom Actions: "Back" & "Next step ->"
+          _buildBottomButtons(context, controller),
+        ],
+      ),
     );
   }
 
@@ -140,21 +195,122 @@ class LoanAmountTenureBody extends StatelessWidget {
           ),
           const SizedBox(height: 6),
 
-          // Big Amount Display
-          Obx(
-            () => Text(
-              controller.formatIndianCurrency(controller.loanAmount.value),
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.8,
-              ),
-            ),
-          ),
+          // Big Amount Display / In-Place Inline Editable Input (No bottom line)
+          _isEditingAmount
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '₹',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.8,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: _amountController,
+                        focusNode: _amountFocusNode,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        textAlign: TextAlign.center,
+                        autofocus: true,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.8,
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (val) {
+                          final clean = val.replaceAll(RegExp(r'[^0-9]'), '');
+                          if (clean.isNotEmpty) {
+                            final parsed = double.tryParse(clean);
+                            if (parsed != null) {
+                              controller.setLoanAmount(parsed);
+                            }
+                          }
+                        },
+                        onSubmitted: (_) {
+                          _finishEditing(controller);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () {
+                        _finishEditing(controller);
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.indigo,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isEditingAmount = true;
+                      _amountController.text = controller.loanAmount.value.toInt().toString();
+                      _amountFocusNode.requestFocus();
+                    });
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Obx(
+                        () => Text(
+                          controller.formatIndianCurrency(controller.loanAmount.value),
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.canvas,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.edit_outlined,
+                          size: 16,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
           const SizedBox(height: 12),
 
-          // Custom Styled Slider
+          // Custom Styled Slider (continuous, allows any entered amount)
           Obx(
             () => SliderTheme(
               data: SliderThemeData(
@@ -171,11 +327,15 @@ class LoanAmountTenureBody extends StatelessWidget {
                 ),
               ),
               child: Slider(
-                value: controller.loanAmount.value,
+                value: controller.loanAmount.value.clamp(50000.0, 5000000.0),
                 min: 50000.0,
                 max: 5000000.0,
-                divisions: 99,
-                onChanged: (val) => controller.setLoanAmount(val),
+                onChanged: (val) {
+                  controller.setLoanAmount(val);
+                  if (_isEditingAmount) {
+                    _amountController.text = val.toInt().toString();
+                  }
+                },
               ),
             ),
           ),
@@ -228,7 +388,12 @@ class LoanAmountTenureBody extends StatelessWidget {
           final isSelected = (controller.loanAmount.value - amount).abs() < 1000;
 
           return GestureDetector(
-            onTap: () => controller.setLoanAmount(amount),
+            onTap: () {
+              controller.setLoanAmount(amount);
+              if (_isEditingAmount) {
+                _amountController.text = amount.toInt().toString();
+              }
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -329,11 +494,11 @@ class LoanAmountTenureBody extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.navy,
+        gradient: AppColors.dashboardCardGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.3),
+            color: AppColors.cardGradientEnd.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -365,7 +530,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                       const Text(
                         'Estimated monthly EMI',
                         style: TextStyle(
-                          color: AppColors.indigoTint,
+                          color: AppColors.secondaryTextColor2,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -386,7 +551,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                       const Text(
                         'Indicative at 9.5% p.a. · final rate after review',
                         style: TextStyle(
-                          color: AppColors.muted,
+                          color: AppColors.secondaryTextColor2,
                           fontSize: 10.5,
                           height: 1.25,
                         ),
@@ -405,7 +570,7 @@ class LoanAmountTenureBody extends StatelessWidget {
                         'Total\ninterest',
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          color: AppColors.indigoTint,
+                          color: AppColors.secondaryTextColor2,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           height: 1.2,
