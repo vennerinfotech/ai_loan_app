@@ -250,6 +250,29 @@ class UploadPanBody extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // 5. Uploading Overlay
+              Obx(() {
+                if (controller.isUploadingPan.value) {
+                  return Container(
+                    color: Colors.black54,
+                    child: const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                          SizedBox(height: 10),
+                          Text(
+                            'Uploading PAN card...',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
             ],
           ),
         );
@@ -482,33 +505,46 @@ class UploadPanBody extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 52,
-              child: ElevatedButton(
-                onPressed: controller.continueToReview,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryButtonBackground,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: controller.isUploadingPan.value
+                      ? null
+                      : () => controller.continueToReview(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryButtonBackground,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Continue',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.accentGold,
-                      size: 16,
-                    ),
-                  ],
+                  child: controller.isUploadingPan.value
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.accentGold,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),

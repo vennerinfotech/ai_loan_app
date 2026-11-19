@@ -334,38 +334,53 @@ class EnterPanBody extends StatelessWidget {
   Widget _buildBottomSection(PanKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 48,
-        child: ElevatedButton(
-          onPressed: controller.verifyPan,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryButtonBackground,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 0,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Verify PAN',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w700,
+      child: Obx(
+        () {
+          final isBusy = controller.isStoringPan.value;
+          return SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: isBusy ? null : controller.verifyPan,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryButtonBackground,
+                disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
-              SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: AppColors.accentGold,
-                size: 16,
-              ),
-            ],
-          ),
-        ),
+              child: isBusy
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Verify PAN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AppColors.accentGold,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+            ),
+          );
+        },
       ),
     );
   }

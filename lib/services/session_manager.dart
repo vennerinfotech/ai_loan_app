@@ -50,7 +50,7 @@ class SessionManager {
   /// Get saved user name using getString
   static Future<String> getUserName() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(keyUserName) ?? 'Aarav Mehta';
+    return prefs.getString(keyUserName) ?? '';
   }
 
   /// Clear login session using setString (or remove)

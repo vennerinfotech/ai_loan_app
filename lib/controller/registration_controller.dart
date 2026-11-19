@@ -412,6 +412,7 @@ class RegistrationController extends GetxController
           await SessionManager.saveLoginSession(
             phone: model.data?.user?.phone ?? phone,
             name: model.data?.user?.name ?? fullName.value,
+            token: model.data!.token!,
           );
         }
 

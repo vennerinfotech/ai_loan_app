@@ -9,6 +9,9 @@ import '../screens/review_pan_details_screen.dart';
 import '../screens/kyc_next_step_placeholder_screen.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import '../models/store_pan_response_model.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
 
 /// GetX Controller for PAN Card Verification flow.
 /// Implements:
@@ -30,6 +33,13 @@ class PanKycController extends GetxController {
   // Branching toggle: is PAN verified with Income Tax records?
   final isPanVerified = false.obs;
 
+  // API State
+  final isStoringPan = false.obs;
+  final storePanData = Rxn<StorePanData>();
+  final panDocumentId = RxnInt();
+  final isUploadingPan = false.obs;
+  final panUploadedFilename = ''.obs;
+
   // Upload PAN Card state
   final isCardUploaded = false.obs;
   final uploadSource = ''.obs; // 'Camera' or 'Gallery'
@@ -44,6 +54,23 @@ class PanKycController extends GetxController {
 
   // Overall PAN completion status
   final isPanCompleted = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadUserSession();
+  }
+
+  Future<void> _loadUserSession() async {
+    try {
+      final name = await SessionManager.getUserName();
+      if (nameAsPerPan.value.isEmpty && name.isNotEmpty) {
+        nameAsPerPan.value = name;
+      }
+    } catch (e) {
+      debugPrint('Error loading user session in PanKycController: $e');
+    }
+  }
 
   /// PAN format validation: 5 uppercase letters, 4 numbers, 1 uppercase letter (10 chars)
   bool get isPanFormatValid {
@@ -69,8 +96,8 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Verify PAN button action
-  void verifyPan() {
+  /// Verify PAN button action: calls POST /store-pan-card and stores response in model
+  Future<void> verifyPan() async {
     if (!isPanFormatValid) {
       Get.snackbar(
         'Invalid PAN Number',
@@ -83,18 +110,78 @@ class PanKycController extends GetxController {
       return;
     }
 
-    if (isPanVerified.value) {
-      if (Get.isRegistered<KycFlowController>()) {
-        Get.find<KycFlowController>().setStep(KycSubStep.panUpload);
+    if (isStoringPan.value) return;
+    isStoringPan.value = true;
+
+    try {
+      final response = await ApiService.storePanCard(
+        panCardNumber: panNumber.value.trim().toUpperCase(),
+      );
+      isStoringPan.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        if (response['data'] != null && response['data'] is Map) {
+          final data = StorePanData.fromJson(Map<String, dynamic>.from(response['data']));
+          storePanData.value = data;
+          if (data.documentId != null) {
+            panDocumentId.value = data.documentId;
+          }
+        }
+
+        isPanVerified.value = true;
+
+        final message = response['message']?.toString() ?? 'PAN card number saved successfully.';
+        Get.snackbar(
+          'PAN Verified',
+          message.isNotEmpty ? message : 'PAN card number saved successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(KycSubStep.panUpload);
+        } else {
+          Get.to(() => const UploadPanScreen());
+        }
       } else {
-        Get.to(() => const UploadPanScreen());
+        isPanVerified.value = false;
+        final errorMsg = ApiService.getErrorMessage(response);
+
+        Get.snackbar(
+          'Verification Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(KycSubStep.panNotVerified);
+        } else {
+          Get.to(() => const PanNotVerifiedScreen());
+        }
       }
-    } else {
-      if (Get.isRegistered<KycFlowController>()) {
-        Get.find<KycFlowController>().setStep(KycSubStep.panNotVerified);
-      } else {
-        Get.to(() => const PanNotVerifiedScreen());
-      }
+    } catch (e) {
+      isStoringPan.value = false;
+      debugPrint('verifyPan exception: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to save PAN card: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
@@ -131,9 +218,101 @@ class PanKycController extends GetxController {
     uploadSource.value = '';
     panImagePath.value = '';
     panImageBytes.value = null;
+    panUploadedFilename.value = '';
   }
 
-  /// Capture PAN photo using device camera via ImagePicker
+  /// Upload PAN Card Image via POST /upload-pan
+  Future<bool> uploadPanImage({
+    String? filePath,
+    Uint8List? fileBytes,
+    String? filename,
+  }) async {
+    final path = filePath ?? panImagePath.value;
+    final bytes = fileBytes ?? panImageBytes.value;
+
+    if (path.isEmpty && (bytes == null || bytes.isEmpty)) {
+      Get.snackbar(
+        'Upload Error',
+        'Please select or capture a PAN card image first.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    }
+
+    if (isUploadingPan.value) return false;
+    isUploadingPan.value = true;
+
+    try {
+      final response = await ApiService.uploadPan(
+        filePath: path,
+        fileBytes: bytes,
+        filename: filename,
+      );
+      isUploadingPan.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        if (response['data'] != null && response['data'] is Map) {
+          final data = StorePanData.fromJson(Map<String, dynamic>.from(response['data']));
+          storePanData.value = StorePanData(
+            panCardNumber: storePanData.value?.panCardNumber ?? panNumber.value,
+            userId: data.userId ?? storePanData.value?.userId,
+            documentId: data.documentId ?? storePanData.value?.documentId ?? panDocumentId.value,
+            filename: data.filename,
+          );
+          if (data.filename != null) {
+            panUploadedFilename.value = data.filename!;
+          }
+        }
+
+        isCardUploaded.value = true;
+
+        Get.snackbar(
+          'PAN Uploaded',
+          response['message']?.toString() ?? 'PAN card uploaded successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+        return true;
+      } else {
+        final errorMsg = ApiService.getErrorMessage(response);
+        Get.snackbar(
+          'Upload Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+        );
+        return false;
+      }
+    } catch (e) {
+      isUploadingPan.value = false;
+      debugPrint('uploadPanImage exception: $e');
+      Get.snackbar(
+        'Upload Error',
+        'Failed to upload PAN card: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+      return false;
+    }
+  }
+
+  /// Capture PAN photo using device camera via ImagePicker and auto-uploads to POST /upload-pan
   Future<void> takePhoto() async {
     final picker = ImagePicker();
     try {
@@ -147,15 +326,7 @@ class PanKycController extends GetxController {
         uploadSource.value = 'Camera';
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
-        Get.snackbar(
-          'Photo Captured',
-          'PAN card photo captured: ${file.name}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.navy,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        );
+        await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
       debugPrint('Camera error: $e');
@@ -170,7 +341,7 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Select PAN card photo from gallery via ImagePicker
+  /// Select PAN card photo from gallery via ImagePicker and auto-uploads to POST /upload-pan
   Future<void> pickFromGallery() async {
     final picker = ImagePicker();
     try {
@@ -184,15 +355,7 @@ class PanKycController extends GetxController {
         uploadSource.value = 'Gallery';
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
-        Get.snackbar(
-          'Image Selected',
-          'PAN card image selected: ${file.name}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.navy,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        );
+        await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
       debugPrint('Gallery error: $e');
@@ -207,7 +370,7 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Open Bottom Sheet to choose Camera or Gallery for PAN card
+  /// Open Bottom Sheet to choose Camera or Gallery for PAN card and auto-uploads to POST /upload-pan
   Future<void> openImagePickerBottomSheet({BuildContext? context}) async {
     final file = await ImagePickerBottomSheet.show(
       context: context,
@@ -221,25 +384,43 @@ class PanKycController extends GetxController {
       uploadSource.value = 'Selected';
       panImagePath.value = file.path;
       panImageBytes.value = bytes;
+      await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
+    }
+  }
+
+  /// Continue from upload screen to Review PAN Details screen
+  Future<void> continueToReview() async {
+    if (isUploadingPan.value) {
       Get.snackbar(
-        'PAN Card Selected',
-        'Document added: ${file.name}',
+        'Uploading',
+        'Please wait while your PAN card image is being uploaded.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.navy,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       );
+      return;
     }
-  }
 
-  /// Continue from upload screen to Review PAN Details screen
-  void continueToReview() {
-    if (!isCardUploaded.value) {
-      // Auto-set dummy upload if user hasn't explicitly tapped camera/gallery for quick demo
-      isCardUploaded.value = true;
-      uploadSource.value = 'Camera';
+    if (!isCardUploaded.value && panImagePath.value.isEmpty && panImageBytes.value == null) {
+      Get.snackbar(
+        'Upload Required',
+        'Please capture or select your PAN card photo to proceed.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
     }
+
+    // If an image was selected/captured but upload has not been confirmed yet, upload it now
+    if (panUploadedFilename.value.isEmpty && (panImagePath.value.isNotEmpty || panImageBytes.value != null)) {
+      final success = await uploadPanImage();
+      if (!success) return;
+    }
+
     if (Get.isRegistered<KycFlowController>()) {
       Get.find<KycFlowController>().setStep(KycSubStep.panReview);
     } else {

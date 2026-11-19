@@ -75,7 +75,27 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Top Banner Card: Aarav Mehta & Masked Aadhaar
+                // Loader when fetching receipt from UIDAI
+                Obx(() {
+                  if (controller.isDownloadingReceipt.value) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Center(
+                        child: SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+
+                // Top Banner Card: User details & Masked Aadhaar
                 _buildUserBannerCard(controller),
                 const SizedBox(height: 16),
 

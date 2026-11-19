@@ -131,15 +131,18 @@ class ReviewPanDetailsBody extends StatelessWidget {
                 ),
 
                 Obx(
-                  () => Text(
-                    controller.panNumber.value,
-                    style: const TextStyle(
-                      color: AppColors.navy,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
+                  () {
+                    final pan = controller.panNumber.value.trim();
+                    return Text(
+                      pan.isNotEmpty ? pan : 'N/A',
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.0,
+                      ),
+                    );
+                  },
                 ),
 
                 // "Format valid" pill badge
@@ -179,45 +182,53 @@ class ReviewPanDetailsBody extends StatelessWidget {
 
   /// Extracted Details Card (Name on PAN, Father's name, Date of birth)
   Widget _buildExtractedDetailsCard(PanKycController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // 1: Name on PAN
-          _buildDetailRow(
-            icon: Icons.person_outline_rounded,
-            label: 'Name on PAN',
-            value: controller.nameAsPerPan.value,
-          ),
-          const Divider(color: AppColors.line, height: 14, thickness: 1),
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.dashboardCardBorder, width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // 1: Name on PAN
+            _buildDetailRow(
+              icon: Icons.person_outline_rounded,
+              label: 'Name on PAN',
+              value: controller.nameAsPerPan.value.trim().isNotEmpty
+                  ? controller.nameAsPerPan.value.trim()
+                  : 'N/A',
+            ),
+            const Divider(color: AppColors.line, height: 14, thickness: 1),
 
-          // 2: Father's name
-          _buildDetailRow(
-            icon: Icons.person_outline_rounded,
-            label: 'Father\'s name',
-            value: controller.fathersName.value,
-          ),
-          const Divider(color: AppColors.line, height: 14, thickness: 1),
+            // 2: Father's name
+            _buildDetailRow(
+              icon: Icons.person_outline_rounded,
+              label: 'Father\'s name',
+              value: controller.fathersName.value.trim().isNotEmpty
+                  ? controller.fathersName.value.trim()
+                  : 'N/A',
+            ),
+            const Divider(color: AppColors.line, height: 14, thickness: 1),
 
-          // 3: Date of birth
-          _buildDetailRow(
-            icon: Icons.calendar_today_rounded,
-            label: 'Date of birth',
-            value: controller.dob.value,
-          ),
-        ],
+            // 3: Date of birth
+            _buildDetailRow(
+              icon: Icons.calendar_today_rounded,
+              label: 'Date of birth',
+              value: controller.dob.value.trim().isNotEmpty
+                  ? controller.dob.value.trim()
+                  : 'N/A',
+            ),
+          ],
+        ),
       ),
     );
   }

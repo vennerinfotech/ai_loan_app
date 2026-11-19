@@ -10,6 +10,7 @@ import '../screens/enter_pan_screen.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import '../models/aadhaar_kyc_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 
@@ -45,6 +46,7 @@ class AadhaarKycController extends GetxController {
   final isResendingOtp = false.obs;
   final isUpdatingStep = false.obs;
   final isDownloadingReceipt = false.obs;
+  final aadhaarKycData = Rxn<AadhaarKycModel>();
   final receiptUser = Rxn<Map<String, dynamic>>();
 
   // Step 2: Aadhaar OTP
@@ -80,6 +82,33 @@ class AadhaarKycController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _loadInitialUserData();
+  }
+
+  /// Initialize user details from SessionManager if available
+  Future<void> _loadInitialUserData() async {
+    try {
+      final savedName = await SessionManager.getUserName();
+      final savedPhone = await SessionManager.getUserPhone();
+      if (userName.value.isEmpty && savedName.isNotEmpty) {
+        userName.value = savedName;
+        _updateInitials(savedName);
+      }
+      if (linkedMobile.value.isEmpty && savedPhone.isNotEmpty) {
+        linkedMobile.value = savedPhone.startsWith('+91') ? savedPhone : '+91 $savedPhone';
+      }
+    } catch (e) {
+      debugPrint('Error loading initial user data: $e');
+    }
+  }
+
+  void _updateInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length > 1 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+      userInitials.value = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      userInitials.value = parts[0][0].toUpperCase();
+    }
   }
 
   @override
@@ -163,8 +192,10 @@ class AadhaarKycController extends GetxController {
             response['status_code'] == 201;
 
         if (isSuccess) {
-          final filename =
-              response['data']?['filename']?.toString() ?? file.name;
+          final model = response['data'] != null && response['data'] is Map
+              ? AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']))
+              : null;
+          final filename = model?.filename ?? file.name;
           if (isFront) {
             frontUploaded.value = true;
             frontUploadedFilename.value = filename;
@@ -285,17 +316,18 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 201;
 
       if (isSuccess) {
-        final data = response['data'] is Map<String, dynamic>
-            ? response['data'] as Map<String, dynamic>
-            : null;
+        if (response['data'] != null && response['data'] is Map) {
+          final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
+          aadhaarKycData.value = model;
 
-        if (data != null) {
-          documentId.value = data['document_id'] is int
-              ? data['document_id']
-              : int.tryParse(data['document_id']?.toString() ?? '');
-          otpExpiresAt.value = data['expires_at']?.toString() ?? '';
+          if (model.documentId != null) {
+            documentId.value = model.documentId;
+          }
+          if (model.expiresAt != null) {
+            otpExpiresAt.value = model.expiresAt!;
+          }
 
-          final testOtp = data['otp']?.toString();
+          final testOtp = model.otp?.toString();
           if (testOtp != null && testOtp.isNotEmpty) {
             otpCode.value = testOtp;
             otpController.value = TextEditingValue(
@@ -384,17 +416,18 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 201;
 
       if (isSuccess) {
-        if (response['data'] != null) {
-          if (response['data']['document_id'] != null) {
-            documentId.value = response['data']['document_id'] is int
-                ? response['data']['document_id']
-                : int.tryParse(response['data']['document_id'].toString());
+        if (response['data'] != null && response['data'] is Map) {
+          final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
+          aadhaarKycData.value = model;
+
+          if (model.documentId != null) {
+            documentId.value = model.documentId;
           }
-          if (response['data']['expires_at'] != null) {
-            otpExpiresAt.value = response['data']['expires_at'].toString();
+          if (model.expiresAt != null) {
+            otpExpiresAt.value = model.expiresAt!;
           }
-          if (response['data']['otp'] != null) {
-            final testOtp = response['data']['otp'].toString();
+          if (model.otp != null) {
+            final testOtp = model.otp.toString();
             otpController.text = testOtp;
             otpCode.value = testOtp;
           }
@@ -467,6 +500,14 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 201;
 
       if (isSuccess) {
+        if (response['data'] != null && response['data'] is Map) {
+          final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
+          aadhaarKycData.value = model;
+          if (model.documentId != null) {
+            documentId.value = model.documentId;
+          }
+        }
+
         // Fetch verified user receipt details so ReviewAadhaarDetailsScreen shows live backend data
         await fetchVerificationReceiptDetails();
 
@@ -545,9 +586,12 @@ class AadhaarKycController extends GetxController {
             response['status_code'] == 201;
 
         if (isSuccess) {
+          final model = response['data'] != null && response['data'] is Map
+              ? AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']))
+              : null;
+          final filename = model?.filename ?? file.name;
           frontUploaded.value = true;
-          frontUploadedFilename.value =
-              response['data']?['filename']?.toString() ?? file.name;
+          frontUploadedFilename.value = filename;
 
           Get.snackbar(
             'Aadhaar Uploaded',
@@ -634,51 +678,56 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 200;
 
       if (isSuccess && response['data'] != null) {
+        final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
+        aadhaarKycData.value = model;
+
         final rawUser = response['data']['user'];
         if (rawUser != null && rawUser is Map) {
           final userData = Map<String, dynamic>.from(rawUser);
           receiptUser.value = userData;
+        }
 
-          // 1. Full name & initials
-          final name = userData['name']?.toString().trim() ?? '';
-          if (name.isNotEmpty) {
-            userName.value = name;
-            final parts = name.split(RegExp(r'\s+'));
-            if (parts.length > 1 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
-              userInitials.value = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-            } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
-              userInitials.value = parts[0][0].toUpperCase();
-            }
-          }
+        // 1. Full name & initials from model.user or rawUser
+        final name = (model.user?.name ?? receiptUser.value?['name']?.toString() ?? '').trim();
+        if (name.isNotEmpty) {
+          userName.value = name;
+          _updateInitials(name);
+        }
 
-          // 2. Mobile number
-          final phone = userData['phone']?.toString().trim() ?? '';
-          if (phone.isNotEmpty) {
-            linkedMobile.value = phone.startsWith('+91') ? phone : '+91 $phone';
-          }
+        // 2. Mobile number
+        final phone = (model.user?.phone ?? receiptUser.value?['phone']?.toString() ?? '').trim();
+        if (phone.isNotEmpty) {
+          linkedMobile.value = phone.startsWith('+91') ? phone : '+91 $phone';
+        }
 
-          // 3. Optional KYC attributes if returned by backend
-          if (userData['dob'] != null && userData['dob'].toString().trim().isNotEmpty) {
-            dob.value = userData['dob'].toString().trim();
-          }
-          if (userData['gender'] != null && userData['gender'].toString().trim().isNotEmpty) {
-            gender.value = userData['gender'].toString().trim();
-          }
-          if (userData['address'] != null && userData['address'].toString().trim().isNotEmpty) {
-            address.value = userData['address'].toString().trim();
-          }
+        // 3. Optional KYC attributes if returned by backend
+        final rawDob = model.user?.dob ?? receiptUser.value?['dob']?.toString();
+        if (rawDob != null && rawDob.trim().isNotEmpty) {
+          dob.value = rawDob.trim();
+        }
+        final rawGender = model.user?.gender ?? receiptUser.value?['gender']?.toString();
+        if (rawGender != null && rawGender.trim().isNotEmpty) {
+          gender.value = rawGender.trim();
+        }
+        final rawAddress = model.user?.address ?? receiptUser.value?['address']?.toString();
+        if (rawAddress != null && rawAddress.trim().isNotEmpty) {
+          address.value = rawAddress.trim();
+        }
 
-          // 4. Ensure masked Aadhaar is formatted
-          if (maskedAadhaarDisplay.value.isEmpty || maskedAadhaarDisplay.value == 'N/A') {
-            if (aadhaarNumber.value.length == 12) {
-              maskedAadhaarDisplay.value = 'XXXX XXXX ${aadhaarNumber.value.substring(8)}';
-            }
+        // 4. Ensure masked Aadhaar is formatted
+        if (maskedAadhaarDisplay.value.isEmpty || maskedAadhaarDisplay.value == 'N/A') {
+          if (aadhaarNumber.value.length == 12) {
+            maskedAadhaarDisplay.value = 'XXXX XXXX ${aadhaarNumber.value.substring(8)}';
           }
         }
+      } else {
+        // Fallback to locally stored session data if network or auth error
+        await _loadInitialUserData();
       }
     } catch (e) {
       isDownloadingReceipt.value = false;
       debugPrint('fetchVerificationReceiptDetails exception: $e');
+      await _loadInitialUserData();
     }
   }
 

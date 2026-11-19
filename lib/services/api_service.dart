@@ -728,4 +728,105 @@ class ApiService {
       };
     }
   }
+
+  /// Store PAN Card API: POST {{baseUrl}}/store-pan-card
+  /// Request: { "pan_card_number": "ABCDE1234F" }
+  static Future<Map<String, dynamic>> storePanCard({
+    required String panCardNumber,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/store-pan-card');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'pan_card_number': panCardNumber.trim().toUpperCase(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Store PAN Card ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in storePanCard: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to connect to server. Please try again.',
+      };
+    }
+  }
+
+  /// Upload PAN Card Image API: POST {{baseUrl}}/upload-pan
+  /// Multipart form-data with key 'pan_card_image'
+  static Future<Map<String, dynamic>> uploadPan({
+    required String filePath,
+    Uint8List? fileBytes,
+    String? filename,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/upload-pan');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+
+      request.headers.addAll({
+        'Accept': 'application/json',
+        if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+      });
+
+      if (fileBytes != null && fileBytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'pan_card_image',
+            fileBytes,
+            filename: filename ?? 'pan_card.jpg',
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'pan_card_image',
+            filePath,
+          ),
+        );
+      }
+
+      debugPrint('========== Upload PAN Card ==========');
+      debugPrint('--> POST (Multipart) $url');
+      debugPrint('File Path: $filePath');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in uploadPan: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to upload PAN card. Please try again.',
+      };
+    }
+  }
 }
