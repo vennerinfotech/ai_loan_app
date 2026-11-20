@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../controller/pan_kyc_controller.dart';
@@ -26,15 +27,71 @@ class EnterPanScreen extends StatelessWidget {
 }
 
 /// Content body of "Enter your PAN" (used within sticky-header KYC flow)
-class EnterPanBody extends StatelessWidget {
+class EnterPanBody extends StatefulWidget {
   const EnterPanBody({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.isRegistered<PanKycController>()
+  State<EnterPanBody> createState() => _EnterPanBodyState();
+}
+
+class _EnterPanBodyState extends State<EnterPanBody> {
+  late final PanKycController controller;
+  late final FocusNode _panFocusNode;
+  TextInputType _currentKeyboardType = TextInputType.text;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.isRegistered<PanKycController>()
         ? Get.find<PanKycController>()
         : Get.put(PanKycController(), permanent: true);
+    _panFocusNode = FocusNode();
+    _currentKeyboardType = _getKeyboardTypeForLength(controller.panController.text.length);
+    controller.panController.addListener(_onPanTextChanged);
+  }
 
+  @override
+  void dispose() {
+    controller.panController.removeListener(_onPanTextChanged);
+    _panFocusNode.dispose();
+    super.dispose();
+  }
+
+  TextInputType _getKeyboardTypeForLength(int length) {
+    if (length < 5) {
+      // First 5 characters (index 0-4): alphabetic
+      return TextInputType.text;
+    } else if (length < 9) {
+      // Next 4 characters (index 5-8): numeric
+      return TextInputType.number;
+    } else {
+      // Last character (index 9): alphabetic
+      return TextInputType.text;
+    }
+  }
+
+  void _onPanTextChanged() {
+    final length = controller.panController.text.length;
+    final newKeyboardType = _getKeyboardTypeForLength(length);
+
+    if (newKeyboardType != _currentKeyboardType) {
+      setState(() {
+        _currentKeyboardType = newKeyboardType;
+      });
+      // Trigger keyboard refresh by unfocusing and refocusing
+      if (_panFocusNode.hasFocus) {
+        _panFocusNode.unfocus();
+        Future.delayed(const Duration(milliseconds: 50), () {
+          if (mounted) {
+            _panFocusNode.requestFocus();
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         // Scrollable Content
@@ -117,8 +174,15 @@ class EnterPanBody extends StatelessWidget {
   Widget _buildPanInputField(PanKycController controller) {
     return TextFormField(
       controller: controller.panController,
+      focusNode: _panFocusNode,
+      keyboardType: _currentKeyboardType,
       onChanged: controller.onPanChanged,
       textCapitalization: TextCapitalization.characters,
+      inputFormatters: [
+        LengthLimitingTextInputFormatter(10),
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+        _UpperCaseTextFormatter(),
+      ],
       style: const TextStyle(
         color: AppColors.inputText,
         fontSize: 17,
@@ -148,6 +212,37 @@ class EnterPanBody extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.fieldFocusedBorder, width: 1.8),
         ),
+        suffixIcon: Obx(() {
+          if (controller.isPanFormatValid) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Center(
+                widthFactor: 1.0,
+                heightFactor: 1.0,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreenBg,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.successGreen.withValues(alpha: 0.45),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: AppColors.successGreen,
+                      size: 13,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }),
       ),
     );
   }
@@ -382,6 +477,20 @@ class EnterPanBody extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Automatically capitalizes all typed letters for PAN format
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }

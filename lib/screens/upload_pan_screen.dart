@@ -325,7 +325,7 @@ class UploadPanBody extends StatelessWidget {
                   Text(
                     'Tap to capture or choose from gallery',
                     style: TextStyle(
-                      color: AppColors.muted,
+                      color: AppColors.textSecondary2,
                       fontSize: 11,
                     ),
                   ),
