@@ -4,7 +4,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_colors.dart';
 import '../screens/upload_pan_screen.dart';
-import '../screens/pan_not_verified_screen.dart';
+import '../screens/pan_verifying_screen.dart';
 import '../screens/review_pan_details_screen.dart';
 import '../screens/kyc_next_step_placeholder_screen.dart';
 import 'kyc_flow_controller.dart';
@@ -80,8 +80,8 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Verify PAN button action: calls POST /store-pan-card and stores response in model
-  Future<void> verifyPan() async {
+  /// Verify PAN button action: validates format and navigates to the animated PanVerifyingScreen
+  void verifyPan() {
     if (!isPanFormatValid) {
       Get.snackbar(
         'Invalid PAN Number',
@@ -94,7 +94,13 @@ class PanKycController extends GetxController {
       return;
     }
 
-    if (isStoringPan.value) return;
+    // Navigate to verifying loading screen with cosmic animations
+    Get.to(() => const PanVerifyingScreen());
+  }
+
+  /// Calls POST /store-pan-card in the background during PanVerifyingScreen animation
+  Future<bool> storePanCardApi() async {
+    if (isStoringPan.value) return false;
     isStoringPan.value = true;
 
     try {
@@ -107,65 +113,18 @@ class PanKycController extends GetxController {
           response['status_code'] == 200 ||
           response['status_code'] == 201;
 
-      if (isSuccess) {
-        if (response['data'] != null && response['data'] is Map) {
-          final data = StorePanData.fromJson(Map<String, dynamic>.from(response['data']));
-          storePanData.value = data;
-          if (data.documentId != null) {
-            panDocumentId.value = data.documentId;
-          }
-        }
-
-        isPanVerified.value = true;
-
-        final message = response['message']?.toString() ?? 'PAN card number saved successfully.';
-        Get.snackbar(
-          'PAN Verified',
-          message.isNotEmpty ? message : 'PAN card number saved successfully.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.navy,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        );
-
-        if (Get.isRegistered<KycFlowController>()) {
-          Get.find<KycFlowController>().setStep(KycSubStep.panUpload);
-        } else {
-          Get.to(() => const UploadPanScreen());
-        }
-      } else {
-        isPanVerified.value = false;
-        final errorMsg = ApiService.getErrorMessage(response);
-
-        Get.snackbar(
-          'Verification Failed',
-          errorMsg,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade800,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
-        );
-
-        if (Get.isRegistered<KycFlowController>()) {
-          Get.find<KycFlowController>().setStep(KycSubStep.panNotVerified);
-        } else {
-          Get.to(() => const PanNotVerifiedScreen());
+      if (isSuccess && response['data'] != null && response['data'] is Map) {
+        final data = StorePanData.fromJson(Map<String, dynamic>.from(response['data']));
+        storePanData.value = data;
+        if (data.documentId != null) {
+          panDocumentId.value = data.documentId;
         }
       }
+      return isSuccess;
     } catch (e) {
       isStoringPan.value = false;
-      debugPrint('verifyPan exception: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to save PAN card: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red.shade800,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
-      );
+      debugPrint('storePanCardApi exception: $e');
+      return false;
     }
   }
 

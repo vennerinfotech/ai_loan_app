@@ -147,11 +147,7 @@ class _EnterPanBodyState extends State<EnterPanBody> {
                     fontSize: 11,
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                // PREVIEW Container
-                _buildPreviewCard(controller),
-                const SizedBox(height: 14),
+                const SizedBox(height: 20),
 
                 // "Upload PAN card instead" Button
                 _buildUploadInsteadButton(controller),
@@ -247,98 +243,6 @@ class _EnterPanBodyState extends State<EnterPanBody> {
     );
   }
 
-  /// PREVIEW card with "AARAV MEHTA" and "Matches Aadhaar" badge
-  Widget _buildPreviewCard(PanKycController controller) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.dashboardCardBorder, width: 1.0),
-  
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'PREVIEW',
-            style: TextStyle(
-              color: AppColors.textDarkSecondary,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // Lavender preview box
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: AppColors.indigoTint,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Name as per PAN',
-                      style: TextStyle(
-                        color: AppColors.textDarkSecondary,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Obx(
-                      () => Text(
-                        controller.nameAsPerPan.value,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Matches Aadhaar badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: const Text(
-                    'Matches Aadhaar',
-                    style: TextStyle(
-                      color: AppColors.primaryPurple,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// "Upload PAN card instead" Button
   Widget _buildUploadInsteadButton(PanKycController controller) {
     return GestureDetector(
@@ -429,53 +333,38 @@ class _EnterPanBodyState extends State<EnterPanBody> {
   Widget _buildBottomSection(PanKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-      child: Obx(
-        () {
-          final isBusy = controller.isStoringPan.value;
-          return SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: isBusy ? null : controller.verifyPan,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryButtonBackground,
-                disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: isBusy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Verify PAN',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: AppColors.accentGold,
-                          size: 16,
-                        ),
-                      ],
-                    ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: ElevatedButton(
+          onPressed: controller.verifyPan,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryButtonBackground,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-          );
-        },
+            elevation: 0,
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Verify PAN',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              SizedBox(width: 8),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.accentGold,
+                size: 16,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
