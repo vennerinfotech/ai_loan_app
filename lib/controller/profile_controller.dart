@@ -71,7 +71,6 @@ class ProfileController extends GetxController {
   Future<void> logout() async {
     isLoggingOut.value = true;
     try {
-      final phone = await SessionManager.getUserPhone();
       final token = await SessionManager.getAuthToken();
 
       // Smooth UX delay + API call

@@ -1,9 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
-import '../controller/otp_verification_controller.dart';
 import '../screens/login_with_mpin_screen.dart';
-import '../screens/otp_verification_screen.dart';
 import '../screens/registration_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';

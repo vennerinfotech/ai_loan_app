@@ -1,4 +1,9 @@
+import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import '../models/dashboard_response_model.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
 import 'aadhaar_kyc_controller.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
@@ -15,11 +20,16 @@ class DashboardController extends GetxController {
   // Active bottom nav tab index (0: Home, 1: Cards, 2: Apply/Add, 3: Reports/Docs, 4: Profile)
   final currentNavIndex = 0.obs;
 
-  // Active user data
-  final userName = 'Aarav'.obs;
-  final userInitials = 'AM'.obs;
-  final cibilScore = 762.obs;
-  final cibilStatus = 'Good'.obs;
+  // Active user data (strictly dynamic, zero static fallback data)
+  final userName = ''.obs;
+  final userInitials = ''.obs;
+  final greeting = ''.obs;
+  final cibilScore = 0.obs;
+  final cibilStatus = ''.obs;
+
+  // Loading and full dashboard data
+  final isLoading = false.obs;
+  final dashboardData = Rxn<DashboardData>();
 
   // Aadhaar KYC Controller instance
   AadhaarKycController get kycController => Get.put(AadhaarKycController());
@@ -28,6 +38,102 @@ class DashboardController extends GetxController {
   bool get isAadhaarCompleted => kycController.isAadhaarVerified.value;
   bool get isPanCompleted => panController.isPanCompleted.value;
   bool get isKycCompleted => isAadhaarCompleted && isPanCompleted;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadLocalUserData();
+    fetchDashboardData();
+  }
+
+  /// Initial load from local session if available to avoid any UI flash
+  Future<void> _loadLocalUserData() async {
+    final localName = await SessionManager.getUserName();
+    if (localName.isNotEmpty && userName.value.isEmpty) {
+      userName.value = localName;
+      userInitials.value = _computeInitials(localName);
+    }
+  }
+
+  /// Derives 2-letter uppercase initials from full name
+  String _computeInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts[0].isEmpty) return 'U';
+    if (parts.length == 1) {
+      return parts[0].substring(0, math.min(2, parts[0].length)).toUpperCase();
+    }
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  /// Calls GET /dashboard and synchronizes dashboard state
+  Future<void> fetchDashboardData() async {
+    isLoading.value = true;
+    try {
+      final res = await ApiService.getDashboardData();
+      if (res['status_code'] == 200 || res['success'] == true) {
+        final model = DashboardResponseModel.fromJson(res);
+        if (model.data != null) {
+          dashboardData.value = model.data;
+          final d = model.data!;
+
+          // 1. Sync User Name & Initials
+          if (d.user != null) {
+            final name = d.user!.name ?? d.user!.firstName ?? userName.value;
+            if (name.isNotEmpty) {
+              userName.value = name;
+              userInitials.value = _computeInitials(name);
+            }
+          }
+
+          // 2. Sync Greeting
+          if (d.greeting != null && d.greeting!.trim().isNotEmpty) {
+            greeting.value = d.greeting!.trim();
+          }
+
+          // 3. Sync Credit Score
+          if (d.creditScore != null) {
+            if (d.creditScore!.score != null) {
+              cibilScore.value = d.creditScore!.score!;
+            }
+            if (d.creditScore!.band != null && d.creditScore!.band!.trim().isNotEmpty) {
+              cibilStatus.value = d.creditScore!.band!.trim();
+            }
+          }
+
+          // 4. Sync KYC Document Verifications
+          final insights = d.aiInsights;
+          if (insights != null) {
+            final aadhaarStatus = insights.getVerificationStatus('aadhaar');
+            if (aadhaarStatus?.toLowerCase() == 'verified') {
+              kycController.isAadhaarVerified.value = true;
+            }
+            final panStatus = insights.getVerificationStatus('pan');
+            if (panStatus?.toLowerCase() == 'verified') {
+              panController.isPanCompleted.value = true;
+            }
+          }
+
+          // 5. Sync from Application Status steps if present
+          if (d.applicationStatus?.steps.isNotEmpty == true) {
+            for (final step in d.applicationStatus!.steps) {
+              if (step.key == 'aadhaar' &&
+                  (step.isCompleted == true || step.status?.toLowerCase() == 'completed')) {
+                kycController.isAadhaarVerified.value = true;
+              }
+              if (step.key == 'pan' &&
+                  (step.isCompleted == true || step.status?.toLowerCase() == 'completed')) {
+                panController.isPanCompleted.value = true;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching dashboard data: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   void changeNavIndex(int index) {
     currentNavIndex.value = index;

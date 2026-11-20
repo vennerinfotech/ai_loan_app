@@ -21,28 +21,33 @@ class DashboardScreen extends StatelessWidget {
             // 1. Sticky Header (Fixed at top, not scrollable, search icon removed)
             _buildStickyTopHeader(controller),
 
-            // 2. Scrollable Dashboard Body (Compressive / compact layout)
+            // 2. Scrollable Dashboard Body (Compressive / compact layout with pull-to-refresh)
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // CIBIL Score Card (Compact)
-                    _buildCibilScoreCard(controller),
-                    const SizedBox(height: 12),
+              child: RefreshIndicator(
+                onRefresh: controller.fetchDashboardData,
+                color: AppColors.primaryPurple,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // CIBIL Score Card (Compact)
+                      _buildCibilScoreCard(controller),
+                      const SizedBox(height: 12),
 
-                    // Complete your KYC Card (Compact)
-                    Obx(() => _buildKycStatusCard(controller)),
-                    const SizedBox(height: 12),
+                      // Complete your KYC Card (Compact)
+                      Obx(() => _buildKycStatusCard(controller)),
+                      const SizedBox(height: 12),
 
-                    // 2x2 Feature Grid (Compact)
-                    _buildFeatureGrid(controller),
-                    const SizedBox(height: 14),
+                      // 2x2 Feature Grid (Compact)
+                      _buildFeatureGrid(controller),
+                      const SizedBox(height: 14),
 
-                    // Active Application Section (Compact)
-                    _buildActiveApplicationSection(controller),
-                  ],
+                      // Active Application Section (Compact)
+                      _buildActiveApplicationSection(controller),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -52,50 +57,78 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Sticky top user bar: Avatar, "good morning Aarav", Notification icon (Search bar removed)
+  /// Sticky top user bar: Avatar, Greeting, User Name, Notification icon
   Widget _buildStickyTopHeader(DashboardController controller) {
     return Container(
       color: AppColors.lightBackground,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(
         children: [
-          // Avatar AM (Reduced size 38x38)
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: AppColors.mpinAvatarBackground,
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Obx(
-                () => Text(
-                  controller.userInitials.value,
-                  style: const TextStyle(
-                    color: AppColors.mpinAvatarText,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+          // Avatar (Dynamic)
+          Obx(() {
+            final photoUrl = controller.dashboardData.value?.user?.profilePhotoUrl;
+            final initials = controller.userInitials.value;
+            return Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: AppColors.mpinAvatarBackground,
+                shape: BoxShape.circle,
               ),
-            ),
-          ),
+              clipBehavior: Clip.antiAlias,
+              child: photoUrl != null && photoUrl.isNotEmpty
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: Text(
+                          initials.isNotEmpty ? initials : '',
+                          style: const TextStyle(
+                            color: AppColors.mpinAvatarText,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: initials.isNotEmpty
+                          ? Text(
+                              initials,
+                              style: const TextStyle(
+                                color: AppColors.mpinAvatarText,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.mpinAvatarText,
+                              size: 20,
+                            ),
+                    ),
+            );
+          }),
           const SizedBox(width: 10),
 
-          // Greeting & Name
+          // Greeting & Name (Dynamic, zero static text)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'good morning',
-                  style: TextStyle(
-                    color: AppColors.textDarkSecondary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Obx(() {
+                  final g = controller.greeting.value;
+                  if (g.isEmpty) return const SizedBox.shrink();
+                  return Text(
+                    g.toLowerCase(),
+                    style: const TextStyle(
+                      color: AppColors.textDarkSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                }),
                 Obx(
                   () => Text(
                     controller.userName.value,
@@ -212,7 +245,9 @@ class DashboardScreen extends StatelessWidget {
                             children: [
                               Obx(
                                 () => Text(
-                                  '${controller.cibilScore.value}',
+                                  controller.cibilScore.value > 0
+                                      ? '${controller.cibilScore.value}'
+                                      : '--',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 30,
@@ -222,46 +257,70 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cibilGoodTagBg,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Obx(
-                                  () => Text(
-                                    controller.cibilStatus.value,
-                                    style: const TextStyle(
-                                      color: AppColors.cibilGoodTagText,
+                              Obx(() {
+                                final status = controller.cibilStatus.value;
+                                if (status.isEmpty) return const SizedBox.shrink();
+                                final cs = controller.dashboardData.value?.creditScore;
+                                Color tagColor = AppColors.cibilGoodTagText;
+                                Color tagBg = AppColors.cibilGoodTagBg;
+                                if (cs?.bandColor != null) {
+                                  final parsed = _parseHexColor(cs!.bandColor);
+                                  tagColor = parsed;
+                                  tagBg = parsed.withValues(alpha: 0.15);
+                                }
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: tagBg,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: TextStyle(
+                                      color: tagColor,
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ],
                           ),
                           const SizedBox(height: 2),
-                          const Text(
-                            'Updated 12 Nov · free monthly refresh',
-                            style: TextStyle(
-                              color: AppColors.indigoTint,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
+                          Obx(() {
+                            final isEst = controller.dashboardData.value?.creditScore?.isEstimated == true;
+                            return Text(
+                              isEst ? 'Estimated score · updated live' : 'Credit score · free refresh',
+                              style: const TextStyle(
+                                color: AppColors.indigoTint,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),
 
                     // CIBIL Gauge Ring (Reduced size 54x54)
-                    SizedBox(
-                      width: 54,
-                      height: 54,
-                      child: CustomPaint(
-                        painter: _CibilRingPainter(progress: 762 / 900),
-                      ),
-                    ),
+                    Obx(() {
+                      final cs = controller.dashboardData.value?.creditScore;
+                      double progress = 0.0;
+                      if (cs != null) {
+                        if (cs.gaugePercent != null) {
+                          progress = cs.gaugePercent! / 100.0;
+                        } else if (cs.score != null && cs.maxScore != null && cs.maxScore! > 0) {
+                          progress = cs.score! / cs.maxScore!;
+                        }
+                      }
+                      return SizedBox(
+                        width: 54,
+                        height: 54,
+                        child: CustomPaint(
+                          painter: _CibilRingPainter(progress: progress.clamp(0.0, 1.0)),
+                        ),
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -665,158 +724,225 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  /// Compact Active Application Section: Radius 14, padding 12
+  /// Active Application Section: Strictly dynamic, zero static fallback data.
+  /// Hidden when there is no active loan application.
   Widget _buildActiveApplicationSection(DashboardController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Active application',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.2,
-              ),
-            ),
-            GestureDetector(
-              onTap: () => controller.onDashboardOptionSelected('All Applications'),
-              child: const Text(
-                'View all',
-                style: TextStyle(
-                  color: AppColors.primaryPurple,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+    return Obx(() {
+      final appStatus = controller.dashboardData.value?.applicationStatus;
+      final latestLead = appStatus?.latestLead;
+      final isSubmitted = appStatus?.isSubmitted == true;
 
-        GestureDetector(
-          onTap: () => controller.onDashboardOptionSelected('Home loan Application'),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+      // If user hasn't applied for any loan or there is no active lead, remove static fallback data entirely
+      if (latestLead == null && !isSubmitted) {
+        return const SizedBox.shrink();
+      }
+
+      final progressVal = appStatus?.progressPercent != null
+          ? (appStatus!.progressPercent! / 100.0).clamp(0.0, 1.0)
+          : 0.0;
+      final percentDisplay = appStatus?.progressPercent != null
+          ? '${appStatus!.progressPercent}%'
+          : '0%';
+
+      final activeStepRaw = appStatus?.activeStep ?? '';
+      final activeStepTitle = activeStepRaw
+          .replaceAll('_', ' ')
+          .split(' ')
+          .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+          .join(' ');
+
+      final totalSteps = appStatus?.steps.isNotEmpty == true ? appStatus!.steps.length : 6;
+
+      // Determine step number dynamically from steps array (not raw internal currentStep id)
+      int currentStepNum = 1;
+      if (appStatus?.steps.isNotEmpty == true) {
+        final activeStepObj = appStatus!.steps.firstWhereOrNull(
+          (s) =>
+              s.key?.toLowerCase() == activeStepRaw.toLowerCase() ||
+              s.status?.toLowerCase() == 'active',
+        );
+        if (activeStepObj != null && activeStepObj.stepNumber != null) {
+          currentStepNum = activeStepObj.stepNumber!;
+        } else {
+          final completedCount = appStatus.steps
+              .where((s) => s.isCompleted == true || s.status?.toLowerCase() == 'completed')
+              .length;
+          currentStepNum = (completedCount + 1).clamp(1, totalSteps > 0 ? totalSteps : 1);
+        }
+      }
+
+      // Dynamic loan details from latestLead (no static fallback)
+      String loanTitle = 'Loan application';
+      String loanSubtitle = '';
+      if (latestLead is Map) {
+        loanTitle = latestLead['title']?.toString() ??
+            latestLead['loan_type']?.toString() ??
+            'Loan application';
+        final amt = latestLead['amount']?.toString();
+        final tenure = latestLead['tenure']?.toString();
+        if (amt != null && tenure != null) {
+          loanSubtitle = '$amt • $tenure';
+        } else if (amt != null) {
+          loanSubtitle = amt;
+        } else if (tenure != null) {
+          loanSubtitle = tenure;
+        }
+      }
+
+      final statusText = isSubmitted ? 'Submitted' : 'In review';
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Active application',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    // Home icon box (Reduced size 36x36)
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.indigoTint,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.home_outlined,
-                          color: AppColors.primaryPurple,
-                          size: 19,
+              ),
+              GestureDetector(
+                onTap: () => controller.onDashboardOptionSelected('All Applications'),
+                child: const Text(
+                  'View all',
+                  style: TextStyle(
+                    color: AppColors.primaryPurple,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          GestureDetector(
+            onTap: () => controller.onDashboardOptionSelected('Home loan Application'),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.indigoTint,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.home_outlined,
+                            color: AppColors.primaryPurple,
+                            size: 19,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
+                      const SizedBox(width: 10),
 
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Home loan',
-                            style: TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w700,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              loanTitle,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 1),
-                          Text(
-                            '₹14,50,000 • 15 years',
-                            style: TextStyle(
-                              color: AppColors.textDarkSecondary,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
+                            if (loanSubtitle.isNotEmpty) ...[
+                              const SizedBox(height: 1),
+                              Text(
+                                loanSubtitle,
+                                style: const TextStyle(
+                                  color: AppColors.textDarkSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
 
-                    // "In review" status pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.reviewPillBg,
-                        borderRadius: BorderRadius.circular(8),
+                      // Status pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.reviewPillBg,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusText,
+                          style: const TextStyle(
+                            color: AppColors.reviewPillText,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                      child: const Text(
-                        'In review',
-                        style: TextStyle(
-                          color: AppColors.reviewPillText,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Linear Progress Indicator
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: progressVal,
+                      backgroundColor: AppColors.line,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                      minHeight: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Step $currentStepNum of $totalSteps • $activeStepTitle',
+                        style: const TextStyle(
+                          color: AppColors.textDarkSecondary,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                      Text(
+                        percentDisplay,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Linear Progress Indicator
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: const LinearProgressIndicator(
-                    value: 0.48,
-                    backgroundColor: AppColors.line,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                    minHeight: 4,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 6),
-
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Step 3 of 6 • Credit report',
-                      style: TextStyle(
-                        color: AppColors.textDarkSecondary,
-                        fontSize: 10.5,
-                      ),
-                    ),
-                    Text(
-                      '48%',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
 
@@ -894,4 +1020,17 @@ class _CibilCosmicOrbitPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Helper to parse hex color strings like "#059669" or "ef4444"
+Color _parseHexColor(String? hexString, {Color fallback = const Color(0xFF10B981)}) {
+  if (hexString == null || hexString.trim().isEmpty) return fallback;
+  final cleanHex = hexString.replaceAll('#', '').trim();
+  final buffer = StringBuffer();
+  if (cleanHex.length == 6) {
+    buffer.write('ff');
+  }
+  buffer.write(cleanHex);
+  final val = int.tryParse(buffer.toString(), radix: 16);
+  return val != null ? Color(val) : fallback;
 }

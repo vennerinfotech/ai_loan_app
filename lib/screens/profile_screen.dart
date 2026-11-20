@@ -2,14 +2,12 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
-import '../services/session_manager.dart';
 import '../controller/dashboard_controller.dart';
 import '../controller/profile_controller.dart';
 import 'loan_flow/applicant_details_screen.dart';
 import 'document_wallet_screen.dart';
 import 'personal_details_screen.dart';
 import 'reset_mpin_screen.dart';
-import 'login_with_mpin_screen.dart';
 import '../widgets/language_selection_bottom_sheet.dart';
 
 /// Screen displaying user profile, account settings, security, and support (Reference Image 2)
