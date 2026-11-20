@@ -32,6 +32,12 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
   void initState() {
     super.initState();
     final controller = Get.find<ApplyLoanController>();
+    controller.syncFromDashboardData().then((_) {
+      if (mounted) {
+        _amountController.text = controller.loanAmount.value.toInt().toString();
+        setState(() {});
+      }
+    });
     _amountController = TextEditingController(
       text: controller.loanAmount.value.toInt().toString(),
     );
@@ -138,20 +144,7 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                   _buildLoanAmountCard(controller),
                   const SizedBox(height: 20),
 
-                  // 2. Tenure Selection
-                  const Text(
-                    'Tenure',
-                    style: TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _buildTenureSelector(controller),
-                  const SizedBox(height: 18),
-
-                  // 3. Estimated EMI Hero Banner Card
+                  // 2. Estimated EMI Hero Banner Card
                   _buildEmiBannerCard(controller),
                 ],
               ),
@@ -332,43 +325,62 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                   innerColor: AppColors.navy,
                 ),
               ),
-              child: Slider(
-                value: controller.loanAmount.value.clamp(50000.0, 5000000.0),
-                min: 50000.0,
-                max: 5000000.0,
-                onChanged: (val) {
-                  controller.setLoanAmount(val);
-                  if (_isEditingAmount) {
-                    _amountController.text = val.toInt().toString();
-                  }
-                },
-              ),
+              child: controller.maxLoanAmount.value > controller.minLoanAmount.value
+                  ? Slider(
+                      value: controller.loanAmount.value.clamp(
+                        controller.minLoanAmount.value,
+                        controller.maxLoanAmount.value,
+                      ),
+                      min: controller.minLoanAmount.value,
+                      max: controller.maxLoanAmount.value,
+                      onChanged: (val) {
+                        controller.setLoanAmount(val);
+                        if (_isEditingAmount) {
+                          _amountController.text = val.toInt().toString();
+                        }
+                      },
+                    )
+                  : const SizedBox(
+                      height: 48,
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.amber,
+                          ),
+                        ),
+                      ),
+                    ),
             ),
           ),
 
-          // Min & Max range markers
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '₹50K',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+          // Dynamic Min & Max range markers from dashboard API
+          Obx(
+            () => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    controller.formatIndianCurrency(controller.minLoanAmount.value),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  '₹50L',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
+                  Text(
+                    controller.formatIndianCurrency(controller.maxLoanAmount.value),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -424,78 +436,7 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
     );
   }
 
-  /// 4 side-by-side Tenure cards (5, 10, 15, 20 years)
-  Widget _buildTenureSelector(ApplyLoanController controller) {
-    return Row(
-      children: controller.tenureOptions.map((years) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Obx(() {
-              final isSelected = controller.selectedTenureYears.value == years;
-
-              return GestureDetector(
-                onTap: () => controller.setTenureYears(years),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.indigo
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.indigo
-                          : AppColors.line,
-                      width: 1.2,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isSelected
-                            ? AppColors.indigo.withValues(alpha: 0.25)
-                            : Colors.black.withValues(alpha: 0.02),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$years',
-                        style: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textDark,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'years',
-                        style: TextStyle(
-                          color: isSelected
-                              ? AppColors.indigoTint
-                              : AppColors.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  /// Royal blue banner showing live calculated EMI & Total Interest
+  /// Royal blue banner showing live calculated EMI & Total Interest from API
   Widget _buildEmiBannerCard(ApplyLoanController controller) {
     return Container(
       width: double.infinity,
@@ -543,30 +484,48 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                       ),
                       const SizedBox(height: 4),
                       Obx(
-                        () => Text(
-                          controller.formatIndianCurrency(controller.estimatedMonthlyEmi),
-                          style: const TextStyle(
-                            color: AppColors.amber,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
+                        () => controller.isCalculatingEmi.value
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.amber,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                controller.formatIndianCurrency(
+                                  controller.monthlyEmi.value > 0
+                                      ? controller.monthlyEmi.value
+                                      : controller.estimatedMonthlyEmi,
+                                ),
+                                style: const TextStyle(
+                                  color: AppColors.amber,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Indicative at 9.5% p.a. · final rate after review',
-                        style: TextStyle(
-                          color: AppColors.secondaryTextColor2,
-                          fontSize: 10.5,
-                          height: 1.25,
+                      Obx(
+                        () => Text(
+                          'Indicative at ${controller.apiInterestRate.value > 0 ? controller.apiInterestRate.value : controller.annualInterestRate.value}% p.a. · final rate after review',
+                          style: const TextStyle(
+                            color: AppColors.secondaryTextColor2,
+                            fontSize: 10.5,
+                            height: 1.25,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // Right: Total interest
+                // Right: Total interest & Total payable
                 Expanded(
                   flex: 4,
                   child: Column(
@@ -585,7 +544,11 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                       const SizedBox(height: 4),
                       Obx(
                         () => Text(
-                          controller.formatIndianCurrency(controller.totalInterestPayable),
+                          controller.formatIndianCurrency(
+                            controller.totalInterest.value > 0
+                                ? controller.totalInterest.value
+                                : controller.totalInterestPayable,
+                          ),
                           textAlign: TextAlign.right,
                           style: const TextStyle(
                             color: Colors.white,
@@ -594,6 +557,21 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Obx(() {
+                        if (controller.totalPayable.value > 0) {
+                          return Text(
+                            'Payable: ${controller.formatIndianCurrency(controller.totalPayable.value)}',
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              color: AppColors.secondaryTextColor2,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
                     ],
                   ),
                 ),

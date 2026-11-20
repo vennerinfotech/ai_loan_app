@@ -170,7 +170,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    controller.formatCurrency(controller.monthlyEmi),
+                    controller.formatCurrency(controller.monthlyEmi.value),
                     style: const TextStyle(
                       color: AppColors.amber,
                       fontSize: 27,
@@ -215,7 +215,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Interest ${controller.formatCurrency(controller.totalInterest)}',
+                        'Interest ${controller.formatCurrency(controller.totalInterest.value)}',
                         style: const TextStyle(
                           color: AppColors.indigoTint,
                           fontSize: 12,
@@ -251,10 +251,10 @@ class EmiCalculatorScreen extends StatelessWidget {
               title: 'Loan amount',
               valueString: controller.formatCurrency(controller.loanAmount.value),
               currentValue: controller.loanAmount.value,
-              minValue: controller.minLoanAmount,
-              maxValue: controller.maxLoanAmount,
-              minLabel: '₹50K',
-              maxLabel: '₹50L',
+              minValue: controller.minLoanAmount.value,
+              maxValue: controller.maxLoanAmount.value,
+              minLabel: controller.formatCurrency(controller.minLoanAmount.value),
+              maxLabel: controller.formatCurrency(controller.maxLoanAmount.value),
               onChanged: controller.updateLoanAmount,
             );
           }),
@@ -267,10 +267,10 @@ class EmiCalculatorScreen extends StatelessWidget {
               title: 'Interest rate (p.a.)',
               valueString: '${controller.interestRate.value.toStringAsFixed(1)}%',
               currentValue: controller.interestRate.value,
-              minValue: controller.minInterestRate,
-              maxValue: controller.maxInterestRate,
-              minLabel: '6%',
-              maxLabel: '24%',
+              minValue: controller.minInterestRate.value,
+              maxValue: controller.maxInterestRate.value,
+              minLabel: '${controller.minInterestRate.value.toStringAsFixed(0)}%',
+              maxLabel: '${controller.maxInterestRate.value.toStringAsFixed(0)}%',
               onChanged: controller.updateInterestRate,
             );
           }),
@@ -279,14 +279,23 @@ class EmiCalculatorScreen extends StatelessWidget {
 
           // 3. Tenure Slider
           Obx(() {
+            final yrs = controller.tenureYears.value;
+            final tenureStr = yrs < 1
+                ? '${(yrs * 12).round()} months'
+                : '${yrs.toStringAsFixed(yrs % 1 == 0 ? 0 : 1)} yrs';
+            final minLabel = controller.minTenure.value < 1
+                ? '${(controller.minTenure.value * 12).round()} mo'
+                : '${controller.minTenure.value.toInt()} yr';
+            final maxLabel = '${controller.maxTenure.value.toInt()} yrs';
+
             return _buildSliderItem(
               title: 'Tenure',
-              valueString: '${controller.tenureYears.value.toInt()} yrs',
+              valueString: tenureStr,
               currentValue: controller.tenureYears.value,
-              minValue: controller.minTenure,
-              maxValue: controller.maxTenure,
-              minLabel: '1 yr',
-              maxLabel: '30 yrs',
+              minValue: controller.minTenure.value,
+              maxValue: controller.maxTenure.value,
+              minLabel: minLabel,
+              maxLabel: maxLabel,
               onChanged: controller.updateTenure,
             );
           }),
@@ -336,23 +345,37 @@ class EmiCalculatorScreen extends StatelessWidget {
         const SizedBox(height: 6),
 
         // Custom Slider
-        SliderTheme(
-          data: SliderThemeData(
-            trackHeight: 5,
-            trackShape: const _EmiSliderTrackShape(),
-            activeTrackColor: AppColors.indigoTint,
-            inactiveTrackColor: AppColors.inputFill,
-            thumbColor: AppColors.navy,
-            thumbShape: const _EmiSliderThumbShape(thumbRadius: 11),
-            overlayShape: SliderComponentShape.noOverlay,
-          ),
-          child: Slider(
-            value: currentValue.clamp(minValue, maxValue),
-            min: minValue,
-            max: maxValue,
-            onChanged: onChanged,
-          ),
-        ),
+        maxValue > minValue
+            ? SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 5,
+                  trackShape: const _EmiSliderTrackShape(),
+                  activeTrackColor: AppColors.indigoTint,
+                  inactiveTrackColor: AppColors.inputFill,
+                  thumbColor: AppColors.navy,
+                  thumbShape: const _EmiSliderThumbShape(thumbRadius: 11),
+                  overlayShape: SliderComponentShape.noOverlay,
+                ),
+                child: Slider(
+                  value: currentValue.clamp(minValue, maxValue),
+                  min: minValue,
+                  max: maxValue,
+                  onChanged: onChanged,
+                ),
+              )
+            : const SizedBox(
+                height: 30,
+                child: Center(
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ),
+              ),
 
         const SizedBox(height: 4),
 
@@ -404,7 +427,7 @@ class EmiCalculatorScreen extends StatelessWidget {
           ),
           Obx(() {
             return Text(
-              controller.formatCurrency(controller.totalPayable),
+              controller.formatCurrency(controller.totalPayable.value),
               style: const TextStyle(
                 color: AppColors.textDark,
                 fontSize: 17,

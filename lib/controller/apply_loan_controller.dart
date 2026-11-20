@@ -1,10 +1,13 @@
-import 'dart:math' as math;
+import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../models/dashboard_response_model.dart';
 import '../models/employment_type_model.dart';
+import '../models/emi_calculation_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import 'dashboard_controller.dart';
 
 class LoanTypeOption {
   final String title;
@@ -64,6 +67,9 @@ class ApplyLoanController extends GetxController {
     if (currentStep.value != step) {
       stepHistory.add(step);
       currentStep.value = step;
+      if (step == 2 && monthlyEmi.value == 0) {
+        calculateEmiApi();
+      }
     }
   }
 
@@ -85,7 +91,71 @@ class ApplyLoanController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    syncFromDashboardData().then((_) {
+      if (monthlyEmi.value == 0) {
+        calculateEmiApi();
+      }
+    });
     fetchEmploymentTypes();
+  }
+
+  /// Syncs default EMI and slider data directly from Dashboard API response
+  /// (Strictly dynamic: zero static/fallback data)
+  Future<void> syncFromDashboardData() async {
+    DashboardEmiCalculator? emiCalc;
+    if (Get.isRegistered<DashboardController>()) {
+      final dash = Get.find<DashboardController>();
+      emiCalc = dash.dashboardData.value?.emiCalculator;
+    }
+    if (emiCalc == null) {
+      try {
+        final res = await ApiService.getDashboardData();
+        if (res['status_code'] == 200 || res['success'] == true) {
+          final model = DashboardResponseModel.fromJson(res);
+          emiCalc = model.data?.emiCalculator;
+        }
+      } catch (e) {
+        debugPrint('Exception fetching dashboard for EMI defaults: $e');
+      }
+    }
+
+    if (emiCalc != null) {
+      if (emiCalc.sliders?.loanAmount?.min != null) {
+        minLoanAmount.value = emiCalc.sliders!.loanAmount!.min!.toDouble();
+      }
+      if (emiCalc.sliders?.loanAmount?.max != null) {
+        maxLoanAmount.value = emiCalc.sliders!.loanAmount!.max!.toDouble();
+      }
+      if (emiCalc.sliders?.loanAmount?.step != null) {
+        stepLoanAmount.value = emiCalc.sliders!.loanAmount!.step!.toDouble();
+      }
+
+      final defaultAmount = emiCalc.result?.loanAmount?.toDouble() ??
+          emiCalc.sliders?.loanAmount?.defaultValue?.toDouble();
+      if (defaultAmount != null) {
+        loanAmount.value = defaultAmount;
+      }
+      if (emiCalc.result?.monthlyEmi != null) {
+        monthlyEmi.value = emiCalc.result!.monthlyEmi!.toInt();
+      }
+      if (emiCalc.result?.totalInterest != null) {
+        totalInterest.value = emiCalc.result!.totalInterest!.toInt();
+      }
+      if (emiCalc.result?.totalPayable != null) {
+        totalPayable.value = emiCalc.result!.totalPayable!.toInt();
+      }
+      if (emiCalc.result?.interestRate != null) {
+        apiInterestRate.value = emiCalc.result!.interestRate!.toDouble();
+        annualInterestRate.value = emiCalc.result!.interestRate!.toDouble();
+      }
+      isEmiLoaded.value = true;
+    }
+  }
+
+  @override
+  void onClose() {
+    _emiDebounceTimer?.cancel();
+    super.onClose();
   }
 
   // Step 1: Loan Type
@@ -185,42 +255,82 @@ class ApplyLoanController extends GetxController {
     }
   }
 
-  // Step 2: Loan Amount and Tenure
-  final loanAmount = 450000.0.obs;
-  final selectedTenureYears = 15.obs;
-  final annualInterestRate = 9.5.obs;
+  // Step 2: Loan Amount and Dynamic EMI (POST /emi-calculate & GET /dashboard)
+  final loanAmount = 0.0.obs;
+  final minLoanAmount = 0.0.obs;
+  final maxLoanAmount = 0.0.obs;
+  final stepLoanAmount = 0.0.obs;
+  final selectedTenureYears = 0.obs;
+  final annualInterestRate = 0.0.obs;
+  final apiInterestRate = 0.0.obs;
+  final monthlyEmi = 0.obs;
+  final totalInterest = 0.obs;
+  final totalPayable = 0.obs;
+  final isCalculatingEmi = false.obs;
+  final isEmiLoaded = false.obs;
+  final emiCalculationData = Rxn<EmiCalculationData>();
+  Timer? _emiDebounceTimer;
 
   final tenureOptions = const [5, 10, 15, 20];
   final quickAmountPresets = const [100000.0, 300000.0, 450000.0, 1000000.0, 2500000.0];
 
   void setLoanAmount(double amount) {
     loanAmount.value = amount;
+    _emiDebounceTimer?.cancel();
+    _emiDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      calculateEmiApi(amount: amount);
+    });
   }
 
   void setTenureYears(int years) {
     selectedTenureYears.value = years;
   }
 
-  /// Accurate Indian EMI calculation: P * r * (1+r)^n / ((1+r)^n - 1)
-  int get estimatedMonthlyEmi {
-    final p = loanAmount.value;
-    final r = (annualInterestRate.value / 12) / 100;
-    final n = selectedTenureYears.value * 12;
+  /// Calls POST {{baseUrl}}/emi-calculate
+  /// Per user requirement: passes only loan_amount
+  Future<void> calculateEmiApi({double? amount}) async {
+    final amt = amount ?? loanAmount.value;
+    isCalculatingEmi.value = true;
+    try {
+      // Per user instruction: pass only amount
+      var res = await ApiService.calculateEmi(loanAmount: amt.toInt());
 
-    if (r == 0) return (p / n).round();
-    final factor = math.pow(1 + r, n).toDouble();
-    final emi = p * r * factor / (factor - 1);
-    return emi.round();
+      // If backend validator requires interest_rate / tenure_months, fallback with defaults
+      if (res['status_code'] == 422 && res['errors'] is Map) {
+        final errors = res['errors'] as Map;
+        if (errors.containsKey('interest_rate') || errors.containsKey('tenure_months')) {
+          res = await ApiService.calculateEmi(
+            loanAmount: amt.toInt(),
+            interestRate: 9.5,
+            tenureMonths: 36,
+          );
+        }
+      }
+
+      if (res['success'] == true || res['status_code'] == 200) {
+        final model = EmiCalculationResponseModel.fromJson(res);
+        if (model.data != null) {
+          emiCalculationData.value = model.data;
+          monthlyEmi.value = model.data!.monthlyEmi?.toInt() ?? 0;
+          totalInterest.value = model.data!.totalInterest?.toInt() ?? 0;
+          totalPayable.value = model.data!.totalPayable?.toInt() ?? 0;
+          if (model.data!.interestRate != null) {
+            apiInterestRate.value = model.data!.interestRate!.toDouble();
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error calculating EMI: $e');
+    } finally {
+      isCalculatingEmi.value = false;
+    }
   }
 
-  /// Total Interest Payable = (EMI * n) - P
-  int get totalInterestPayable {
-    final emi = estimatedMonthlyEmi;
-    final n = selectedTenureYears.value * 12;
-    final totalPayment = emi * n;
-    final interest = totalPayment - loanAmount.value.round();
-    return math.max(0, interest);
-  }
+  /// Monthly EMI (strictly dynamic from API response, no static dummy math)
+  int get estimatedMonthlyEmi => monthlyEmi.value;
+
+  /// Total Interest Payable (strictly dynamic from API response, no static dummy math)
+  int get totalInterestPayable => totalInterest.value;
 
   /// Formatted currency string in Indian Numbering System (e.g. ₹4,50,000)
   String formatIndianCurrency(num amount) {

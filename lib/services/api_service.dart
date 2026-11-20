@@ -1047,4 +1047,52 @@ class ApiService {
       };
     }
   }
+
+  /// Calculate EMI API: POST {{baseUrl}}/emi-calculate
+  /// Uses form-data matching Postman collection
+  static Future<Map<String, dynamic>> calculateEmi({
+    required dynamic loanAmount,
+    dynamic interestRate,
+    dynamic tenureMonths,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/emi-calculate');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.headers['Accept'] = 'application/json';
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      request.fields['loan_amount'] = loanAmount.toString();
+      if (interestRate != null) {
+        request.fields['interest_rate'] = interestRate.toString();
+      }
+      if (tenureMonths != null) {
+        request.fields['tenure_months'] = tenureMonths.toString();
+      }
+
+      debugPrint('========== Calculate EMI ==========');
+      debugPrint('--> POST (form-data) $url');
+      debugPrint('Fields: ${request.fields}');
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in calculateEmi: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to calculate EMI. Please try again.',
+      };
+    }
+  }
 }
