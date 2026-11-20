@@ -39,7 +39,6 @@ class KycSuccessBody extends StatelessWidget {
         : Get.put(PanKycController());
 
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Column(
         children: [

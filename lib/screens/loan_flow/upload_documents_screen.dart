@@ -1,16 +1,16 @@
 import 'package:material_ui/material_ui.dart';
-import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
+import '../../theme/app_colors.dart';
 import '../../controller/apply_loan_controller.dart';
+import '../../models/employment_type_model.dart';
 import 'applicant_details_screen.dart';
 import 'apply_loan_flow_screen.dart';
 
-/// Screen 4 of Apply Loan Flow: "Upload documents" (Step 4 of 4)
-/// Dynamically adapts to all 4 employment types:
-/// - Salaried: Circular progress ring, uploaded files with trash icon, uploading progress card, Employee ID upload, alert notice, "Save draft" + "Submit application →"
-/// - Self-employed / Business: Business proof header, horizontal progress bar, 9 proof items with "✓ Added" / "Upload" button, "Back" + "Save & continue →"
-/// - Freelancer: Freelancer proof header, horizontal progress bar, 6 proof items, "Back" + "Save & continue →"
-/// - Pensioner: Pensioner proof header, horizontal progress bar, 6 proof items, "Back" + "Save & continue →"
+/// Screen 4 of Apply Loan Flow: "Upload documents / Employment & Proof" (Step 4 of 4)
+/// Matches the web proof layout (media_1795169562743_35dfbd91.png):
+/// 1. Card 1: 💼 Employment Details (text inputs: company, designation, salary, etc.)
+/// 2. Card 2: 📄 Required Document Proofs (checkbox, dotted upload container, cloud icon)
+/// 3. Bottom: Save & Continue button
 class UploadDocumentsScreen extends StatelessWidget {
   const UploadDocumentsScreen({super.key});
 
@@ -30,609 +30,876 @@ class UploadDocumentsBody extends StatelessWidget {
 
     return Column(
       children: [
-        // Dynamic Scrollable Documents Content
+        // Dynamic Scrollable Content
         Expanded(
-          child: Obx(() {
-            final empType = controller.selectedEmploymentType.value.toLowerCase();
-            final isSalaried = empType.contains('salaried') && !empType.contains('self');
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Obx(() {
+              final empType = controller.selectedEmploymentType.value;
 
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Column(
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header Section (Circular for Salaried, Icon + Title for others)
-                  if (isSalaried)
-                    _buildSalariedHeader(controller)
-                  else
-                    _buildOtherEmploymentHeader(controller),
+                  // Title matching web mockup (e.g. "Salaried Business Proof")
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$empType Business Proof',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => controller.handleBack(),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: AppColors.muted,
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
 
+                  // ==========================================
+                  // Card 1: 💼 Employment Details (Strictly dynamic from detail_fields)
+                  // ==========================================
+                  _buildEmploymentDetailsCard(controller),
                   const SizedBox(height: 16),
 
-                  // Document List (Unified for all employment types with live progress & delete icon)
-                  _buildDocList(controller, controller.activeDocs, context),
-
-                  const SizedBox(height: 14),
-
-                  // Warning Alert Note (Displayed for Salaried as per reference design)
-                  if (isSalaried) ...[
-                    _buildAlertNotice(),
-                    const SizedBox(height: 14),
-                  ],
+                  // ==========================================
+                  // Card 2: 📄 Required Document Proofs
+                  // ==========================================
+                  _buildRequiredDocumentProofsCard(controller, context),
+                  const SizedBox(height: 16),
                 ],
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
 
-        // Bottom Action Buttons
+        // Bottom CTA Buttons (Save & Continue)
         _buildBottomButtons(context, controller),
       ],
     );
   }
 
   // ==========================================
-  // Header Implementations
+  // Card 1: Employment Details Card (Strictly dynamic per API response)
   // ==========================================
+  Widget _buildEmploymentDetailsCard(ApplyLoanController controller) {
+    final fields = controller.activeDetailFields;
+    final salaryModes = controller.activeSalaryModes;
 
-  /// Salaried Header with Circular Progress ring + Title + Subtitle
-  Widget _buildSalariedHeader(ApplyLoanController controller) {
-    return Obx(() {
-      final addedCount = controller.activeAddedCount;
-      final totalCount = controller.salariedDocs.length;
-      final progress = totalCount > 0 ? (addedCount / totalCount).clamp(0.0, 1.0) : 0.0;
-
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Circular Progress Indicator Ring with "2/4"
-          SizedBox(
-            width: 54,
-            height: 54,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned.fill(
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 5.5,
-                    backgroundColor: AppColors.line,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo),
-                    strokeCap: StrokeCap.round,
-                  ),
-                ),
-                Text(
-                  '$addedCount/$totalCount',
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Title & Subtitle
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Salaried documents',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  'PDF, JPG or PNG · up to 5 MB each',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    });
-  }
-
-  /// Self-employed / Freelancer / Pensioner Header
-  Widget _buildOtherEmploymentHeader(ApplyLoanController controller) {
-    final type = controller.selectedEmploymentType.value.toLowerCase();
-    String title = 'Business proof';
-    String subtitle = 'Self-employed / business owner';
-    IconData icon = Icons.storefront_rounded;
-
-    if (type.contains('freelancer')) {
-      title = 'Freelancer proof';
-      subtitle = 'Project-based work for multiple clients';
-      icon = Icons.laptop_mac_rounded;
-    } else if (type.contains('pension')) {
-      title = 'Pensioner proof';
-      subtitle = 'Receiving retirement or pension benefits';
-      icon = Icons.north_rounded;
+    // If API returned no detail fields for this employment type (e.g. Freelancer/Pensioner), hide card
+    if (fields.isEmpty && salaryModes.isEmpty) {
+      return const SizedBox.shrink();
     }
 
-    return Obx(() {
-      final addedCount = controller.activeAddedCount;
-      final totalCount = controller.activeDocs.length;
-      final progress = totalCount > 0 ? addedCount / totalCount : 0.0;
-
-      return Column(
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.line, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Navy icon container + Title & Subtitle
+          // Header: Blue briefcase icon + "Employment Details"
           Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(14),
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Center(
+                child: const Center(
                   child: Icon(
-                    icon,
-                    color: AppColors.amber,
-                    size: 24,
+                    Icons.business_center_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 16,
                   ),
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 8),
+              const Text(
+                'Employment Details',
+                style: TextStyle(
+                  color: Color(0xFF1D4ED8),
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
-          // Horizontal Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 5,
-              backgroundColor: AppColors.line,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.indigo),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Render ONLY the fields returned in detail_fields for the selected employment type
+          ...fields.map((field) {
+            final name = field.name ?? '';
+            final label = field.label ?? name;
+            final isReq = field.required == true;
+            final type = field.type?.toLowerCase() ?? 'text';
 
-          // Counts & File info row
+            if (type == 'select' && field.options.isNotEmpty) {
+              final dropVal = controller.getDropdownValueForField(name, field.options.first);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Obx(
+                  () => _buildDropdownField(
+                    label: label,
+                    isRequired: isReq,
+                    value: dropVal.value,
+                    options: field.options,
+                    onChanged: (val) {
+                      if (val != null) dropVal.value = val;
+                    },
+                  ),
+                ),
+              );
+            }
+
+            final textCtrl = controller.getControllerForField(name);
+            final isNum = type == 'number';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildTextField(
+                label: label,
+                isRequired: isReq,
+                hintText: 'Enter $label',
+                controller: textCtrl,
+                keyboardType: isNum ? TextInputType.number : TextInputType.text,
+              ),
+            );
+          }),
+
+          // Dynamic Salary Modes from API (e.g. Bank Salary, Cash Salary, Bank + Cash Salary)
+          if (salaryModes.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            _buildSalaryModesField(controller, salaryModes),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSalaryModesField(ApplyLoanController controller, List<SalaryModeItem> salaryModes) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Salary Mode',
+          style: TextStyle(
+            color: Color(0xFF334155),
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Obx(() {
+          final currentMode = controller.selectedSalaryMode.value.isNotEmpty
+              ? controller.selectedSalaryMode.value
+              : (salaryModes.first.key ?? '');
+
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: salaryModes.map((mode) {
+              final key = mode.key ?? '';
+              final label = mode.label ?? key;
+              final isSel = currentMode == key;
+
+              return GestureDetector(
+                onTap: () => controller.selectedSalaryMode.value = key,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSel ? const Color(0xFF1E1B4B) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSel ? const Color(0xFF1E1B4B) : const Color(0xFFCBD5E1),
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSel ? Colors.white : const Color(0xFF334155),
+                      fontSize: 12.5,
+                      fontWeight: isSel ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }),
+      ],
+    );
+  }
+
+  // ==========================================
+  // Card 2: Required Document Proofs Card (Filtered per API)
+  // ==========================================
+  Widget _buildRequiredDocumentProofsCard(ApplyLoanController controller, BuildContext context) {
+    // Filter documents from POST /loan/employment-type:
+    // Exclude property documents & already uploaded KYC documents
+    final dynamicDocs = controller.dynamicDocuments.where((doc) {
+      final cat = doc.category?.toLowerCase() ?? '';
+      final key = doc.key?.toLowerCase() ?? '';
+      if (cat == 'property') return false;
+      if (key == 'aadhar_card_front' || key == 'pan_card_image') return false;
+      return true;
+    }).toList();
+
+    final hasDynamic = dynamicDocs.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.line, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Blue document icon + "Required Document Proofs"
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$addedCount of $totalCount added',
-                style: const TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.description_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 16,
+                  ),
                 ),
               ),
+              const SizedBox(width: 8),
               const Text(
-                'PDF, JPG, PNG · max 5 MB',
+                'Required Document Proofs',
                 style: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF1D4ED8),
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 14),
+
+          if (hasDynamic)
+            ...dynamicDocs.map((doc) => _buildDynamicDocProofItem(controller, doc, context))
+          else
+            ...controller.activeDocs.map((doc) => _buildStaticDocProofItem(controller, doc, context)),
         ],
-      );
-    });
+      ),
+    );
   }
 
-  // ==========================================
-  // Document Card Lists
-  // ==========================================
+  /// Document Proof Item matching web design (Dotted border container with cloud icon)
+  Widget _buildDynamicDocProofItem(
+    ApplyLoanController controller,
+    LoanDocumentItem doc,
+    BuildContext context,
+  ) {
+    final key = doc.key ?? '';
+    final label = doc.label ?? key;
 
-  /// Unified Document Cards List for all employment types (Salaried, Self-employed, Freelancer, Pensioner)
-  /// Features:
-  /// - Pending state: Document icon, title, subtitle, and solid navy "Upload" button
-  /// - Uploading state: Royal purple border, live upload progress bar inside card with percentage & cancel '✕'
-  /// - Added state: Green checkmark icon, file name & size, and trash can delete icon to remove document
-  Widget _buildDocList(ApplyLoanController controller, List<LoanDocItem> docs, BuildContext context) {
-    return Column(
-      children: docs.map((doc) {
-        return Obx(() {
-          final isAdded = doc.isAdded.value;
-          final isUploading = doc.isUploading.value;
+    return Obx(() {
+      final isChecked = controller.selectedDocCheckboxes[key] ?? true;
+      final fileName = controller.uploadedDocFileNames[key];
+      final isUploaded = doc.uploaded == true || (fileName != null && fileName.isNotEmpty);
+      final isUploading = controller.uploadingDocKeys[key] == true;
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isUploading
-                    ? AppColors.indigo
-                    : AppColors.line,
-                width: isUploading ? 1.4 : 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFE),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isUploaded ? const Color(0xFF4F46E5) : AppColors.line,
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Checkbox + Document Label
+            Row(
               children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  child: Row(
-                    children: [
-                      // Leading Icon
-                      _buildDocLeadingIcon(doc),
-                      const SizedBox(width: 14),
-
-                      // Text: Title + Subtitle/filename/progress
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              doc.title,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            if (isUploading)
-                              const Text(
-                                'Uploading...',
-                                style: TextStyle(
-                                  color: AppColors.indigo,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              )
-                            else if (isAdded)
-                              Text(
-                                '${doc.fileName.value} · ${doc.fileSize.value}',
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              )
-                            else
-                              Text(
-                                doc.subtitle.isNotEmpty
-                                    ? doc.subtitle
-                                    : 'Upload document',
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                          ],
-                        ),
+                GestureDetector(
+                  onTap: () {
+                    controller.selectedDocCheckboxes[key] = !isChecked;
+                  },
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: isChecked ? const Color(0xFF4F46E5) : Colors.white,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isChecked ? const Color(0xFF4F46E5) : const Color(0xFF94A3B8),
+                        width: 1.5,
                       ),
-
-                      // Trailing Action: Trash icon if added, '✕' if uploading, 'Upload' button if pending
-                      if (isAdded)
-                        GestureDetector(
-                          onTap: () => controller.removeDocument(doc),
-                          child: const Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.delete_outline_rounded,
-                              color: AppColors.muted,
-                              size: 20,
-                            ),
-                          ),
-                        )
-                      else if (isUploading)
-                        GestureDetector(
-                          onTap: () => controller.removeDocument(doc),
-                          child: const Padding(
-                            padding: EdgeInsets.all(6),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: AppColors.muted,
-                              size: 20,
-                            ),
-                          ),
-                        )
-                      else
-                        GestureDetector(
-                          onTap: () => controller.pickAndUploadDocument(doc, context: context),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.navy,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.upload_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                                SizedBox(width: 5),
-                                Text(
-                                  'Upload',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
+                    ),
+                    child: isChecked
+                        ? const Center(
+                            child: Icon(Icons.check, size: 14, color: Colors.white),
+                          )
+                        : null,
                   ),
                 ),
-
-                // Smooth linear progress bar widget inside the card during upload
-                if (isUploading)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: const LinearProgressIndicator(
-                        minHeight: 4,
-                        backgroundColor: AppColors.line,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.indigo),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (isUploaded)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: const Text(
+                      'Uploaded ✓',
+                      style: TextStyle(
+                        color: Color(0xFF059669),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
               ],
             ),
-          );
-        });
-      }).toList(),
+            const SizedBox(height: 10),
+
+            // Dashed / Dotted Upload Container with Cloud Icon
+            GestureDetector(
+              onTap: () => controller.pickAndUploadDynamicDoc(doc, context: context),
+              child: CustomPaint(
+                painter: _DashedBorderPainter(
+                  color: isUploaded ? const Color(0xFF818CF8) : const Color(0xFFCBD5E1),
+                ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: isUploading
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF4F46E5),
+                                strokeWidth: 2.2,
+                              ),
+                            ),
+                          ),
+                        )
+                      : isUploaded
+                          ? Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        fileName ?? '$label uploaded',
+                                        style: const TextStyle(
+                                          color: AppColors.textDark,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      const Text(
+                                        'Tap to change file',
+                                        style: TextStyle(
+                                          color: Color(0xFF6366F1),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => controller.removeDynamicDoc(doc),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(4),
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.cloud_upload_outlined,
+                                  color: Color(0xFF64748B),
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Tap to upload $label',
+                                  style: const TextStyle(
+                                    color: Color(0xFF475569),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'PDF, JPG or PNG (up to ${doc.maxSizeMb ?? 5} MB)',
+                                  style: const TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Fallback static document proof item
+  Widget _buildStaticDocProofItem(
+    ApplyLoanController controller,
+    LoanDocItem doc,
+    BuildContext context,
+  ) {
+    return Obx(() {
+      final isAdded = doc.isAdded.value;
+      final isUploading = doc.isUploading.value;
+
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFAFAFE),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isAdded ? const Color(0xFF4F46E5) : AppColors.line,
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: isAdded ? const Color(0xFF4F46E5) : const Color(0xFF4F46E5),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.check, size: 14, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    doc.title,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (isAdded)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: const Text(
+                      'Uploaded ✓',
+                      style: TextStyle(
+                        color: Color(0xFF059669),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            GestureDetector(
+              onTap: () => controller.pickAndUploadDocument(doc, context: context),
+              child: CustomPaint(
+                painter: _DashedBorderPainter(
+                  color: isAdded ? const Color(0xFF818CF8) : const Color(0xFFCBD5E1),
+                ),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: isUploading
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF4F46E5),
+                                strokeWidth: 2.2,
+                              ),
+                            ),
+                          ),
+                        )
+                      : isAdded
+                          ? Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Color(0xFF10B981),
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    doc.fileName.value.isNotEmpty
+                                        ? doc.fileName.value
+                                        : '${doc.title} uploaded',
+                                    style: const TextStyle(
+                                      color: AppColors.textDark,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => controller.removeDocument(doc),
+                                  child: const Padding(
+                                    padding: EdgeInsets.all(4),
+                                    child: Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Color(0xFFEF4444),
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.cloud_upload_outlined,
+                                  color: Color(0xFF64748B),
+                                  size: 28,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Tap to upload ${doc.title}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF475569),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'PDF, JPG or PNG (up to 5 MB)',
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ==========================================
+  // Form Field Helper Widgets
+  // ==========================================
+  Widget _buildTextField({
+    required String label,
+    required String hintText,
+    required TextEditingController controller,
+    bool isRequired = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF334155),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.0),
+          ),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(
+              color: AppColors.textDark,
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: const TextStyle(
+                color: Color(0xFF94A3B8),
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              border: InputBorder.none,
+              isDense: true,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildDocLeadingIcon(LoanDocItem doc) {
-    final isAdded = doc.isAdded.value;
-    final isUploading = doc.isUploading.value;
+  Widget _buildDropdownField({
+    required String label,
+    required String value,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+    bool isRequired = false,
+  }) {
+    final validValue = options.contains(value) ? value : options.first;
 
-    if (isAdded) {
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.successGreenBg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.check_rounded,
-            color: AppColors.successGreen,
-            size: 20,
-          ),
-        ),
-      );
-    } else if (isUploading) {
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.indigoTint,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.upload_rounded,
-            color: AppColors.indigo,
-            size: 20,
-          ),
-        ),
-      );
-    } else {
-      IconData icon = Icons.description_outlined;
-      final title = doc.title.toLowerCase();
-      if (title.contains('id')) {
-        icon = Icons.badge_outlined;
-      } else if (title.contains('statement')) {
-        icon = Icons.account_balance_outlined;
-      } else if (title.contains('licence') || title.contains('license') || title.contains('certificate')) {
-        icon = Icons.verified_outlined;
-      } else if (title.contains('invoice') || title.contains('slip') || title.contains('payment') || title.contains('order')) {
-        icon = Icons.receipt_long_outlined;
-      }
-
-      return Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.indigoTint,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            color: AppColors.indigo,
-            size: 20,
-          ),
-        ),
-      );
-    }
-  }
-
-  /// Warning Alert Box: "Make sure all four corners are visible..."
-  Widget _buildAlertNotice() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.warningAmberBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.warningAmberBg, width: 1.0),
-      ),
-      child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            color: AppColors.warningAmber,
-            size: 18,
-          ),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Make sure all four corners are visible and text is readable — blurry photos slow down approval.',
-              style: TextStyle(
-                color: AppColors.warningAmber,
-                fontSize: 12,
-                height: 1.35,
-                fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF334155),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Color(0xFFEF4444),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.0),
           ),
-        ],
-      ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: validValue,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+              items: options.map((opt) {
+                return DropdownMenuItem<String>(
+                  value: opt,
+                  child: Text(
+                    opt,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   // ==========================================
   // Bottom Action Buttons
   // ==========================================
-
   Widget _buildBottomButtons(BuildContext context, ApplyLoanController controller) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
-      child: Obx(() {
-        final empType = controller.selectedEmploymentType.value.toLowerCase();
-        final isSalaried = empType.contains('salaried') && !empType.contains('self');
-
-        final leftLabel = isSalaried ? 'Save draft' : 'Back';
-        final rightLabel = isSalaried ? 'Submit application' : 'Save & continue';
-
-        return Row(
-          children: [
-            // Left Button: "Save draft" or "Back"
-            Expanded(
-              flex: 4,
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (isSalaried) {
-                      Get.snackbar(
-                        'Draft Saved',
-                        'Your uploaded documents have been saved as draft.',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: AppColors.navy,
-                        colorText: Colors.white,
-                        margin: const EdgeInsets.all(16),
-                        duration: const Duration(seconds: 2),
-                      );
-                    } else {
-                      controller.handleBack();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.inputFill,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: const BorderSide(color: AppColors.line, width: 1.2),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    leftLabel,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: ElevatedButton(
+          onPressed: () {
+            // Save details & advance to Applicant Details
+            Get.to(() => const ApplicantDetailsScreen());
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1E1B4B), // Deep navy matching web CTA
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-            const SizedBox(width: 12),
-
-            // Right Button: "Submit application →" or "Save & continue →"
-            Expanded(
-              flex: 6,
-              child: SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Get.to(() => const ApplicantDetailsScreen());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        rightLabel,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.amber,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Save & Continue',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
             ),
-          ],
-        );
-      }),
+          ),
+        ),
+      ),
     );
   }
+}
 
+/// CustomPainter to draw a clean dashed/dotted border matching web UI
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
 
+  const _DashedBorderPainter({
+    this.color = const Color(0xFFCBD5E1),
+  });
+
+  static const double strokeWidth = 1.2;
+  static const double gap = 4.0;
+  static const double dash = 6.0;
+  static const double radius = 12.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        Radius.circular(radius),
+      ));
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0.0;
+      while (distance < metric.length) {
+        final currentLength = (distance + dash < metric.length) ? dash : metric.length - distance;
+        final extract = metric.extractPath(distance, distance + currentLength);
+        canvas.drawPath(extract, paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) => false;
 }

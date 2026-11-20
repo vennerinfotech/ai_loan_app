@@ -27,7 +27,6 @@ class EmploymentTypeBody extends StatelessWidget {
         // Scrollable Content
         Expanded(
           child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,126 +70,245 @@ class EmploymentTypeBody extends StatelessWidget {
   }
 
   Widget _buildEmploymentCardsList(ApplyLoanController controller) {
-    return Column(
-      children: controller.employmentTypes.map((item) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Obx(() {
-            final isSelected = controller.selectedEmploymentType.value == item.title;
+    return Obx(() {
+      if (controller.isLoadingEmploymentTypes.value && controller.apiEmploymentTypes.isEmpty) {
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 32),
+          child: Center(
+            child: CircularProgressIndicator(color: AppColors.navy),
+          ),
+        );
+      }
 
-            return GestureDetector(
-              onTap: () => controller.selectEmploymentType(item.title),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.navy : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.navy
-                        : AppColors.line,
-                    width: 1.4,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isSelected
-                          ? AppColors.navy.withValues(alpha: 0.22)
-                          : Colors.black.withValues(alpha: 0.02),
-                      blurRadius: isSelected ? 10 : 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    // Icon Container
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.amber
-                            : AppColors.indigoTint,
-                        borderRadius: BorderRadius.circular(13),
+      // If API returned employment types, use them dynamically
+      if (controller.apiEmploymentTypes.isNotEmpty) {
+        return Column(
+          children: controller.apiEmploymentTypes.map((item) {
+            final title = item.label ?? item.key ?? '';
+            final subtitle = item.description ?? '';
+            final iconKey = item.icon ?? 'briefcase';
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Obx(() {
+                final isSelected = controller.selectedEmploymentType.value.toLowerCase() == title.toLowerCase() ||
+                    controller.selectedEmploymentType.value.toLowerCase() == (item.key ?? '').toLowerCase();
+
+                return GestureDetector(
+                  onTap: () => controller.selectEmploymentType(title),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.navy : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected ? AppColors.navy : AppColors.line,
+                        width: 1.4,
                       ),
-                      child: Center(
-                        child: Icon(
-                          _getIconForEmployment(item.iconKey),
-                          size: 21,
+                      boxShadow: [
+                        BoxShadow(
                           color: isSelected
-                              ? AppColors.navy
-                              : AppColors.indigo,
+                              ? AppColors.navy.withValues(alpha: 0.22)
+                              : Colors.black.withValues(alpha: 0.02),
+                          blurRadius: isSelected ? 10 : 6,
+                          offset: const Offset(0, 3),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-
-                    // Title & Subtitle
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : AppColors.textDark,
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w800,
+                    child: Row(
+                      children: [
+                        // Icon Container
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.amber : AppColors.indigoTint,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              _getIconForEmployment(iconKey),
+                              size: 21,
+                              color: isSelected ? AppColors.navy : AppColors.indigo,
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.subtitle,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? AppColors.muted
-                                  : AppColors.muted,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w400,
-                              height: 1.25,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Radio Button Indicator
-                    Container(
-                      width: 22,
-                      height: 22,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.amber
-                              : AppColors.line,
-                          width: 2.0,
                         ),
-                      ),
-                      child: isSelected
-                          ? Center(
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.amber,
-                                  shape: BoxShape.circle,
+                        const SizedBox(width: 14),
+
+                        // Title & Subtitle
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textDark,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                            )
-                          : null,
+                              if (subtitle.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Text(
+                                  subtitle,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white.withValues(alpha: 0.75) : AppColors.muted,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // Radio Button Indicator
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected ? AppColors.amber : AppColors.line,
+                              width: 2.0,
+                            ),
+                          ),
+                          child: isSelected
+                              ? Center(
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.amber,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }),
             );
-          }),
+          }).toList(),
         );
-      }).toList(),
-    );
+      }
+
+      // Fallback to static employment types if needed
+      return Column(
+        children: controller.employmentTypes.map((item) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Obx(() {
+              final isSelected = controller.selectedEmploymentType.value == item.title;
+
+              return GestureDetector(
+                onTap: () => controller.selectEmploymentType(item.title),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.navy : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? AppColors.navy : AppColors.line,
+                      width: 1.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isSelected
+                            ? AppColors.navy.withValues(alpha: 0.22)
+                            : Colors.black.withValues(alpha: 0.02),
+                        blurRadius: isSelected ? 10 : 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Icon Container
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.amber : AppColors.indigoTint,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            _getIconForEmployment(item.iconKey),
+                            size: 21,
+                            color: isSelected ? AppColors.navy : AppColors.indigo,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+
+                      // Title & Subtitle
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.title,
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : AppColors.textDark,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              item.subtitle,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.muted : AppColors.muted,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w400,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Radio Button Indicator
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? AppColors.amber : AppColors.line,
+                            width: 2.0,
+                          ),
+                        ),
+                        child: isSelected
+                            ? Center(
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.amber,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          );
+        }).toList(),
+      );
+    });
   }
 
   /// Light purple hint container explaining co-applicant benefits
@@ -271,35 +389,46 @@ class EmploymentTypeBody extends StatelessWidget {
           Expanded(
             child: SizedBox(
               height: 52,
-              child: ElevatedButton(
-                onPressed: () {
-                  controller.goToStep(4);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navy,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: controller.isSelectingEmploymentType.value
+                      ? null
+                      : () => controller.submitEmploymentTypeSelection(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Continue',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.amber,
-                      size: 18,
-                    ),
-                  ],
+                  child: controller.isSelectingEmploymentType.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.amber,
+                              size: 18,
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),

@@ -76,7 +76,6 @@ class ApplicationStatusScreen extends StatelessWidget {
             // Scrollable Content (Top Hero Card + Stepper)
             Expanded(
               child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

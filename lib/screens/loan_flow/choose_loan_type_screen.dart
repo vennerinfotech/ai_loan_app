@@ -38,7 +38,6 @@ class ChooseLoanTypeBody extends StatelessWidget {
         Expanded(
           child: SingleChildScrollView(
             controller: scrollController,
-            physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

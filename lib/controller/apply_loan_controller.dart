@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../models/employment_type_model.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 
@@ -78,6 +80,12 @@ class ApplyLoanController extends GetxController {
     currentStep.value = 1;
     stepHistory.clear();
     stepHistory.add(1);
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchEmploymentTypes();
   }
 
   // Step 1: Loan Type
@@ -235,9 +243,62 @@ class ApplyLoanController extends GetxController {
     return '₹${buffer.toString()}';
   }
 
-  // Step 3: Employment Type
+  // Step 3: Employment Type (Dynamic API Integration)
   final selectedEmploymentType = 'Salaried'.obs;
+  final isLoadingEmploymentTypes = false.obs;
+  final isSelectingEmploymentType = false.obs;
 
+  final apiEmploymentTypes = <EmploymentTypeItem>[].obs;
+  final employmentTypesData = Rxn<EmploymentTypesData>();
+  final selectionData = Rxn<EmploymentTypeSelectionData>();
+  final dynamicDocuments = <LoanDocumentItem>[].obs;
+
+  // Selected salary mode (for salaried)
+  final selectedSalaryMode = ''.obs;
+
+  // Dynamic detail fields resolved directly from the API response for the selected employment type
+  EmploymentTypeItem? get currentSelectedEmploymentTypeItem {
+    final sel = selectedEmploymentType.value.toLowerCase().trim();
+    return apiEmploymentTypes.firstWhereOrNull(
+      (e) =>
+          (e.label ?? '').toLowerCase().trim() == sel ||
+          (e.key ?? '').toLowerCase().trim() == sel,
+    );
+  }
+
+  List<DetailFieldItem> get activeDetailFields {
+    return currentSelectedEmploymentTypeItem?.detailFields ?? [];
+  }
+
+  List<SalaryModeItem> get activeSalaryModes {
+    return currentSelectedEmploymentTypeItem?.salaryModes ?? [];
+  }
+
+  // Dynamic field controllers mapped strictly by field name from API
+  final detailFieldControllers = <String, TextEditingController>{};
+  final detailDropdownValues = <String, RxString>{};
+
+  TextEditingController getControllerForField(String name) {
+    if (!detailFieldControllers.containsKey(name)) {
+      detailFieldControllers[name] = TextEditingController();
+    }
+    return detailFieldControllers[name]!;
+  }
+
+  RxString getDropdownValueForField(String name, String defaultValue) {
+    if (!detailDropdownValues.containsKey(name)) {
+      detailDropdownValues[name] = defaultValue.obs;
+    }
+    return detailDropdownValues[name]!;
+  }
+
+  // Dynamic Document Upload states
+  final uploadedDocFileNames = <String, String>{}.obs; // doc.key -> fileName
+  final uploadedDocFileSizes = <String, String>{}.obs; // doc.key -> fileSize
+  final uploadingDocKeys = <String, bool>{}.obs; // doc.key -> isUploading
+  final selectedDocCheckboxes = <String, bool>{}.obs; // doc.key -> isChecked
+
+  // Fallback static list used only if API is loading
   final employmentTypes = const [
     EmploymentTypeOption(
       title: 'Salaried',
@@ -263,6 +324,135 @@ class ApplyLoanController extends GetxController {
 
   void selectEmploymentType(String type) {
     selectedEmploymentType.value = type;
+  }
+
+  /// Calls GET {{baseUrl}}/loan/employment-types
+  Future<void> fetchEmploymentTypes() async {
+    isLoadingEmploymentTypes.value = true;
+    try {
+      final res = await ApiService.getEmploymentTypes();
+      if (res['status_code'] == 200 || res['success'] == true) {
+        final model = EmploymentTypesResponseModel.fromJson(res);
+        if (model.data != null) {
+          employmentTypesData.value = model.data;
+          apiEmploymentTypes.assignAll(model.data!.employmentTypes);
+          if (apiEmploymentTypes.isNotEmpty) {
+            // Keep existing selection if valid or pick first
+            final exists = apiEmploymentTypes.any(
+              (e) => (e.label ?? e.key ?? '').toLowerCase() == selectedEmploymentType.value.toLowerCase(),
+            );
+            if (!exists) {
+              selectedEmploymentType.value = apiEmploymentTypes.first.label ?? 'Salaried';
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in fetchEmploymentTypes: $e');
+    } finally {
+      isLoadingEmploymentTypes.value = false;
+    }
+  }
+
+  /// Calls POST {{baseUrl}}/loan/employment-type
+  Future<bool> submitEmploymentTypeSelection() async {
+    isSelectingEmploymentType.value = true;
+    try {
+      final res = await ApiService.selectEmploymentType(
+        employmentType: selectedEmploymentType.value,
+        loanType: selectedLoanType.value,
+        loanAmount: loanAmount.value.toInt(),
+        businessEntity: selectedEmploymentType.value.toLowerCase().contains('self')
+            ? getDropdownValueForField('business_entity', 'Proprietorship').value
+            : null,
+      );
+
+      if (res['status_code'] == 200 || res['success'] == true) {
+        final model = EmploymentTypeSelectionResponseModel.fromJson(res);
+        if (model.data != null) {
+          selectionData.value = model.data;
+          dynamicDocuments.assignAll(model.data!.documents);
+
+          // Initialize checkboxes: default to checked for all documents
+          for (final doc in model.data!.documents) {
+            final key = doc.key ?? '';
+            if (key.isNotEmpty) {
+              selectedDocCheckboxes[key] = true;
+              if (doc.uploaded == true) {
+                uploadedDocFileNames[key] = '${doc.label ?? 'Document'} (Uploaded)';
+              }
+            }
+          }
+
+          // Advance to Step 4 (Upload Documents / Proof screen)
+          goToStep(4);
+          return true;
+        }
+      } else {
+        final msg = ApiService.getErrorMessage(res);
+        Get.snackbar(
+          'Notice',
+          msg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error in submitEmploymentTypeSelection: $e');
+      // Advance to step 4 even if network issue occurs
+      goToStep(4);
+      return false;
+    } finally {
+      isSelectingEmploymentType.value = false;
+    }
+  }
+
+  /// Upload dynamic document item
+  Future<void> pickAndUploadDynamicDoc(LoanDocumentItem doc, {BuildContext? context}) async {
+    final key = doc.key ?? '';
+    final file = await ImagePickerBottomSheet.show(
+      context: context,
+      title: 'Upload ${doc.label ?? 'Document'}',
+      subtitle: 'Take a clear photo or select from your gallery',
+    );
+
+    if (file == null) return;
+
+    final length = await file.length();
+    final sizeStr = length > 1024 * 1024
+        ? '${(length / (1024 * 1024)).toStringAsFixed(1)} MB'
+        : '${(length / 1024).toStringAsFixed(0)} KB';
+
+    uploadingDocKeys[key] = true;
+
+    // Simulate upload delay
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    uploadingDocKeys[key] = false;
+    uploadedDocFileNames[key] = file.name;
+    uploadedDocFileSizes[key] = sizeStr;
+    selectedDocCheckboxes[key] = true;
+
+    Get.snackbar(
+      'Document Uploaded',
+      '${doc.label ?? 'Document'} uploaded successfully.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.navy,
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  /// Remove dynamic document
+  void removeDynamicDoc(LoanDocumentItem doc) {
+    final key = doc.key ?? '';
+    uploadedDocFileNames.remove(key);
+    uploadedDocFileSizes.remove(key);
+    uploadingDocKeys.remove(key);
   }
 
   // ========================================================

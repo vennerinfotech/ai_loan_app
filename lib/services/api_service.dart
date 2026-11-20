@@ -960,4 +960,91 @@ class ApiService {
       };
     }
   }
+
+  /// Get Employment Types API: GET {{baseUrl}}/loan/employment-types
+  static Future<Map<String, dynamic>> getEmploymentTypes({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan/employment-types');
+    final authToken = token ?? await SessionManager.getAuthToken();
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(
+        url,
+        headers: headers,
+      );
+
+      debugPrint('========== Get Employment Types ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getEmploymentTypes: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch employment types. Please try again.',
+      };
+    }
+  }
+
+  /// Select Employment Type API: POST {{baseUrl}}/loan/employment-type
+  /// Uses form-data matching Postman collection
+  static Future<Map<String, dynamic>> selectEmploymentType({
+    required String employmentType,
+    String? loanType,
+    dynamic loanAmount,
+    String? businessEntity,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan/employment-type');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.headers['Accept'] = 'application/json';
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      request.fields['employment_type'] = employmentType;
+      if (loanType != null && loanType.trim().isNotEmpty) {
+        request.fields['loan_type'] = loanType.trim();
+      }
+      if (loanAmount != null) {
+        request.fields['loan_amount'] = loanAmount.toString();
+      }
+      if (businessEntity != null && businessEntity.trim().isNotEmpty) {
+        request.fields['business_entity'] = businessEntity.trim();
+      }
+
+      debugPrint('========== Select Employment Type ==========');
+      debugPrint('--> POST (form-data) $url');
+      debugPrint('Fields: ${request.fields}');
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in selectEmploymentType: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to select employment type. Please try again.',
+      };
+    }
+  }
 }
