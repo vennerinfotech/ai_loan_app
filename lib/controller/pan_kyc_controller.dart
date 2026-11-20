@@ -10,8 +10,8 @@ import '../screens/kyc_next_step_placeholder_screen.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 import '../models/store_pan_response_model.dart';
+import '../models/upload_pan_model.dart';
 import '../services/api_service.dart';
-import '../services/session_manager.dart';
 
 /// GetX Controller for PAN Card Verification flow.
 /// Implements:
@@ -36,6 +36,7 @@ class PanKycController extends GetxController {
   // API State
   final isStoringPan = false.obs;
   final storePanData = Rxn<StorePanData>();
+  final uploadedPanData = Rxn<UploadPanData>();
   final panDocumentId = RxnInt();
   final isUploadingPan = false.obs;
   final panUploadedFilename = ''.obs;
@@ -46,7 +47,7 @@ class PanKycController extends GetxController {
   final panImagePath = ''.obs;
   final panImageBytes = Rxn<Uint8List>();
 
-  // Extracted PAN details (dynamic)
+  // Extracted PAN details (dynamic - populated directly from API)
   final nameAsPerPan = ''.obs;
   final fathersName = ''.obs;
   final dob = ''.obs;
@@ -54,23 +55,6 @@ class PanKycController extends GetxController {
 
   // Overall PAN completion status
   final isPanCompleted = false.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadUserSession();
-  }
-
-  Future<void> _loadUserSession() async {
-    try {
-      final name = await SessionManager.getUserName();
-      if (nameAsPerPan.value.isEmpty && name.isNotEmpty) {
-        nameAsPerPan.value = name;
-      }
-    } catch (e) {
-      debugPrint('Error loading user session in PanKycController: $e');
-    }
-  }
 
   /// PAN format validation: 5 uppercase letters, 4 numbers, 1 uppercase letter (10 chars)
   bool get isPanFormatValid {
@@ -229,6 +213,10 @@ class PanKycController extends GetxController {
   }) async {
     final path = filePath ?? panImagePath.value;
     final bytes = fileBytes ?? panImageBytes.value;
+    final resolvedFilename = filename ??
+        (panUploadedFilename.value.isNotEmpty
+            ? panUploadedFilename.value
+            : (path.isNotEmpty ? path.split('/').last : 'pan_card.jpg'));
 
     if (path.isEmpty && (bytes == null || bytes.isEmpty)) {
       Get.snackbar(
@@ -249,7 +237,8 @@ class PanKycController extends GetxController {
       final response = await ApiService.uploadPan(
         filePath: path,
         fileBytes: bytes,
-        filename: filename,
+        filename: resolvedFilename,
+        uploadMode: 'combined',
       );
       isUploadingPan.value = false;
 
@@ -259,15 +248,47 @@ class PanKycController extends GetxController {
 
       if (isSuccess) {
         if (response['data'] != null && response['data'] is Map) {
-          final data = StorePanData.fromJson(Map<String, dynamic>.from(response['data']));
+          final dataMap = Map<String, dynamic>.from(response['data']);
+          final uploadData = UploadPanData.fromJson(dataMap);
+          uploadedPanData.value = uploadData;
+
+          // Legacy StorePanData support
+          final legacyData = StorePanData.fromJson(dataMap);
           storePanData.value = StorePanData(
-            panCardNumber: storePanData.value?.panCardNumber ?? panNumber.value,
-            userId: data.userId ?? storePanData.value?.userId,
-            documentId: data.documentId ?? storePanData.value?.documentId ?? panDocumentId.value,
-            filename: data.filename,
+            panCardNumber: uploadData.extractedData?.panNumber ?? storePanData.value?.panCardNumber ?? panNumber.value,
+            userId: uploadData.userId ?? legacyData.userId ?? storePanData.value?.userId,
+            documentId: legacyData.documentId ?? storePanData.value?.documentId ?? panDocumentId.value,
+            filename: uploadData.filename ?? legacyData.filename,
           );
-          if (data.filename != null) {
-            panUploadedFilename.value = data.filename!;
+
+          if (uploadData.filename != null && uploadData.filename!.isNotEmpty) {
+            panUploadedFilename.value = uploadData.filename!;
+          } else if (resolvedFilename.isNotEmpty) {
+            panUploadedFilename.value = resolvedFilename;
+          }
+
+          if (uploadData.panStatus != null) {
+            isPanVerified.value = uploadData.panStatus!.toLowerCase() == 'accepted';
+          }
+
+          // Populate extracted OCR details directly from API
+          final extracted = uploadData.extractedData;
+          if (extracted != null) {
+            if (extracted.panNumber != null && extracted.panNumber!.isNotEmpty) {
+              panNumber.value = extracted.panNumber!;
+              if (panController.text != extracted.panNumber!) {
+                panController.text = extracted.panNumber!;
+              }
+            }
+            if (extracted.name != null && extracted.name!.isNotEmpty) {
+              nameAsPerPan.value = extracted.name!;
+            }
+            if (extracted.fatherName != null && extracted.fatherName!.isNotEmpty) {
+              fathersName.value = extracted.fatherName!;
+            }
+            if (extracted.dateOfBirth != null && extracted.dateOfBirth!.isNotEmpty) {
+              dob.value = extracted.dateOfBirth!;
+            }
           }
         }
 
@@ -326,6 +347,7 @@ class PanKycController extends GetxController {
         uploadSource.value = 'Camera';
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
+        panUploadedFilename.value = file.name;
         await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
@@ -355,6 +377,7 @@ class PanKycController extends GetxController {
         uploadSource.value = 'Gallery';
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
+        panUploadedFilename.value = file.name;
         await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
@@ -384,6 +407,7 @@ class PanKycController extends GetxController {
       uploadSource.value = 'Selected';
       panImagePath.value = file.path;
       panImageBytes.value = bytes;
+      panUploadedFilename.value = file.name;
       await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
     }
   }

@@ -98,9 +98,15 @@ class UploadPanBody extends StatelessWidget {
     return Obx(() {
       final bytes = controller.panImageBytes.value;
       final imagePath = controller.panImagePath.value;
+      final filename = controller.panUploadedFilename.value.isNotEmpty
+          ? controller.panUploadedFilename.value
+          : (imagePath.isNotEmpty ? imagePath.split('/').last : '');
+      final isPdf = imagePath.toLowerCase().endsWith('.pdf') ||
+          filename.toLowerCase().endsWith('.pdf');
       final hasImage =
           bytes != null ||
-          (imagePath.isNotEmpty && File(imagePath).existsSync());
+          (imagePath.isNotEmpty && File(imagePath).existsSync()) ||
+          filename.isNotEmpty;
 
       if (hasImage) {
         // FULL CARD IMAGE DISPLAY with cancel & change options
@@ -126,22 +132,75 @@ class UploadPanBody extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 1. Full-cover image
+              // 1. Full-cover image or PDF Document preview
               GestureDetector(
                 onTap: () => controller.openImagePickerBottomSheet(context: context),
-                child: bytes != null
-                    ? Image.memory(
-                        bytes,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
+                child: isPdf
+                    ? Container(
+                        color: const Color(0xFFF9FAFC),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFEBEE),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.picture_as_pdf_rounded,
+                                color: Color(0xFFE53935),
+                                size: 30,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              filename.isNotEmpty ? filename : 'pan_card.pdf',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            const Text(
+                              'PDF Document',
+                              style: TextStyle(
+                                color: Color(0xFFE53935),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       )
-                    : Image.file(
-                        File(imagePath),
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                    : (bytes != null
+                        ? Image.memory(
+                            bytes,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : (imagePath.isNotEmpty && File(imagePath).existsSync()
+                            ? Image.file(
+                                File(imagePath),
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : Container(
+                                color: AppColors.navy,
+                                child: Center(
+                                  child: Text(
+                                    filename.isNotEmpty ? filename : 'PAN Card',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ))),
               ),
 
               // Gradient vignette at bottom

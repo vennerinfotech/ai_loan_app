@@ -230,6 +230,7 @@ class AadhaarVerificationBody extends StatelessWidget {
               isUploading: controller.isUploadingDocuments.value,
               imagePath: controller.frontImagePath.value,
               imageBytes: controller.frontImageBytes.value,
+              filename: controller.frontUploadedFilename.value,
               onTap: () => controller.pickAadhaarDocument(isFront: true, context: context),
             ),
           ),
@@ -250,6 +251,7 @@ class AadhaarVerificationBody extends StatelessWidget {
               isUploading: controller.isUploadingDocuments.value,
               imagePath: controller.backImagePath.value,
               imageBytes: controller.backImageBytes.value,
+              filename: controller.backUploadedFilename.value,
               onTap: () => controller.pickAadhaarDocument(isFront: false, context: context),
             ),
           ),
@@ -265,10 +267,17 @@ class AadhaarVerificationBody extends StatelessWidget {
     bool isUploading = false,
     required String imagePath,
     Uint8List? imageBytes,
+    String? filename,
     required VoidCallback onTap,
   }) {
-    final hasFile = imageBytes != null || (imagePath.isNotEmpty && File(imagePath).existsSync());
-    final isPdf = imagePath.toLowerCase().endsWith('.pdf');
+    final effectiveFilename = filename != null && filename.isNotEmpty
+        ? filename
+        : (imagePath.isNotEmpty ? imagePath.split('/').last : '');
+    final hasFile = imageBytes != null ||
+        (imagePath.isNotEmpty && File(imagePath).existsSync()) ||
+        effectiveFilename.isNotEmpty;
+    final isPdf = imagePath.toLowerCase().endsWith('.pdf') ||
+        effectiveFilename.toLowerCase().endsWith('.pdf');
 
     return GestureDetector(
       onTap: onTap,
@@ -322,7 +331,7 @@ class AadhaarVerificationBody extends StatelessWidget {
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            imagePath.split('/').last,
+                            effectiveFilename.isNotEmpty ? effectiveFilename : 'document.pdf',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

@@ -536,15 +536,16 @@ class ApiService {
       request.fields['upload_mode'] = uploadMode;
 
       // Add Front Image / Document
+      final resolvedFrontName = frontFilename ??
+          (frontPath.isNotEmpty
+              ? frontPath.split('/').last
+              : (frontPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_front.pdf' : 'aadhaar_front.jpg'));
       if (frontBytes != null && frontBytes.isNotEmpty) {
-        final defaultFrontName = frontPath.toLowerCase().endsWith('.pdf')
-            ? 'aadhaar_front.pdf'
-            : 'aadhaar_front.jpg';
         request.files.add(
           http.MultipartFile.fromBytes(
             'aadhaar_front_image',
             frontBytes,
-            filename: frontFilename ?? defaultFrontName,
+            filename: resolvedFrontName,
           ),
         );
       } else if (frontPath.isNotEmpty) {
@@ -552,21 +553,22 @@ class ApiService {
           await http.MultipartFile.fromPath(
             'aadhaar_front_image',
             frontPath,
-            filename: frontFilename,
+            filename: resolvedFrontName,
           ),
         );
       }
 
       // Add Back Image / Document
+      final resolvedBackName = backFilename ??
+          (backPath.isNotEmpty
+              ? backPath.split('/').last
+              : (backPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_back.pdf' : 'aadhaar_back.jpg'));
       if (backBytes != null && backBytes.isNotEmpty) {
-        final defaultBackName = backPath.toLowerCase().endsWith('.pdf')
-            ? 'aadhaar_back.pdf'
-            : 'aadhaar_back.jpg';
         request.files.add(
           http.MultipartFile.fromBytes(
             'aadhaar_back_image',
             backBytes,
-            filename: backFilename ?? defaultBackName,
+            filename: resolvedBackName,
           ),
         );
       } else if (backPath.isNotEmpty) {
@@ -574,7 +576,7 @@ class ApiService {
           await http.MultipartFile.fromPath(
             'aadhaar_back_image',
             backPath,
-            filename: backFilename,
+            filename: resolvedBackName,
           ),
         );
       }
@@ -662,7 +664,7 @@ class ApiService {
     };
 
     final body = jsonEncode({
-      if (documentId != null) 'document_id': documentId,
+      ...? (documentId != null ? {'document_id': documentId} : null),
     });
 
     try {
@@ -811,11 +813,14 @@ class ApiService {
   }
 
   /// Upload PAN Card Image API: POST {{baseUrl}}/upload-pan
-  /// Multipart form-data with key 'pan_card_image'
+  /// Multipart form-data with:
+  /// - 'upload_mode': 'combined' (Text)
+  /// - 'pan_card_image': File (Required. JPG, JPEG, PNG or PDF)
   static Future<Map<String, dynamic>> uploadPan({
     required String filePath,
     Uint8List? fileBytes,
     String? filename,
+    String uploadMode = 'combined',
     String? token,
   }) async {
     final url = Uri.parse('$baseUrl/upload-pan');
@@ -829,25 +834,34 @@ class ApiService {
         if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
       });
 
+      request.fields['upload_mode'] = uploadMode;
+
+      final resolvedName = filename ??
+          (filePath.isNotEmpty
+              ? filePath.split('/').last
+              : (filePath.toLowerCase().endsWith('.pdf') ? 'pan_card.pdf' : 'pan_card.jpg'));
+
       if (fileBytes != null && fileBytes.isNotEmpty) {
         request.files.add(
           http.MultipartFile.fromBytes(
             'pan_card_image',
             fileBytes,
-            filename: filename ?? 'pan_card.jpg',
+            filename: resolvedName,
           ),
         );
-      } else {
+      } else if (filePath.isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath(
             'pan_card_image',
             filePath,
+            filename: resolvedName,
           ),
         );
       }
 
       debugPrint('========== Upload PAN Card ==========');
       debugPrint('--> POST (Multipart) $url');
+      debugPrint('Upload Mode: $uploadMode');
       debugPrint('File Path: $filePath');
 
       final streamedResponse = await request.send();

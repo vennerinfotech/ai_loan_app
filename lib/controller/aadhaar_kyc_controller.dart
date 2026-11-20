@@ -204,6 +204,8 @@ class AadhaarKycController extends GetxController {
         backPath: backImagePath.value,
         frontBytes: frontImageBytes.value,
         backBytes: backImageBytes.value,
+        frontFilename: frontUploadedFilename.value.isNotEmpty ? frontUploadedFilename.value : null,
+        backFilename: backUploadedFilename.value.isNotEmpty ? backUploadedFilename.value : null,
         uploadMode: 'separate',
       );
       isUploadingDocuments.value = false;
@@ -217,6 +219,13 @@ class AadhaarKycController extends GetxController {
             ? UploadAadhaarData.fromJson(Map<String, dynamic>.from(response['data']))
             : null;
         uploadedAadhaarData.value = uploadData;
+
+        if (uploadData?.front != null && uploadData!.front!.isNotEmpty) {
+          frontUploadedFilename.value = uploadData.front!;
+        }
+        if (uploadData?.back != null && uploadData!.back!.isNotEmpty) {
+          backUploadedFilename.value = uploadData.back!;
+        }
 
         // Populate extracted OCR details from API response
         final extracted = uploadData?.extractedData;
