@@ -208,12 +208,16 @@ class KycHeaderWithStepper extends StatelessWidget {
     }
 
     if (isDone) {
-      // Completed pill: Light lime green with yellow checkmark badge (as seen in PAN reference images)
+      // Completed pill: Light lime green with light border & checkmark badge
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: AppColors.kycSuccessGreenBg,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.successGreen.withValues(alpha: 0.35),
+            width: 1.0,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

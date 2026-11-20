@@ -505,9 +505,13 @@ class UploadPanBody extends StatelessWidget {
         Container(
           width: 20,
           height: 20,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.successGreenBg,
             shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.successGreen.withValues(alpha: 0.35),
+              width: 1.0,
+            ),
           ),
           child: const Center(
             child: Icon(

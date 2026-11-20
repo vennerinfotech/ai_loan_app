@@ -292,7 +292,7 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Capture PAN photo using device camera via ImagePicker and auto-uploads to POST /upload-pan
+  /// Capture PAN photo using device camera via ImagePicker (stores locally, uploaded on tap Continue)
   Future<void> takePhoto() async {
     final picker = ImagePicker();
     try {
@@ -307,7 +307,6 @@ class PanKycController extends GetxController {
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
         panUploadedFilename.value = file.name;
-        await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
       debugPrint('Camera error: $e');
@@ -322,7 +321,7 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Select PAN card photo from gallery via ImagePicker and auto-uploads to POST /upload-pan
+  /// Select PAN card photo from gallery via ImagePicker (stores locally, uploaded on tap Continue)
   Future<void> pickFromGallery() async {
     final picker = ImagePicker();
     try {
@@ -337,7 +336,6 @@ class PanKycController extends GetxController {
         panImagePath.value = file.path;
         panImageBytes.value = bytes;
         panUploadedFilename.value = file.name;
-        await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
       }
     } catch (e) {
       debugPrint('Gallery error: $e');
@@ -352,7 +350,7 @@ class PanKycController extends GetxController {
     }
   }
 
-  /// Open Bottom Sheet to choose Camera or Gallery for PAN card and auto-uploads to POST /upload-pan
+  /// Open Bottom Sheet to choose Camera or Gallery for PAN card (stores locally, uploaded on tap Continue)
   Future<void> openImagePickerBottomSheet({BuildContext? context}) async {
     final file = await ImagePickerBottomSheet.show(
       context: context,
@@ -367,26 +365,21 @@ class PanKycController extends GetxController {
       panImagePath.value = file.path;
       panImageBytes.value = bytes;
       panUploadedFilename.value = file.name;
-      await uploadPanImage(filePath: file.path, fileBytes: bytes, filename: file.name);
     }
   }
 
-  /// Continue from upload screen to Review PAN Details screen
+  /// Continue from upload screen to Review PAN Details screen:
+  /// Calls POST /upload-pan upon tapping Continue button
   Future<void> continueToReview() async {
     if (isUploadingPan.value) {
-      Get.snackbar(
-        'Uploading',
-        'Please wait while your PAN card image is being uploaded.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      );
       return;
     }
 
-    if (!isCardUploaded.value && panImagePath.value.isEmpty && panImageBytes.value == null) {
+    final hasFile = isCardUploaded.value ||
+        panImagePath.value.isNotEmpty ||
+        panImageBytes.value != null;
+
+    if (!hasFile) {
       Get.snackbar(
         'Upload Required',
         'Please capture or select your PAN card photo to proceed.',
@@ -398,11 +391,9 @@ class PanKycController extends GetxController {
       return;
     }
 
-    // If an image was selected/captured but upload has not been confirmed yet, upload it now
-    if (panUploadedFilename.value.isEmpty && (panImagePath.value.isNotEmpty || panImageBytes.value != null)) {
-      final success = await uploadPanImage();
-      if (!success) return;
-    }
+    // Call POST /upload-pan on tap Continue button
+    final success = await uploadPanImage();
+    if (!success) return;
 
     if (Get.isRegistered<KycFlowController>()) {
       Get.find<KycFlowController>().setStep(KycSubStep.panReview);
