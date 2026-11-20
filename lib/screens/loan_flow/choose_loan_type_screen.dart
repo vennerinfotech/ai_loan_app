@@ -198,7 +198,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                     item.subtitle,
                     style: TextStyle(
                       color: isSelected
-                          ? AppColors.muted
+                          ? AppColors.textSecondary2
                           : AppColors.muted,
                       fontSize: 10.5,
                       fontWeight: FontWeight.w400,
@@ -268,58 +268,61 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 });
               }
             },
-            child: DottedBorder(
-              color: AppColors.indigoTint,
-              strokeWidth: 1.2,
-              dashPattern: const [5, 4],
-              borderType: BorderType.RRect,
-              radius: const Radius.circular(16),
-              child: Container(
-                width: double.infinity,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.canvas.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (!isExpanded) ...[
-                      const Text(
-                        '•••',
-                        style: TextStyle(
-                          color: AppColors.indigo,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 15,
-                          letterSpacing: 1.0,
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: AppColors.canvas.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: DottedBorder(
+                color: AppColors.indigo.withValues(alpha: 0.4),
+                strokeWidth: 1.3,
+                dashPattern: const [6, 4],
+                borderType: BorderType.RRect,
+                radius: const Radius.circular(16),
+                borderPadding: const EdgeInsets.all(1),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (!isExpanded) ...[
+                        const Text(
+                          '•••',
+                          style: TextStyle(
+                            color: AppColors.indigo,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            letterSpacing: 1.0,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Other loans',
-                        style: TextStyle(
-                          color: AppColors.indigo,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Other loans',
+                          style: TextStyle(
+                            color: AppColors.indigo,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ] else ...[
-                      const Icon(
-                        Icons.keyboard_arrow_up_rounded,
-                        color: AppColors.indigo,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'Show fewer loans',
-                        style: TextStyle(
+                      ] else ...[
+                        const Icon(
+                          Icons.keyboard_arrow_up_rounded,
                           color: AppColors.indigo,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                          size: 20,
                         ),
-                      ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Show fewer loans',
+                          style: TextStyle(
+                            color: AppColors.indigo,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -330,47 +333,50 @@ class ChooseLoanTypeBody extends StatelessWidget {
   }
 
   Widget _buildBottomCta(ApplyLoanController controller) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
-      child: Obx(() {
-        final loanType = controller.selectedLoanType.value.toLowerCase();
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+        child: Obx(() {
+          final loanType = controller.selectedLoanType.value.toLowerCase();
 
-        return SizedBox(
-          width: double.infinity,
-          height: 52,
-          child: ElevatedButton(
-            onPressed: () {
-              controller.goToStep(2);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.navy,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          return SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                controller.goToStep(2);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Continue with  $loanType',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Continue with  $loanType',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: AppColors.amber,
-                  size: 18,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: AppColors.amber,
+                    size: 18,
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 
