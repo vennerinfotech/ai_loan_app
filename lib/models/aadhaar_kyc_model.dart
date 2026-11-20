@@ -75,9 +75,11 @@ class AadhaarUser {
     return AadhaarUser(
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
       name: json['name']?.toString(),
-      phone: json['phone']?.toString(),
+      phone: json['phone']?.toString() ??
+          json['mobile']?.toString() ??
+          json['linked_mobile']?.toString(),
       email: json['email']?.toString(),
-      dob: json['dob']?.toString(),
+      dob: json['dob']?.toString() ?? json['date_of_birth']?.toString(),
       gender: json['gender']?.toString(),
       address: json['address']?.toString(),
     );

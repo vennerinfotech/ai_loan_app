@@ -507,12 +507,19 @@ class ApiService {
     }
   }
 
-  /// Upload Aadhaar Card Image API: POST {{baseUrl}}/upload-aadhaar
-  /// Multipart form-data with key 'aadhar_card_image'
+  /// Upload Aadhaar Documents API: POST {{baseUrl}}/upload-aadhaar
+  /// Multipart form-data with:
+  /// - 'upload_mode': 'separate'
+  /// - 'aadhaar_front_image': Front image file
+  /// - 'aadhaar_back_image': Back image file
   static Future<Map<String, dynamic>> uploadAadhaar({
-    required String filePath,
-    Uint8List? fileBytes,
-    String? filename,
+    required String frontPath,
+    required String backPath,
+    Uint8List? frontBytes,
+    Uint8List? backBytes,
+    String? frontFilename,
+    String? backFilename,
+    String uploadMode = 'separate',
     String? token,
   }) async {
     final url = Uri.parse('$baseUrl/upload-aadhaar');
@@ -526,26 +533,57 @@ class ApiService {
         if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
       });
 
-      if (fileBytes != null && fileBytes.isNotEmpty) {
+      request.fields['upload_mode'] = uploadMode;
+
+      // Add Front Image / Document
+      if (frontBytes != null && frontBytes.isNotEmpty) {
+        final defaultFrontName = frontPath.toLowerCase().endsWith('.pdf')
+            ? 'aadhaar_front.pdf'
+            : 'aadhaar_front.jpg';
         request.files.add(
           http.MultipartFile.fromBytes(
-            'aadhar_card_image',
-            fileBytes,
-            filename: filename ?? 'aadhaar_card.jpg',
+            'aadhaar_front_image',
+            frontBytes,
+            filename: frontFilename ?? defaultFrontName,
           ),
         );
-      } else {
+      } else if (frontPath.isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath(
-            'aadhar_card_image',
-            filePath,
+            'aadhaar_front_image',
+            frontPath,
+            filename: frontFilename,
           ),
         );
       }
 
-      debugPrint('========== Upload Aadhaar Card ==========');
+      // Add Back Image / Document
+      if (backBytes != null && backBytes.isNotEmpty) {
+        final defaultBackName = backPath.toLowerCase().endsWith('.pdf')
+            ? 'aadhaar_back.pdf'
+            : 'aadhaar_back.jpg';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'aadhaar_back_image',
+            backBytes,
+            filename: backFilename ?? defaultBackName,
+          ),
+        );
+      } else if (backPath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'aadhaar_back_image',
+            backPath,
+            filename: backFilename,
+          ),
+        );
+      }
+
+      debugPrint('========== Upload Aadhaar Documents ==========');
       debugPrint('--> POST (Multipart) $url');
-      debugPrint('File Path: $filePath');
+      debugPrint('Upload Mode: $uploadMode');
+      debugPrint('Front Image Path: $frontPath');
+      debugPrint('Back Image Path: $backPath');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -560,7 +598,7 @@ class ApiService {
       return {
         'success': false,
         'status_code': 500,
-        'message': 'Failed to upload Aadhaar document. Please try again.',
+        'message': 'Failed to upload Aadhaar documents. Please try again.',
       };
     }
   }

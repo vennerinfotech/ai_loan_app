@@ -1,9 +1,16 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import '../theme/app_colors.dart';
 
-/// Reusable Bottom Sheet for selecting document upload source (Camera or Gallery)
+enum _PickerSourceType {
+  camera,
+  gallery,
+  document,
+}
+
+/// Reusable Bottom Sheet for selecting document upload source (Camera, Gallery, or PDF/Document)
 /// styled cleanly to match Finsphere AI's theme.
 class ImagePickerBottomSheet {
   ImagePickerBottomSheet._();
@@ -12,7 +19,7 @@ class ImagePickerBottomSheet {
   static Future<XFile?> show({
     BuildContext? context,
     String title = 'Upload document',
-    String subtitle = 'Take a clear photo or select from your gallery',
+    String subtitle = 'Take a clear photo or select from your gallery or files',
   }) async {
     final ImagePicker picker = ImagePicker();
 
@@ -29,116 +36,133 @@ class ImagePickerBottomSheet {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-            // Top Drag Handle
-            Center(
-              child: Container(
-                width: 44,
-                height: 4.5,
-                decoration: BoxDecoration(
-                  color: AppColors.line,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-
-            // Header Row: Title & Close Button
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 12.5,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
+                // Top Drag Handle
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4.5,
+                    decoration: BoxDecoration(
+                      color: AppColors.line,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
-                GestureDetector(
+                const SizedBox(height: 18),
+
+                // Header Row: Title & Close Button
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 12.5,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        if (Get.isBottomSheetOpen == true) {
+                          Get.back();
+                        } else {
+                          Navigator.of(sheetContext).pop();
+                        }
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: const BoxDecoration(
+                          color: AppColors.lightBackground,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: AppColors.textDarkSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Option 1: Take Photo via Camera
+                _buildOptionCard(
+                  icon: Icons.photo_camera_rounded,
+                  iconColor: AppColors.primaryPurple,
+                  iconBgColor: AppColors.indigoTint,
+                  title: 'Take photo',
+                  subtitle: 'Use camera to scan your document',
                   onTap: () {
                     if (Get.isBottomSheetOpen == true) {
-                      Get.back();
+                      Get.back(result: _PickerSourceType.camera);
                     } else {
-                      Navigator.of(sheetContext).pop();
+                      Navigator.of(sheetContext).pop(_PickerSourceType.camera);
                     }
                   },
-                  child: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: const BoxDecoration(
-                      color: AppColors.lightBackground,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: AppColors.textDarkSecondary,
-                    ),
-                  ),
                 ),
+                const SizedBox(height: 12),
+
+                // Option 2: Choose from Gallery (JPG, PNG)
+                _buildOptionCard(
+                  icon: Icons.photo_library_outlined,
+                  iconColor: AppColors.amber,
+                  iconBgColor: AppColors.amber.withValues(alpha: 0.15),
+                  title: 'Choose from gallery',
+                  subtitle: 'Select existing photo (JPG, PNG) from device',
+                  onTap: () {
+                    if (Get.isBottomSheetOpen == true) {
+                      Get.back(result: _PickerSourceType.gallery);
+                    } else {
+                      Navigator.of(sheetContext).pop(_PickerSourceType.gallery);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Option 3: Upload PDF or Document
+                _buildOptionCard(
+                  icon: Icons.picture_as_pdf_outlined,
+                  iconColor: const Color(0xFFE53935),
+                  iconBgColor: const Color(0xFFFFEBEE),
+                  title: 'Upload PDF or Document',
+                  subtitle: 'Choose PDF or image files (PDF, JPG, PNG)',
+                  onTap: () {
+                    if (Get.isBottomSheetOpen == true) {
+                      Get.back(result: _PickerSourceType.document);
+                    } else {
+                      Navigator.of(sheetContext).pop(_PickerSourceType.document);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
               ],
             ),
-            const SizedBox(height: 20),
-
-            // Option 1: Take Photo via Camera
-            _buildOptionCard(
-              icon: Icons.photo_camera_rounded,
-              iconColor: AppColors.primaryPurple,
-              iconBgColor: AppColors.indigoTint,
-              title: 'Take photo',
-              subtitle: 'Use camera to scan your document',
-              onTap: () {
-                if (Get.isBottomSheetOpen == true) {
-                  Get.back(result: ImageSource.camera);
-                } else {
-                  Navigator.of(sheetContext).pop(ImageSource.camera);
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Option 2: Choose from Gallery
-            _buildOptionCard(
-              icon: Icons.photo_library_outlined,
-              iconColor: AppColors.amber,
-              iconBgColor: AppColors.amber.withValues(alpha: 0.15),
-              title: 'Choose from gallery',
-              subtitle: 'Select existing image or PDF from device',
-              onTap: () {
-                if (Get.isBottomSheetOpen == true) {
-                  Get.back(result: ImageSource.gallery);
-                } else {
-                  Navigator.of(sheetContext).pop(ImageSource.gallery);
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
-}
+      );
+    }
 
     // Prefer Get.bottomSheet for native GetX routing across all contexts
-    final ImageSource? selectedSource = await Get.bottomSheet<ImageSource>(
+    final _PickerSourceType? selectedSource = await Get.bottomSheet<_PickerSourceType>(
       Builder(builder: buildSheet),
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -147,15 +171,33 @@ class ImagePickerBottomSheet {
     if (selectedSource == null) return null;
 
     try {
-      return await picker.pickImage(
-        source: selectedSource,
-        imageQuality: 85,
-      );
+      if (selectedSource == _PickerSourceType.camera) {
+        return await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+        );
+      } else if (selectedSource == _PickerSourceType.gallery) {
+        return await picker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 85,
+        );
+      } else if (selectedSource == _PickerSourceType.document) {
+        final files = await FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        );
+        if (files.isNotEmpty && files.first.path != null) {
+          final file = files.first;
+          return XFile(file.path!, name: file.name);
+        }
+        return null;
+      }
+      return null;
     } catch (e) {
-      debugPrint('Image picker error: $e');
+      debugPrint('Document picker error: $e');
       Get.snackbar(
         'Upload Unavailable',
-        'Could not access the selected photo source on this device.',
+        'Could not access the selected document on this device: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: AppColors.errorRed,
         colorText: Colors.white,

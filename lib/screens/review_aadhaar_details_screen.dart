@@ -36,8 +36,10 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
         ? Get.find<AadhaarKycController>()
         : Get.put(AadhaarKycController());
 
-    // Automatically fetch verified user details from GET /download-verification-receipt if not loaded yet
-    if (controller.receiptUser.value == null && !controller.isDownloadingReceipt.value) {
+    // Automatically fetch verified user details from GET /download-verification-receipt if not loaded yet (for OTP flow)
+    if (controller.uploadedAadhaarData.value == null &&
+        controller.receiptUser.value == null &&
+        !controller.isDownloadingReceipt.value) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         controller.fetchVerificationReceiptDetails();
       });
@@ -159,7 +161,7 @@ class ReviewAadhaarDetailsBody extends StatelessWidget {
                       () {
                         final initials = controller.userInitials.value.trim();
                         return Text(
-                          initials.isNotEmpty ? initials : 'N/A',
+                          initials.isNotEmpty ? initials : '-',
                           style: TextStyle(
                             color: AppColors.navy,
                             fontSize: initials.length > 2 ? 14 : 18,

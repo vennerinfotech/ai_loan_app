@@ -4,13 +4,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../screens/aadhaar_otp_screen.dart';
-import '../screens/aadhaar_not_linked_screen.dart';
 import '../screens/review_aadhaar_details_screen.dart';
 import '../screens/enter_pan_screen.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 import '../models/aadhaar_kyc_model.dart';
+import '../models/upload_aadhaar_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 
@@ -33,6 +33,11 @@ class AadhaarKycController extends GetxController {
   final backImagePath = ''.obs;
   final frontImageBytes = Rxn<Uint8List>();
   final backImageBytes = Rxn<Uint8List>();
+
+  // Manual Document Upload fallback state
+  final showManualUpload = false.obs;
+  final isUploadingDocuments = false.obs;
+  final uploadedAadhaarData = Rxn<UploadAadhaarData>();
 
   // API State
   final isSendingOtp = false.obs;
@@ -78,29 +83,6 @@ class AadhaarKycController extends GetxController {
 
   bool get isAadhaarValid => aadhaarNumber.value.length == 12;
   bool get isOtpValid => otpCode.value.length == 6;
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadInitialUserData();
-  }
-
-  /// Initialize user details from SessionManager if available
-  Future<void> _loadInitialUserData() async {
-    try {
-      final savedName = await SessionManager.getUserName();
-      final savedPhone = await SessionManager.getUserPhone();
-      if (userName.value.isEmpty && savedName.isNotEmpty) {
-        userName.value = savedName;
-        _updateInitials(savedName);
-      }
-      if (linkedMobile.value.isEmpty && savedPhone.isNotEmpty) {
-        linkedMobile.value = savedPhone.startsWith('+91') ? savedPhone : '+91 $savedPhone';
-      }
-    } catch (e) {
-      debugPrint('Error loading initial user data: $e');
-    }
-  }
 
   void _updateInitials(String name) {
     final parts = name.trim().split(RegExp(r'\s+'));
@@ -151,7 +133,8 @@ class AadhaarKycController extends GetxController {
   }
 
   /// Pick Aadhaar document (Front or Back) using camera or gallery via ImagePickerBottomSheet
-  /// and automatically uploads it via POST /upload-aadhaar
+  /// Pick Aadhaar document (Front or Back) using camera or gallery via ImagePickerBottomSheet.
+  /// Stores image path and bytes locally for preview and later upload.
   Future<void> pickAadhaarDocument({
     required bool isFront,
     BuildContext? context,
@@ -167,75 +150,120 @@ class AadhaarKycController extends GetxController {
       if (isFront) {
         frontImagePath.value = file.path;
         frontImageBytes.value = bytes;
-        isUploadingFront.value = true;
+        frontUploaded.value = true;
+        frontUploadedFilename.value = file.name;
       } else {
         backImagePath.value = file.path;
         backImageBytes.value = bytes;
-        isUploadingBack.value = true;
+        backUploaded.value = true;
+        backUploadedFilename.value = file.name;
       }
+    }
+  }
 
-      try {
-        final response = await ApiService.uploadAadhaar(
-          filePath: file.path,
-          fileBytes: bytes,
-          filename: file.name,
+  /// Remove selected Aadhaar document
+  void removeAadhaarDocument({required bool isFront}) {
+    if (isFront) {
+      frontUploaded.value = false;
+      frontImagePath.value = '';
+      frontImageBytes.value = null;
+      frontUploadedFilename.value = '';
+    } else {
+      backUploaded.value = false;
+      backImagePath.value = '';
+      backImageBytes.value = null;
+      backUploadedFilename.value = '';
+    }
+  }
+
+  /// Upload both Aadhaar Front & Back documents via POST /upload-aadhaar
+  /// Content-Type: multipart/form-data
+  /// Fields: upload_mode='separate', aadhaar_front_image, aadhaar_back_image
+  Future<void> uploadBothAadhaarDocuments() async {
+    final hasFront = frontImagePath.value.isNotEmpty || frontImageBytes.value != null;
+    final hasBack = backImagePath.value.isNotEmpty || backImageBytes.value != null;
+
+    if (!hasFront || !hasBack) {
+      Get.snackbar(
+        'Both Documents Required',
+        'Please select both front and back images of your Aadhaar card before uploading.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    if (isUploadingDocuments.value) return;
+    isUploadingDocuments.value = true;
+
+    try {
+      final response = await ApiService.uploadAadhaar(
+        frontPath: frontImagePath.value,
+        backPath: backImagePath.value,
+        frontBytes: frontImageBytes.value,
+        backBytes: backImageBytes.value,
+        uploadMode: 'separate',
+      );
+      isUploadingDocuments.value = false;
+
+      final isSuccess = response['success'] == true ||
+          response['status_code'] == 200 ||
+          response['status_code'] == 201;
+
+      if (isSuccess) {
+        final uploadData = response['data'] != null && response['data'] is Map
+            ? UploadAadhaarData.fromJson(Map<String, dynamic>.from(response['data']))
+            : null;
+        uploadedAadhaarData.value = uploadData;
+
+        // Populate extracted OCR details from API response
+        final extracted = uploadData?.extractedData;
+        if (extracted != null) {
+          if (extracted.name != null && extracted.name!.isNotEmpty) {
+            userName.value = extracted.name!;
+            _updateInitials(extracted.name!);
+          }
+          if (extracted.dateOfBirth != null && extracted.dateOfBirth!.isNotEmpty) {
+            dob.value = extracted.dateOfBirth!;
+          }
+          if (extracted.gender != null && extracted.gender!.isNotEmpty) {
+            gender.value = extracted.gender!;
+          }
+          if (extracted.address != null && extracted.address!.isNotEmpty) {
+            address.value = extracted.address!;
+          }
+          if (extracted.aadhaarNumber != null && extracted.aadhaarNumber!.isNotEmpty) {
+            final raw = extracted.aadhaarNumber!.replaceAll(RegExp(r'\D'), '');
+            if (raw.length == 12) {
+              aadhaarNumber.value = raw;
+              maskedAadhaarDisplay.value = 'XXXX XXXX ${raw.substring(8)}';
+            }
+          }
+        }
+
+        Get.snackbar(
+          'Documents Verified',
+          response['message']?.toString() ??
+              'Aadhaar documents verified and uploaded successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
         );
 
-        if (isFront) {
-          isUploadingFront.value = false;
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
         } else {
-          isUploadingBack.value = false;
+          Get.to(() => const ReviewAadhaarDetailsScreen());
         }
-
-        final isSuccess = response['success'] == true ||
-            response['status_code'] == 200 ||
-            response['status_code'] == 201;
-
-        if (isSuccess) {
-          final model = response['data'] != null && response['data'] is Map
-              ? AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']))
-              : null;
-          final filename = model?.filename ?? file.name;
-          if (isFront) {
-            frontUploaded.value = true;
-            frontUploadedFilename.value = filename;
-          } else {
-            backUploaded.value = true;
-            backUploadedFilename.value = filename;
-          }
-
-          Get.snackbar(
-            isFront ? 'Front Side Uploaded' : 'Back Side Uploaded',
-            response['message']?.toString() ??
-                'Aadhaar document uploaded successfully.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppColors.navy,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 2),
-          );
-        } else {
-          final errorMsg = ApiService.getErrorMessage(response);
-          Get.snackbar(
-            'Upload Failed',
-            errorMsg,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade800,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
-          );
-        }
-      } catch (e) {
-        if (isFront) {
-          isUploadingFront.value = false;
-        } else {
-          isUploadingBack.value = false;
-        }
-        debugPrint('uploadAadhaar exception: $e');
+      } else {
+        final errorMsg = ApiService.getErrorMessage(response);
         Get.snackbar(
-          'Upload Error',
-          'Failed to upload Aadhaar: ${e.toString()}',
+          'Upload Failed',
+          errorMsg,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.shade800,
           colorText: Colors.white,
@@ -243,24 +271,22 @@ class AadhaarKycController extends GetxController {
           duration: const Duration(seconds: 3),
         );
       }
-    }
-  }
-
-  /// Remove uploaded Aadhaar document
-  void removeAadhaarDocument({required bool isFront}) {
-    if (isFront) {
-      frontUploaded.value = false;
-      frontImagePath.value = '';
-      frontImageBytes.value = null;
-    } else {
-      backUploaded.value = false;
-      backImagePath.value = '';
-      backImageBytes.value = null;
+    } catch (e) {
+      isUploadingDocuments.value = false;
+      debugPrint('uploadBothAadhaarDocuments exception: $e');
+      Get.snackbar(
+        'Upload Error',
+        'Failed to upload Aadhaar documents: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
     }
   }
 
   /// Send OTP to registered mobile number via POST /store-aadhaar
-  /// Also ensures any selected documents are uploaded via POST /upload-aadhaar
   Future<void> sendOtp() async {
     if (!isAadhaarValid || isSendingOtp.value) {
       if (!isAadhaarValid) {
@@ -279,33 +305,6 @@ class AadhaarKycController extends GetxController {
     try {
       isSendingOtp.value = true;
 
-      // 1. If front document was selected but upload hasn't completed, upload it
-      if (frontImagePath.value.isNotEmpty && !frontUploaded.value) {
-        final frontRes = await ApiService.uploadAadhaar(
-          filePath: frontImagePath.value,
-          fileBytes: frontImageBytes.value,
-        );
-        if (frontRes['success'] == true || frontRes['status_code'] == 201) {
-          frontUploaded.value = true;
-          frontUploadedFilename.value =
-              frontRes['data']?['filename']?.toString() ?? '';
-        }
-      }
-
-      // 2. If back document was selected but upload hasn't completed, upload it
-      if (backImagePath.value.isNotEmpty && !backUploaded.value) {
-        final backRes = await ApiService.uploadAadhaar(
-          filePath: backImagePath.value,
-          fileBytes: backImageBytes.value,
-        );
-        if (backRes['success'] == true || backRes['status_code'] == 201) {
-          backUploaded.value = true;
-          backUploadedFilename.value =
-              backRes['data']?['filename']?.toString() ?? '';
-        }
-      }
-
-      // 3. Store Aadhaar number and send OTP
       final response = await ApiService.storeAadhaar(
         aadhaarNumber: aadhaarNumber.value,
       );
@@ -499,7 +498,7 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 200 ||
           response['status_code'] == 201;
 
-      if (isSuccess) {
+      if (isSuccess && isMobileLinked.value) {
         if (response['data'] != null && response['data'] is Map) {
           final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
           aadhaarKycData.value = model;
@@ -522,118 +521,64 @@ class AadhaarKycController extends GetxController {
         );
 
         if (Get.isRegistered<KycFlowController>()) {
-          Get.find<KycFlowController>().setStep(
-            isMobileLinked.value ? KycSubStep.aadhaarReview : KycSubStep.aadhaarNotLinked,
-          );
+          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
         } else {
-          if (isMobileLinked.value) {
-            Get.to(() => const ReviewAadhaarDetailsScreen());
-          } else {
-            Get.to(() => const AadhaarNotLinkedScreen());
-          }
+          Get.to(() => const ReviewAadhaarDetailsScreen());
         }
       } else {
-        final errorMsg = ApiService.getErrorMessage(response);
+        // Aadhaar OTP verification failed or mobile not linked:
+        // Activate manual upload and return to Aadhaar input screen
+        showManualUpload.value = true;
+
+        final errorMsg = !isMobileLinked.value
+            ? 'Mobile number is not linked to this Aadhaar.'
+            : ApiService.getErrorMessage(response);
+
         Get.snackbar(
-          'Verification Failed',
-          errorMsg,
+          'Verification Unsuccessful',
+          '$errorMsg Please upload Aadhaar card images to verify.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade800,
+          backgroundColor: Colors.orange.shade800,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 4),
         );
+
+        if (Get.isRegistered<KycFlowController>()) {
+          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
+        } else {
+          Get.back();
+        }
       }
     } catch (e) {
       isVerifyingOtp.value = false;
       debugPrint('verifyAadhaarOtp exception: $e');
+      showManualUpload.value = true;
       Get.snackbar(
-        'Error',
-        'Failed to verify OTP: ${e.toString()}',
+        'Verification Failed',
+        'Failed to verify OTP. Please upload Aadhaar card images instead.',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade800,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
       );
+
+      if (Get.isRegistered<KycFlowController>()) {
+        Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
+      } else {
+        Get.back();
+      }
     }
   }
 
   /// Called from AadhaarNotLinkedScreen when user taps "Upload Aadhaar instead"
-  Future<void> uploadAadhaarManually({BuildContext? context}) async {
-    final file = await ImagePickerBottomSheet.show(
-      context: context,
-      title: 'Upload Aadhaar Card',
-      subtitle: 'Take a photo or choose your Aadhaar image',
-    );
-
-    if (file != null) {
-      final bytes = await file.readAsBytes();
-      frontImagePath.value = file.path;
-      frontImageBytes.value = bytes;
-      isUploadingFront.value = true;
-
-      try {
-        final response = await ApiService.uploadAadhaar(
-          filePath: file.path,
-          fileBytes: bytes,
-          filename: file.name,
-        );
-        isUploadingFront.value = false;
-
-        final isSuccess = response['success'] == true ||
-            response['status_code'] == 200 ||
-            response['status_code'] == 201;
-
-        if (isSuccess) {
-          final model = response['data'] != null && response['data'] is Map
-              ? AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']))
-              : null;
-          final filename = model?.filename ?? file.name;
-          frontUploaded.value = true;
-          frontUploadedFilename.value = filename;
-
-          Get.snackbar(
-            'Aadhaar Uploaded',
-            response['message']?.toString() ??
-                'Aadhaar document uploaded successfully.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppColors.navy,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 2),
-          );
-
-          if (Get.isRegistered<KycFlowController>()) {
-            Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
-          } else {
-            Get.to(() => const ReviewAadhaarDetailsScreen());
-          }
-        } else {
-          final errorMsg = ApiService.getErrorMessage(response);
-          Get.snackbar(
-            'Upload Failed',
-            errorMsg,
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.red.shade800,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 3),
-          );
-        }
-      } catch (e) {
-        isUploadingFront.value = false;
-        debugPrint('uploadAadhaarManually exception: $e');
-        Get.snackbar(
-          'Error',
-          'Failed to upload Aadhaar: ${e.toString()}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.shade800,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
-        );
-      }
+  void navigateToManualUpload() {
+    showManualUpload.value = true;
+    if (Get.isRegistered<KycFlowController>()) {
+      Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
+    } else {
+      Get.back();
     }
   }
 
@@ -665,7 +610,7 @@ class AadhaarKycController extends GetxController {
   }
 
   /// Fetch verified user details from GET {{baseUrl}}/download-verification-receipt
-  /// to populate the "Check your details" (Review Aadhaar Details) screen dynamically.
+  /// to populate the "Check your details" (Review Aadhaar Details) screen directly from API.
   Future<void> fetchVerificationReceiptDetails({BuildContext? context}) async {
     if (isDownloadingReceipt.value) return;
     isDownloadingReceipt.value = true;
@@ -678,56 +623,77 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 200;
 
       if (isSuccess && response['data'] != null) {
-        final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
+        final dataMap = Map<String, dynamic>.from(response['data']);
+        final model = AadhaarKycModel.fromJson(dataMap);
         aadhaarKycData.value = model;
 
-        final rawUser = response['data']['user'];
-        if (rawUser != null && rawUser is Map) {
-          final userData = Map<String, dynamic>.from(rawUser);
-          receiptUser.value = userData;
-        }
+        final rawUser = dataMap['user'] is Map
+            ? Map<String, dynamic>.from(dataMap['user'])
+            : (dataMap['extracted_data'] is Map
+                ? Map<String, dynamic>.from(dataMap['extracted_data'])
+                : dataMap);
+        receiptUser.value = rawUser;
 
-        // 1. Full name & initials from model.user or rawUser
-        final name = (model.user?.name ?? receiptUser.value?['name']?.toString() ?? '').trim();
-        if (name.isNotEmpty) {
+        // 1. Full name & initials directly from API
+        final name = (rawUser['name'] ?? model.user?.name ?? '').toString().trim();
+        if (name.isNotEmpty && name.toLowerCase() != 'null') {
           userName.value = name;
           _updateInitials(name);
         }
 
-        // 2. Mobile number
-        final phone = (model.user?.phone ?? receiptUser.value?['phone']?.toString() ?? '').trim();
-        if (phone.isNotEmpty) {
+        // 2. Mobile number directly from API
+        final phone = (rawUser['phone'] ??
+                rawUser['mobile'] ??
+                rawUser['linked_mobile'] ??
+                model.user?.phone ??
+                '')
+            .toString()
+            .trim();
+        if (phone.isNotEmpty && phone.toLowerCase() != 'null') {
           linkedMobile.value = phone.startsWith('+91') ? phone : '+91 $phone';
         }
 
-        // 3. Optional KYC attributes if returned by backend
-        final rawDob = model.user?.dob ?? receiptUser.value?['dob']?.toString();
-        if (rawDob != null && rawDob.trim().isNotEmpty) {
-          dob.value = rawDob.trim();
-        }
-        final rawGender = model.user?.gender ?? receiptUser.value?['gender']?.toString();
-        if (rawGender != null && rawGender.trim().isNotEmpty) {
-          gender.value = rawGender.trim();
-        }
-        final rawAddress = model.user?.address ?? receiptUser.value?['address']?.toString();
-        if (rawAddress != null && rawAddress.trim().isNotEmpty) {
-          address.value = rawAddress.trim();
+        // 3. Date of birth directly from API
+        final rawDob = (rawUser['dob'] ??
+                rawUser['date_of_birth'] ??
+                model.user?.dob ??
+                '')
+            .toString()
+            .trim();
+        if (rawDob.isNotEmpty && rawDob.toLowerCase() != 'null') {
+          dob.value = rawDob;
         }
 
-        // 4. Ensure masked Aadhaar is formatted
-        if (maskedAadhaarDisplay.value.isEmpty || maskedAadhaarDisplay.value == 'N/A') {
-          if (aadhaarNumber.value.length == 12) {
-            maskedAadhaarDisplay.value = 'XXXX XXXX ${aadhaarNumber.value.substring(8)}';
-          }
+        // 4. Gender directly from API
+        final rawGender = (rawUser['gender'] ?? model.user?.gender ?? '').toString().trim();
+        if (rawGender.isNotEmpty && rawGender.toLowerCase() != 'null') {
+          gender.value = rawGender;
         }
-      } else {
-        // Fallback to locally stored session data if network or auth error
-        await _loadInitialUserData();
+
+        // 5. Address directly from API
+        final rawAddress = (rawUser['address'] ?? model.user?.address ?? '').toString().trim();
+        if (rawAddress.isNotEmpty && rawAddress.toLowerCase() != 'null') {
+          address.value = rawAddress;
+        }
+
+        // 6. Masked Aadhaar directly from API or input
+        final rawAadhaar = (rawUser['aadhaar_number'] ??
+                rawUser['aadhaar_no'] ??
+                rawUser['masked_aadhaar'] ??
+                aadhaarNumber.value)
+            .toString()
+            .trim();
+        final digits = rawAadhaar.replaceAll(RegExp(r'\D'), '');
+        if (digits.length == 12) {
+          maskedAadhaarDisplay.value = 'XXXX XXXX ${digits.substring(8)}';
+        } else if (rawAadhaar.isNotEmpty && rawAadhaar.toLowerCase() != 'null') {
+          maskedAadhaarDisplay.value = rawAadhaar;
+        }
       }
     } catch (e) {
       isDownloadingReceipt.value = false;
       debugPrint('fetchVerificationReceiptDetails exception: $e');
-      await _loadInitialUserData();
+      // No local storage fallback: missing details will display N/A or - as requested
     }
   }
 

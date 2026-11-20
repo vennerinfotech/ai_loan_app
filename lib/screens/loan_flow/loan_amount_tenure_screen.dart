@@ -256,15 +256,22 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
                       },
                       behavior: HitTestBehavior.opaque,
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        width: 26,
+                        height: 26,
                         decoration: BoxDecoration(
-                          color: AppColors.indigo,
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.indigo.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.indigo,
+                            width: 1.4,
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.check,
-                          color: Colors.white,
-                          size: 18,
+                        child: const Center(
+                          child: Icon(
+                            Icons.check_rounded,
+                            color: AppColors.indigo,
+                            size: 15,
+                          ),
                         ),
                       ),
                     ),

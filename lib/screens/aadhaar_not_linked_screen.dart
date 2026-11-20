@@ -195,7 +195,7 @@ class AadhaarNotLinkedBody extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () => controller.uploadAadhaarManually(context: context),
+              onPressed: controller.navigateToManualUpload,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryButtonBackground,
                 shape: RoundedRectangleBorder(

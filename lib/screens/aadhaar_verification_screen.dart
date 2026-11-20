@@ -84,13 +84,24 @@ class AadhaarVerificationBody extends StatelessWidget {
                 _buildAadhaarInputField(controller),
                 const SizedBox(height: 24),
 
-                // "OR UPLOAD CARD" Divider
-                _buildOrUploadDivider(),
-                const SizedBox(height: 20),
+                // Manual Card Upload Option (shown only if Aadhaar is unlinked or verification fails)
+                Obx(() {
+                  if (!controller.showManualUpload.value) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // "OR UPLOAD CARD" Divider
+                      _buildOrUploadDivider(),
+                      const SizedBox(height: 20),
 
-                // Front side & Back side upload cards
-                _buildUploadCardsRow(context, controller),
-                const SizedBox(height: 24),
+                      // Front side & Back side upload cards
+                      _buildUploadCardsRow(context, controller),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                }),
 
                 // Test toggle for linking simulation (Linked vs Unlinked branch)
                 _buildBranchingTestToggle(controller),
@@ -142,18 +153,30 @@ class AadhaarVerificationBody extends StatelessWidget {
         ),
         suffixIcon: Obx(() {
           if (controller.isAadhaarValid) {
-            return Container(
-              margin: const EdgeInsets.only(right: 12),
-              width: 28,
-              height: 28,
-              decoration: const BoxDecoration(
-                color: AppColors.successGreenBg,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_rounded,
-                color: AppColors.successGreen,
-                size: 18,
+            return Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Center(
+                widthFactor: 1.0,
+                heightFactor: 1.0,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: AppColors.successGreenBg,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.successGreen.withValues(alpha: 0.45),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check,
+                      color: AppColors.successGreen,
+                      size: 13,
+                    ),
+                  ),
+                ),
               ),
             );
           }
@@ -198,13 +221,13 @@ class AadhaarVerificationBody extends StatelessWidget {
           child: Obx(
             () => _buildUploadCard(
               title: 'Front side',
-              subtitle: controller.isUploadingFront.value
+              subtitle: controller.isUploadingDocuments.value
                   ? 'Uploading...'
                   : (controller.frontUploaded.value
-                      ? 'Uploaded ✓'
+                      ? 'Selected ✓'
                       : 'Camera or gallery'),
               isUploaded: controller.frontUploaded.value,
-              isUploading: controller.isUploadingFront.value,
+              isUploading: controller.isUploadingDocuments.value,
               imagePath: controller.frontImagePath.value,
               imageBytes: controller.frontImageBytes.value,
               onTap: () => controller.pickAadhaarDocument(isFront: true, context: context),
@@ -218,13 +241,13 @@ class AadhaarVerificationBody extends StatelessWidget {
           child: Obx(
             () => _buildUploadCard(
               title: 'Back side',
-              subtitle: controller.isUploadingBack.value
+              subtitle: controller.isUploadingDocuments.value
                   ? 'Uploading...'
                   : (controller.backUploaded.value
-                      ? 'Uploaded ✓'
+                      ? 'Selected ✓'
                       : 'Camera or gallery'),
               isUploaded: controller.backUploaded.value,
-              isUploading: controller.isUploadingBack.value,
+              isUploading: controller.isUploadingDocuments.value,
               imagePath: controller.backImagePath.value,
               imageBytes: controller.backImageBytes.value,
               onTap: () => controller.pickAadhaarDocument(isFront: false, context: context),
@@ -244,7 +267,8 @@ class AadhaarVerificationBody extends StatelessWidget {
     Uint8List? imageBytes,
     required VoidCallback onTap,
   }) {
-    final hasImage = imageBytes != null || (imagePath.isNotEmpty && File(imagePath).existsSync());
+    final hasFile = imageBytes != null || (imagePath.isNotEmpty && File(imagePath).existsSync());
+    final isPdf = imagePath.toLowerCase().endsWith('.pdf');
 
     return GestureDetector(
       onTap: onTap,
@@ -271,12 +295,55 @@ class AadhaarVerificationBody extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: hasImage
+        child: hasFile
             ? Stack(
                 fit: StackFit.expand,
                 children: [
-                  // Full Card Image Preview
-                  if (imageBytes != null)
+                  // Full Card Image or PDF Preview
+                  if (isPdf)
+                    Container(
+                      color: const Color(0xFFF9FAFC),
+                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFEBEE),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.picture_as_pdf_rounded,
+                              color: Color(0xFFE53935),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            imagePath.split('/').last,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          const Text(
+                            'PDF Document',
+                            style: TextStyle(
+                              color: Color(0xFFE53935),
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (imageBytes != null)
                     Image.memory(
                       imageBytes,
                       fit: BoxFit.cover,
@@ -480,7 +547,7 @@ class AadhaarVerificationBody extends StatelessWidget {
     );
   }
 
-  /// Bottom section: Security notice + "Send OTP ->" button
+  /// Bottom section: Security notice + Dynamic Action button (Send OTP or Upload & Verify Aadhaar)
   Widget _buildBottomSection(AadhaarKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 20),
@@ -504,9 +571,83 @@ class AadhaarVerificationBody extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Send OTP Button
+          // Action Button: Either "Upload & Verify Aadhaar" or "Send OTP"
           Obx(
             () {
+              if (controller.showManualUpload.value) {
+                final isUploading = controller.isUploadingDocuments.value;
+                final canUpload = controller.frontUploaded.value &&
+                    controller.backUploaded.value &&
+                    !isUploading;
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: canUpload ? controller.uploadBothAadhaarDocuments : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryButtonBackground,
+                          disabledBackgroundColor:
+                              AppColors.navy.withValues(alpha: 0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isUploading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.file_upload_outlined,
+                                    color: AppColors.accentGold,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Upload & Verify Aadhaar',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: AppColors.accentGold,
+                                    size: 16,
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () => controller.showManualUpload.value = false,
+                      child: const Text(
+                        'Verify via OTP instead',
+                        style: TextStyle(
+                          color: AppColors.primaryPurple,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
               final isSending = controller.isSendingOtp.value;
               final isValid = controller.isAadhaarValid;
 
