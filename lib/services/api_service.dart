@@ -1217,4 +1217,38 @@ class ApiService {
       };
     }
   }
+
+  /// Get Loan Types API: GET {{baseUrl}}/loan/types
+  static Future<Map<String, dynamic>> getLoanTypes({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan/types');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Loan Types ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getLoanTypes: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch loan types. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }

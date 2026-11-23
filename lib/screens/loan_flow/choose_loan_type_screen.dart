@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:dotted_border/dotted_border.dart';
@@ -32,85 +33,137 @@ class ChooseLoanTypeBody extends StatelessWidget {
     final controller = Get.find<ApplyLoanController>();
     final scrollController = ScrollController();
 
-    return Column(
-      children: [
-        // Scrollable Options Content
-        Expanded(
-          child: SingleChildScrollView(
-            controller: scrollController,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Heading & Subtitle
-                const Text(
-                  'What\'s the loan for?',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Pick one — you can change it later.',
-                  style: TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-                const SizedBox(height: 18),
+    return Obx(() {
+      final isLoading = controller.isLoadingLoanTypes.value &&
+          controller.loanTypesData.value == null;
 
-                // Primary 2x3 Grid of Loan Types
-                _buildLoanTypesGrid(controller),
-                const SizedBox(height: 14),
+      return Skeletonizer(
+        enabled: isLoading,
+        child: Column(
+          children: [
+            // Scrollable Options Content
+            Expanded(
+              child: SingleChildScrollView(
+                controller: scrollController,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Heading & Subtitle
+                    const Text(
+                      'What\'s the loan for?',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Pick one — you can change it later.',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
 
-                // "••• Other loans" Section (Expands with Education, Machinery, BT+Top-up, Agri loans)
-                _buildOtherLoansSection(controller, context, scrollController),
-                const SizedBox(height: 12),
-              ],
+                    // Primary 2x3 Grid of Loan Types from API
+                    _buildLoanTypesGrid(controller),
+                    const SizedBox(height: 14),
+
+                    // "••• Other loans" Section (Expands with remaining loan types from API)
+                    if (!isLoading)
+                      _buildOtherLoansSection(
+                          controller, context, scrollController),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
 
-        // Bottom CTA Button: "Continue with [selected] loan ->"
-        _buildBottomCta(controller),
-      ],
-    );
+            // Bottom CTA Button: "Continue with [selected] loan ->"
+            _buildBottomCta(controller, isLoading: isLoading),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildLoanTypesGrid(ApplyLoanController controller) {
-    return Column(
-      children: [
-        for (int i = 0; i < controller.loanTypes.length; i += 2) ...[
-          Row(
-            children: [
-              Expanded(
-                child: _buildLoanCard(controller, controller.loanTypes[i]),
-              ),
-              const SizedBox(width: 14),
-              if (i + 1 < controller.loanTypes.length)
+    return Obx(() {
+      final apiTypes = controller.apiPrimaryLoanTypes;
+      final useApi = apiTypes.isNotEmpty;
+      final count = useApi ? apiTypes.length : controller.loanTypes.length;
+
+      return Column(
+        children: [
+          for (int i = 0; i < count; i += 2) ...[
+            Row(
+              children: [
                 Expanded(
-                  child: _buildLoanCard(controller, controller.loanTypes[i + 1]),
-                )
-              else
-                const Spacer(),
-            ],
-          ),
-          if (i + 2 < controller.loanTypes.length) const SizedBox(height: 14),
+                  child: useApi
+                      ? _buildLoanCard(
+                          controller: controller,
+                          title: apiTypes[i].label ?? apiTypes[i].value ?? '',
+                          subtitle: apiTypes[i].description ?? '',
+                          iconKey: apiTypes[i].icon ?? apiTypes[i].value ?? '',
+                        )
+                      : _buildLoanCard(
+                          controller: controller,
+                          title: controller.loanTypes[i].title,
+                          subtitle: controller.loanTypes[i].subtitle,
+                          iconKey: controller.loanTypes[i].iconKey,
+                        ),
+                ),
+                const SizedBox(width: 14),
+                if (i + 1 < count)
+                  Expanded(
+                    child: useApi
+                        ? _buildLoanCard(
+                            controller: controller,
+                            title: apiTypes[i + 1].label ??
+                                apiTypes[i + 1].value ??
+                                '',
+                            subtitle: apiTypes[i + 1].description ?? '',
+                            iconKey: apiTypes[i + 1].icon ??
+                                apiTypes[i + 1].value ??
+                                '',
+                          )
+                        : _buildLoanCard(
+                            controller: controller,
+                            title: controller.loanTypes[i + 1].title,
+                            subtitle: controller.loanTypes[i + 1].subtitle,
+                            iconKey: controller.loanTypes[i + 1].iconKey,
+                          ),
+                  )
+                else
+                  const Spacer(),
+              ],
+            ),
+            if (i + 2 < count) const SizedBox(height: 14),
+          ],
         ],
-      ],
-    );
+      );
+    });
   }
 
-  Widget _buildLoanCard(ApplyLoanController controller, LoanTypeOption item) {
+  Widget _buildLoanCard({
+    required ApplyLoanController controller,
+    required String title,
+    required String subtitle,
+    required String iconKey,
+  }) {
     return Obx(() {
-      final isSelected = controller.selectedLoanType.value == item.title;
+      final isSelected = controller.selectedLoanType.value.trim().isNotEmpty &&
+          controller.selectedLoanType.value.toLowerCase().trim() ==
+              title.toLowerCase().trim();
 
       return GestureDetector(
-        onTap: () => controller.selectLoanType(item.title),
+        onTap: () => controller.selectLoanType(title),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 118,
@@ -153,7 +206,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                     ),
                     child: Center(
                       child: Icon(
-                        _getIconForType(item.iconKey),
+                        controller.getIconForLoanType(iconKey),
                         size: 19,
                         color: isSelected
                             ? Colors.white
@@ -185,16 +238,18 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title,
+                    title,
                     style: TextStyle(
                       color: isSelected ? Colors.white : AppColors.textDark,
                       fontSize: 13.5,
                       fontWeight: FontWeight.w800,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    item.subtitle,
+                    subtitle,
                     style: TextStyle(
                       color: isSelected
                           ? AppColors.textSecondary2
@@ -222,24 +277,64 @@ class ChooseLoanTypeBody extends StatelessWidget {
   ) {
     return Obx(() {
       final isExpanded = controller.isOtherLoansExpanded.value;
+      final apiOthers = controller.apiOtherLoanTypes;
+      final useApi = apiOthers.isNotEmpty;
+      final otherCount =
+          useApi ? apiOthers.length : controller.otherLoanTypes.length;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // If expanded, show the 4 additional cards: Education, Machinery, BT+Top-up, Agri
+          // If expanded, show the additional cards
           if (isExpanded) ...[
             Column(
               children: [
-                for (int i = 0; i < controller.otherLoanTypes.length; i += 2) ...[
+                for (int i = 0; i < otherCount; i += 2) ...[
                   Row(
                     children: [
                       Expanded(
-                        child: _buildLoanCard(controller, controller.otherLoanTypes[i]),
+                        child: useApi
+                            ? _buildLoanCard(
+                                controller: controller,
+                                title: apiOthers[i].label ??
+                                    apiOthers[i].value ??
+                                    '',
+                                subtitle: apiOthers[i].description ?? '',
+                                iconKey: apiOthers[i].icon ??
+                                    apiOthers[i].value ??
+                                    '',
+                              )
+                            : _buildLoanCard(
+                                controller: controller,
+                                title: controller.otherLoanTypes[i].title,
+                                subtitle: controller.otherLoanTypes[i].subtitle,
+                                iconKey: controller.otherLoanTypes[i].iconKey,
+                              ),
                       ),
                       const SizedBox(width: 14),
-                      if (i + 1 < controller.otherLoanTypes.length)
+                      if (i + 1 < otherCount)
                         Expanded(
-                          child: _buildLoanCard(controller, controller.otherLoanTypes[i + 1]),
+                          child: useApi
+                              ? _buildLoanCard(
+                                  controller: controller,
+                                  title: apiOthers[i + 1].label ??
+                                      apiOthers[i + 1].value ??
+                                      '',
+                                  subtitle:
+                                      apiOthers[i + 1].description ?? '',
+                                  iconKey: apiOthers[i + 1].icon ??
+                                      apiOthers[i + 1].value ??
+                                      '',
+                                )
+                              : _buildLoanCard(
+                                  controller: controller,
+                                  title:
+                                      controller.otherLoanTypes[i + 1].title,
+                                  subtitle:
+                                      controller.otherLoanTypes[i + 1].subtitle,
+                                  iconKey:
+                                      controller.otherLoanTypes[i + 1].iconKey,
+                                ),
                         )
                       else
                         const Spacer(),
@@ -331,23 +426,30 @@ class ChooseLoanTypeBody extends StatelessWidget {
     });
   }
 
-  Widget _buildBottomCta(ApplyLoanController controller) {
+  Widget _buildBottomCta(ApplyLoanController controller,
+      {bool isLoading = false}) {
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
         child: Obx(() {
-          final loanType = controller.selectedLoanType.value.toLowerCase();
+          final hasSelection =
+              controller.selectedLoanType.value.trim().isNotEmpty;
+          final loanType = controller.selectedLoanType.value;
 
           return SizedBox(
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () {
-                controller.goToStep(2);
-              },
+              onPressed: (isLoading || !hasSelection)
+                  ? null
+                  : () {
+                      controller.goToStep(2);
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.navy,
+                disabledBackgroundColor:
+                    AppColors.navy.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -357,7 +459,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Continue with  $loanType',
+                    hasSelection ? 'Continue with  $loanType' : 'Continue',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 15,
@@ -377,32 +479,5 @@ class ChooseLoanTypeBody extends StatelessWidget {
         }),
       ),
     );
-  }
-
-  IconData _getIconForType(String iconKey) {
-    switch (iconKey) {
-      case 'home':
-        return Icons.home_rounded;
-      case 'property':
-        return Icons.account_balance_rounded;
-      case 'business':
-        return Icons.work_outline_rounded;
-      case 'personal':
-        return Icons.person_outline_rounded;
-      case 'car':
-        return Icons.directions_car_rounded;
-      case 'card':
-        return Icons.credit_card_rounded;
-      case 'education':
-        return Icons.school_rounded;
-      case 'machinery':
-        return Icons.precision_manufacturing_rounded;
-      case 'bt_topup':
-        return Icons.trending_up_rounded;
-      case 'agri':
-        return Icons.eco_rounded;
-      default:
-        return Icons.monetization_on_rounded;
-    }
   }
 }

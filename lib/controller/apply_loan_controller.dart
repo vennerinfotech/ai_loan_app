@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
-import '../models/dashboard_response_model.dart';
 import '../models/employment_type_model.dart';
 import '../models/emi_calculation_model.dart';
+import '../models/loan_types_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
-import 'dashboard_controller.dart';
 
 class LoanTypeOption {
   final String title;
@@ -67,8 +66,14 @@ class ApplyLoanController extends GetxController {
     if (currentStep.value != step) {
       stepHistory.add(step);
       currentStep.value = step;
-      if (step == 2 && monthlyEmi.value == 0) {
-        calculateEmiApi();
+      if (step == 2) {
+        if (monthlyEmi.value == 0) {
+          calculateEmiApi();
+        }
+      } else if (step == 3) {
+        if (apiEmploymentTypes.isEmpty) {
+          fetchEmploymentTypes();
+        }
       }
     }
   }
@@ -91,65 +96,8 @@ class ApplyLoanController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    syncFromDashboardData().then((_) {
-      if (monthlyEmi.value == 0) {
-        calculateEmiApi();
-      }
-    });
-    fetchEmploymentTypes();
-  }
-
-  /// Syncs default EMI and slider data directly from Dashboard API response
-  /// (Strictly dynamic: zero static/fallback data)
-  Future<void> syncFromDashboardData() async {
-    DashboardEmiCalculator? emiCalc;
-    if (Get.isRegistered<DashboardController>()) {
-      final dash = Get.find<DashboardController>();
-      emiCalc = dash.dashboardData.value?.emiCalculator;
-    }
-    if (emiCalc == null) {
-      try {
-        final res = await ApiService.getDashboardData();
-        if (res['status_code'] == 200 || res['success'] == true) {
-          final model = DashboardResponseModel.fromJson(res);
-          emiCalc = model.data?.emiCalculator;
-        }
-      } catch (e) {
-        debugPrint('Exception fetching dashboard for EMI defaults: $e');
-      }
-    }
-
-    if (emiCalc != null) {
-      if (emiCalc.sliders?.loanAmount?.min != null) {
-        minLoanAmount.value = emiCalc.sliders!.loanAmount!.min!.toDouble();
-      }
-      if (emiCalc.sliders?.loanAmount?.max != null) {
-        maxLoanAmount.value = emiCalc.sliders!.loanAmount!.max!.toDouble();
-      }
-      if (emiCalc.sliders?.loanAmount?.step != null) {
-        stepLoanAmount.value = emiCalc.sliders!.loanAmount!.step!.toDouble();
-      }
-
-      final defaultAmount = emiCalc.result?.loanAmount?.toDouble() ??
-          emiCalc.sliders?.loanAmount?.defaultValue?.toDouble();
-      if (defaultAmount != null) {
-        loanAmount.value = defaultAmount;
-      }
-      if (emiCalc.result?.monthlyEmi != null) {
-        monthlyEmi.value = emiCalc.result!.monthlyEmi!.toInt();
-      }
-      if (emiCalc.result?.totalInterest != null) {
-        totalInterest.value = emiCalc.result!.totalInterest!.toInt();
-      }
-      if (emiCalc.result?.totalPayable != null) {
-        totalPayable.value = emiCalc.result!.totalPayable!.toInt();
-      }
-      if (emiCalc.result?.interestRate != null) {
-        apiInterestRate.value = emiCalc.result!.interestRate!.toDouble();
-        annualInterestRate.value = emiCalc.result!.interestRate!.toDouble();
-      }
-      isEmiLoaded.value = true;
-    }
+    // Only call GET /loan/types on Step 1 as requested
+    fetchLoanTypes();
   }
 
   @override
@@ -158,9 +106,72 @@ class ApplyLoanController extends GetxController {
     super.onClose();
   }
 
-  // Step 1: Loan Type
-  final selectedLoanType = 'Home loan'.obs;
+  // Step 1: Loan Type (GET /loan/types)
+  // By default, no option is selected
+  final selectedLoanType = ''.obs;
   final isOtherLoansExpanded = false.obs;
+  final isLoadingLoanTypes = false.obs;
+
+  /// Holds the data payload from GET /loan/types (storing only data, not status/messages)
+  final loanTypesData = Rxn<LoanTypesData>();
+
+  /// Primary 6 loan types from API if available
+  List<LoanTypeItem> get apiPrimaryLoanTypes {
+    if (loanTypesData.value != null &&
+        loanTypesData.value!.loanTypes.isNotEmpty) {
+      final all = loanTypesData.value!.loanTypes;
+      return all.length > 6 ? all.sublist(0, 6) : all;
+    }
+    return [];
+  }
+
+  /// Remaining loan types shown under "Other loans" section
+  List<LoanTypeItem> get apiOtherLoanTypes {
+    if (loanTypesData.value != null &&
+        loanTypesData.value!.loanTypes.length > 6) {
+      return loanTypesData.value!.loanTypes.sublist(6);
+    }
+    return [];
+  }
+
+  Future<void> fetchLoanTypes() async {
+    isLoadingLoanTypes.value = true;
+    try {
+      final res = await ApiService.getLoanTypes();
+      if (res['success'] == true && res['data'] != null && res['data'] is Map) {
+        final model =
+            LoanTypesData.fromJson(Map<String, dynamic>.from(res['data']));
+        loanTypesData.value = model;
+
+        if (model.amountLimits?.min != null) {
+          minLoanAmount.value = model.amountLimits!.min!.toDouble();
+        }
+        if (model.amountLimits?.max != null) {
+          maxLoanAmount.value = model.amountLimits!.max!.toDouble();
+        }
+        if (model.tenureLimits?.min != null) {
+          minTenureMonths.value = model.tenureLimits!.min!.toDouble();
+        }
+        if (model.tenureLimits?.max != null) {
+          maxTenureMonths.value = model.tenureLimits!.max!.toDouble();
+        }
+        if (model.tenureLimits?.defaultTenure != null) {
+          tenureMonths.value = model.tenureLimits!.defaultTenure!.toDouble();
+          if (selectedTenureYears.value == 0) {
+            selectedTenureYears.value =
+                (model.tenureLimits!.defaultTenure! ~/ 12);
+          }
+        }
+        if (model.amountPresets.isNotEmpty && loanAmount.value == 0) {
+          loanAmount.value = model.amountPresets.first.toDouble();
+        }
+      }
+    } catch (e) {
+      debugPrint('Exception in fetchLoanTypes: $e');
+    } finally {
+      isLoadingLoanTypes.value = false;
+    }
+  }
 
   final loanTypes = const [
     LoanTypeOption(
@@ -226,30 +237,55 @@ class ApplyLoanController extends GetxController {
     selectedLoanType.value = type;
   }
 
-  IconData getIconForLoanType(String title) {
-    switch (title.toLowerCase()) {
+  IconData getIconForLoanType(String titleOrIcon) {
+    final lower = titleOrIcon.toLowerCase().trim();
+    switch (lower) {
+      case 'home':
       case 'home loan':
         return Icons.home_rounded;
+      case 'building-columns':
+      case 'property':
       case 'mortgage loan':
         return Icons.account_balance_rounded;
+      case 'business-time':
+      case 'business':
       case 'business loan':
         return Icons.work_outline_rounded;
+      case 'user':
+      case 'personal':
       case 'personal loan':
         return Icons.person_outline_rounded;
+      case 'car':
+      case 'vehicle loan':
       case 'car loan':
         return Icons.directions_car_rounded;
+      case 'credit-card':
+      case 'card':
       case 'cc / od loan':
       case 'cc- od loan':
+      case 'cc- od':
+      case 'cc / od':
         return Icons.credit_card_rounded;
+      case 'graduation-cap':
+      case 'education':
       case 'education loan':
         return Icons.school_rounded;
+      case 'cogs':
+      case 'machinery':
       case 'machinery loan':
         return Icons.precision_manufacturing_rounded;
+      case 'arrow-up-right-dots':
+      case 'bt_topup':
       case 'bt + top-up loan':
       case 'bt+top-up loan':
         return Icons.trending_up_rounded;
+      case 'seedling':
+      case 'agri':
       case 'agri loan':
         return Icons.eco_rounded;
+      case 'pen-nib':
+      case 'other loan':
+        return Icons.edit_note_rounded;
       default:
         return Icons.monetization_on_rounded;
     }
@@ -260,6 +296,9 @@ class ApplyLoanController extends GetxController {
   final minLoanAmount = 0.0.obs;
   final maxLoanAmount = 0.0.obs;
   final stepLoanAmount = 0.0.obs;
+  final minTenureMonths = 6.0.obs;
+  final maxTenureMonths = 360.0.obs;
+  final tenureMonths = 240.0.obs;
   final selectedTenureYears = 0.obs;
   final annualInterestRate = 0.0.obs;
   final apiInterestRate = 0.0.obs;

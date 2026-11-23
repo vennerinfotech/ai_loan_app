@@ -32,12 +32,15 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
   void initState() {
     super.initState();
     final controller = Get.find<ApplyLoanController>();
-    controller.syncFromDashboardData().then((_) {
-      if (mounted) {
-        _amountController.text = controller.loanAmount.value.toInt().toString();
-        setState(() {});
-      }
-    });
+    if (controller.monthlyEmi.value == 0) {
+      controller.calculateEmiApi().then((_) {
+        if (mounted) {
+          _amountController.text =
+              controller.loanAmount.value.toInt().toString();
+          setState(() {});
+        }
+      });
+    }
     _amountController = TextEditingController(
       text: controller.loanAmount.value.toInt().toString(),
     );
