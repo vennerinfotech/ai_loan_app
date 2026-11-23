@@ -4,7 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/applicant_details_controller.dart';
 import 'add_co_applicant_screen.dart';
-import 'application_status_screen.dart';
+import 'recommended_loan_offers_screen.dart';
 
 /// Screen displaying primary applicant & co-applicant details (Reference Image Left Screen)
 class ApplicantDetailsScreen extends StatelessWidget {
@@ -577,8 +577,8 @@ class ApplicantDetailsScreen extends StatelessWidget {
         height: 52,
         child: ElevatedButton(
           onPressed: () {
-            // Navigate to Application Status Screen
-            Get.to(() => const ApplicationStatusScreen());
+            // Navigate to Recommended Loan Offers Screen
+            Get.to(() => const RecommendedLoanOffersScreen());
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.navy,

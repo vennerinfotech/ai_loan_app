@@ -843,9 +843,9 @@ class UploadDocumentsBody extends StatelessWidget {
             Get.to(() => const ApplicantDetailsScreen());
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E1B4B), // Deep navy matching web CTA
+            backgroundColor: AppColors.navy,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
             ),
             elevation: 0,
           ),
