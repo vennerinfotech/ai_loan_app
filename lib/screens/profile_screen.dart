@@ -567,35 +567,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// "Log out" pill button
+  /// "Log out" button
   Widget _buildLogoutButton(BuildContext context) {
     return GestureDetector(
       onTap: () => _showLogoutDialog(context),
       child: Container(
-        height: 44,
+        height: 48,
         decoration: BoxDecoration(
           color: AppColors.errorRedBg,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppColors.errorRedBg,
+            color: AppColors.errorRed.withValues(alpha: 0.3),
             width: 1.2,
           ),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
+          children: [
             Icon(
               Icons.logout_rounded,
               color: AppColors.errorRed,
-              size: 17,
+              size: 18,
             ),
             SizedBox(width: 8),
             Text(
               'Log out',
               style: TextStyle(
                 color: AppColors.errorRed,
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
+                fontSize: 14.5,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -699,6 +699,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor: AppColors.canvas,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
+                              side: const BorderSide(color: AppColors.line),
                             ),
                           ),
                           child: const Text(

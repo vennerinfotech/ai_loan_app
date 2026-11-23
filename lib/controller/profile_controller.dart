@@ -1,8 +1,9 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
+import '../screens/login_with_mobile_screen.dart';
 import '../theme/app_colors.dart';
 
 /// Controller managing user profile data, avatar image, and updates
@@ -130,7 +131,14 @@ class ProfileController extends GetxController {
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       );
+      Get.offAll(() => const LoginWithMobileScreen());
     } catch (e) {
+      if (kDebugMode) {
+        print('error => $e');
+      }
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
       isLoggingOut.value = false;
       await SessionManager.clearSession();
     }
