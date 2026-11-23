@@ -4,7 +4,6 @@ import '../../theme/app_colors.dart';
 import '../../controller/apply_loan_controller.dart';
 import '../../models/employment_type_model.dart';
 import '../../widgets/custom_dropdown.dart';
-import 'applicant_details_screen.dart';
 import 'apply_loan_flow_screen.dart';
 
 /// Screen 4 of Apply Loan Flow: "Upload documents / Employment & Proof" (Step 4 of 4)
@@ -71,7 +70,12 @@ class UploadDocumentsBody extends StatelessWidget {
                   _buildEmploymentDetailsSection(controller),
 
                   // ==========================================
-                  // Section 2: Required Document Proofs (Header outside, cards matching demo UI)
+                  // Section 2: Reference Details (Dynamic Form Sections)
+                  // ==========================================
+                  _buildReferenceDetailsSection(controller),
+
+                  // ==========================================
+                  // Section 3: Required Document Proofs (Header outside, cards matching demo UI)
                   // ==========================================
                   _buildRequiredDocumentProofsSection(controller, context),
                   const SizedBox(height: 16),
@@ -256,12 +260,163 @@ class UploadDocumentsBody extends StatelessWidget {
             }).toList(),
           );
         }),
+
+        // If current selected salary mode requires extra fields (e.g. cash_salary_amount, bank_salary_amount)
+        Obx(() {
+          final currentModeKey = controller.selectedSalaryMode.value.isNotEmpty
+              ? controller.selectedSalaryMode.value
+              : (salaryModes.first.key ?? '');
+          final currentMode = salaryModes.firstWhereOrNull((m) => m.key == currentModeKey);
+          if (currentMode != null && currentMode.requires.isNotEmpty) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                ...currentMode.requires.map((req) {
+                  final label = req == 'cash_salary_amount'
+                      ? 'Cash Salary Amount'
+                      : (req == 'bank_salary_amount'
+                          ? 'Bank Salary Amount'
+                          : req.replaceAll('_', ' ').capitalizeFirst ?? req);
+                  final textCtrl = controller.getControllerForField(req);
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildTextField(
+                      label: label,
+                      isRequired: true,
+                      hintText: 'Enter $label',
+                      controller: textCtrl,
+                      keyboardType: TextInputType.number,
+                    ),
+                  );
+                }),
+              ],
+            );
+          }
+          return const SizedBox.shrink();
+        }),
       ],
     );
   }
 
   // ==========================================
-  // Section 2: Required Document Proofs (Strictly from POST /loan/store-amount)
+  // Section 2: Reference Details (Dynamic from store-amount form_sections)
+  // ==========================================
+  Widget _buildReferenceDetailsSection(ApplyLoanController controller) {
+    return Obx(() {
+      if (controller.dynamicFormSections.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: controller.dynamicFormSections.map((section) {
+          final title = section.title ?? 'Reference Details';
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header OUTSIDE container
+              Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.indigoTint,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.contacts_rounded,
+                        color: AppColors.navy,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Fields Container
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.line, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: section.fields.map((field) {
+                    final name = field.name ?? '';
+                    final label = field.label ?? name;
+                    final isReq = field.required == true;
+                    final type = field.type?.toLowerCase() ?? 'text';
+
+                    if (type == 'select' && field.options.isNotEmpty) {
+                      final dropVal = controller.getDropdownValueForField(name, field.options.first);
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Obx(
+                          () => CustomAppDropdown(
+                            label: label,
+                            isRequired: isReq,
+                            value: dropVal.value,
+                            items: field.options,
+                            onChanged: (val) {
+                              dropVal.value = val;
+                            },
+                          ),
+                        ),
+                      );
+                    }
+
+                    final textCtrl = controller.getControllerForField(name);
+                    final isPhone = type == 'phone';
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildTextField(
+                        label: label,
+                        isRequired: isReq,
+                        hintText: 'Enter $label',
+                        controller: textCtrl,
+                        keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
+          );
+        }).toList(),
+      );
+    });
+  }
+
+  // ==========================================
+  // Section 3: Required Document Proofs (Strictly from POST /loan/store-amount)
   // ==========================================
   Widget _buildRequiredDocumentProofsSection(ApplyLoanController controller, BuildContext context) {
     // Documents loaded dynamically from POST /loan/store-amount only
@@ -663,25 +818,46 @@ class UploadDocumentsBody extends StatelessWidget {
       child: SizedBox(
         width: double.infinity,
         height: 52,
-        child: ElevatedButton(
-          onPressed: () {
-            // Advance to Applicant Details
-            Get.to(() => const ApplicantDetailsScreen());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.navy,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        child: Obx(
+          () => ElevatedButton(
+            onPressed: controller.isSubmittingLead.value
+                ? null
+                : () => controller.submitLoanApplication(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.navy,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
             ),
-            elevation: 0,
-          ),
-          child: const Text(
-            'Save & Continue',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-            ),
+            child: controller.isSubmittingLead.value
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Save & Continue',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.amber,
+                        size: 18,
+                      ),
+                    ],
+                  ),
           ),
         ),
       ),

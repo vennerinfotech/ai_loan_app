@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import '../models/employment_type_model.dart';
 import 'session_manager.dart';
 
 /// Central API Service for handling network requests across Finsphere AI Loan App.
@@ -1051,6 +1053,76 @@ class ApiService {
         'success': false,
         'status_code': 500,
         'message': 'Failed to store loan amount. Please try again.',
+      };
+    }
+  }
+
+  /// Submit Loan Application Lead API: POST {{baseUrl}}/leads/store
+  /// Uses multipart/form-data matching Postman collection
+  static Future<Map<String, dynamic>> submitLoanLead({
+    required Map<String, String> fields,
+    required List<LoanDocumentItem> documents,
+    required Map<String, List<XFile>> uploadedFiles,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/leads/store');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.headers['Accept'] = 'application/json';
+      if (authToken.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      // Add all dynamic form fields (employment details, salary amounts, reference details)
+      fields.forEach((k, v) {
+        if (v.trim().isNotEmpty) {
+          request.fields[k] = v.trim();
+        }
+      });
+
+      // Attach all uploaded document files using leadStoreField format
+      for (final doc in documents) {
+        final key = doc.key ?? '';
+        final files = uploadedFiles[key] ?? [];
+        if (files.isNotEmpty) {
+          final isMulti = doc.allowMultiple == true;
+          final fieldName = doc.upload?.leadStoreField ??
+              (isMulti ? 'documents[$key][]' : 'documents[$key]');
+
+          for (final file in files) {
+            final bytes = await file.readAsBytes();
+            request.files.add(
+              http.MultipartFile.fromBytes(
+                fieldName,
+                bytes,
+                filename: file.name,
+              ),
+            );
+          }
+        }
+      }
+
+      debugPrint('========== Submit Loan Application Lead ==========');
+      debugPrint('--> POST (multipart) $url');
+      debugPrint('Fields: ${request.fields}');
+      debugPrint('Files Count: ${request.files.length}');
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in submitLoanLead: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to submit application. Please try again.',
       };
     }
   }

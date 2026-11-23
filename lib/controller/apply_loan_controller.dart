@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/employment_type_model.dart';
 import '../models/emi_calculation_model.dart';
 import '../models/loan_types_model.dart';
 import '../models/store_loan_amount_model.dart';
+import '../models/lead_store_model.dart';
+import '../screens/loan_flow/applicant_details_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
@@ -363,6 +366,9 @@ class ApplyLoanController extends GetxController {
   final dynamicSalaryModes = <SalaryModeItem>[].obs;
   final dynamicFormSections = <FormSectionItem>[].obs;
   final dynamicDocuments = <LoanDocumentItem>[].obs;
+  final uploadedDocXFiles = <String, List<XFile>>{}.obs;
+  final isSubmittingLead = false.obs;
+  final leadStoreData = Rxn<LeadStoreData>();
 
   // Selected salary mode (for salaried)
   final selectedSalaryMode = ''.obs;
@@ -557,18 +563,25 @@ class ApplyLoanController extends GetxController {
         : '${(length / 1024).toStringAsFixed(0)} KB';
 
     uploadingDocKeys[key] = true;
-
-    // Simulate upload delay
-    await Future.delayed(const Duration(milliseconds: 900));
-
+    await Future.delayed(const Duration(milliseconds: 300));
     uploadingDocKeys[key] = false;
-    uploadedDocFileNames[key] = file.name;
+
+    if (doc.allowMultiple == true) {
+      final list = List<XFile>.from(uploadedDocXFiles[key] ?? []);
+      list.add(file);
+      uploadedDocXFiles[key] = list;
+      uploadedDocFileNames[key] = '${list.length} file(s) attached';
+    } else {
+      uploadedDocXFiles[key] = [file];
+      uploadedDocFileNames[key] = file.name;
+    }
+
     uploadedDocFileSizes[key] = sizeStr;
     selectedDocCheckboxes[key] = true;
 
     Get.snackbar(
       'Document Uploaded',
-      '${doc.label ?? 'Document'} uploaded successfully.',
+      '${doc.label ?? 'Document'} attached successfully.',
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: AppColors.navy,
       colorText: Colors.white,
@@ -580,9 +593,223 @@ class ApplyLoanController extends GetxController {
   /// Remove dynamic document
   void removeDynamicDoc(LoanDocumentItem doc) {
     final key = doc.key ?? '';
+    uploadedDocXFiles.remove(key);
     uploadedDocFileNames.remove(key);
     uploadedDocFileSizes.remove(key);
     uploadingDocKeys.remove(key);
+  }
+
+  /// Collect all dynamic form fields into Map for POST /leads/store
+  Map<String, String> collectAllFormFields() {
+    final map = <String, String>{};
+
+    // 1. Employment detail fields
+    for (final field in activeDetailFields) {
+      final name = field.name ?? '';
+      if (name.isNotEmpty) {
+        final type = field.type?.toLowerCase() ?? 'text';
+        if (type == 'select') {
+          map[name] = getDropdownValueForField(name, field.options.isNotEmpty ? field.options.first : '').value;
+        } else {
+          map[name] = getControllerForField(name).text.trim();
+        }
+      }
+    }
+
+    // 2. Selected salary mode required fields
+    final selectedModeKey = selectedSalaryMode.value.isNotEmpty
+        ? selectedSalaryMode.value
+        : (activeSalaryModes.isNotEmpty ? (activeSalaryModes.first.key ?? '') : '');
+    final currentMode = activeSalaryModes.firstWhereOrNull((m) => m.key == selectedModeKey);
+    if (currentMode != null) {
+      for (final req in currentMode.requires) {
+        map[req] = getControllerForField(req).text.trim();
+      }
+    }
+
+    // 3. Form sections (Reference Details)
+    for (final section in dynamicFormSections) {
+      for (final field in section.fields) {
+        final name = field.name ?? '';
+        if (name.isNotEmpty) {
+          final type = field.type?.toLowerCase() ?? 'text';
+          if (type == 'select') {
+            map[name] = getDropdownValueForField(name, field.options.isNotEmpty ? field.options.first : '').value;
+          } else {
+            map[name] = getControllerForField(name).text.trim();
+          }
+        }
+      }
+    }
+
+    return map;
+  }
+
+  /// Form Validation before submitting to POST /leads/store
+  bool validateEmploymentAndDocuments() {
+    // 1. Validate required employment detail fields
+    for (final field in activeDetailFields) {
+      if (field.required == true) {
+        final name = field.name ?? '';
+        final label = field.label ?? name;
+        final type = field.type?.toLowerCase() ?? 'text';
+
+        if (type == 'select') {
+          final val = getDropdownValueForField(name, '').value.trim();
+          if (val.isEmpty) {
+            Get.snackbar(
+              'Required Field',
+              'Please select $label',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: AppColors.navy,
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(16),
+            );
+            return false;
+          }
+        } else {
+          final val = getControllerForField(name).text.trim();
+          if (val.isEmpty) {
+            Get.snackbar(
+              'Required Field',
+              'Please enter $label',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: AppColors.navy,
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(16),
+            );
+            return false;
+          }
+          if (type == 'number') {
+            final numVal = num.tryParse(val);
+            if (numVal == null || numVal <= 0) {
+              Get.snackbar(
+                'Invalid Value',
+                'Please enter a valid amount for $label',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppColors.navy,
+                colorText: Colors.white,
+                margin: const EdgeInsets.all(16),
+              );
+              return false;
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Validate salary mode required fields
+    final selectedModeKey = selectedSalaryMode.value.isNotEmpty
+        ? selectedSalaryMode.value
+        : (activeSalaryModes.isNotEmpty ? (activeSalaryModes.first.key ?? '') : '');
+    final currentMode = activeSalaryModes.firstWhereOrNull((m) => m.key == selectedModeKey);
+    if (currentMode != null) {
+      for (final req in currentMode.requires) {
+        final val = getControllerForField(req).text.trim();
+        if (val.isEmpty) {
+          final label = req == 'cash_salary_amount'
+              ? 'Cash Salary Amount'
+              : (req == 'bank_salary_amount' ? 'Bank Salary Amount' : req.replaceAll('_', ' ').capitalizeFirst ?? req);
+          Get.snackbar(
+            'Required Field',
+            'Please enter $label',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.navy,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+          return false;
+        }
+      }
+    }
+
+    // 3. Validate reference phone format if entered
+    final ref1Phone = getControllerForField('ref1_phone').text.trim();
+    if (ref1Phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(ref1Phone)) {
+      Get.snackbar(
+        'Invalid Mobile',
+        'Reference 1 Mobile must be 10 digits',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    }
+
+    final ref2Phone = getControllerForField('ref2_phone').text.trim();
+    if (ref2Phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(ref2Phone)) {
+      Get.snackbar(
+        'Invalid Mobile',
+        'Reference 2 Mobile must be 10 digits',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Calls POST {{baseUrl}}/leads/store on tap "Save & Continue"
+  Future<bool> submitLoanApplication() async {
+    if (!validateEmploymentAndDocuments()) {
+      return false;
+    }
+
+    isSubmittingLead.value = true;
+    try {
+      final res = await ApiService.submitLoanLead(
+        fields: collectAllFormFields(),
+        documents: dynamicDocuments,
+        uploadedFiles: uploadedDocXFiles,
+      );
+
+      if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
+        final model = LeadStoreResponseModel.fromJson(res);
+        if (model.data != null) {
+          leadStoreData.value = model.data;
+        }
+        Get.snackbar(
+          'Application Submitted',
+          res['message']?.toString() ?? 'Application submitted successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+        // Advance to Applicant Details screen
+        Get.to(() => const ApplicantDetailsScreen());
+        return true;
+      } else {
+        final msg = ApiService.getErrorMessage(res);
+        Get.snackbar(
+          'Notice',
+          msg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception in submitLoanApplication: $e');
+      Get.snackbar(
+        'Notice',
+        'Failed to submit application. Please verify details.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    } finally {
+      isSubmittingLead.value = false;
+    }
   }
 
   // ========================================================
