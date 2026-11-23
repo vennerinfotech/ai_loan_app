@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../theme/app_colors.dart';
 import '../../controller/apply_loan_controller.dart';
 import '../../models/employment_type_model.dart';
+import '../../widgets/custom_dropdown.dart';
 import 'applicant_details_screen.dart';
 import 'apply_loan_flow_screen.dart';
 
@@ -164,13 +165,13 @@ class UploadDocumentsBody extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Obx(
-                      () => _buildDropdownField(
+                      () => CustomAppDropdown(
                         label: label,
                         isRequired: isReq,
                         value: dropVal.value,
-                        options: field.options,
+                        items: field.options,
                         onChanged: (val) {
-                          if (val != null) dropVal.value = val;
+                          dropVal.value = val;
                         },
                       ),
                     ),
@@ -803,73 +804,6 @@ class UploadDocumentsBody extends StatelessWidget {
     );
   }
 
-  Widget _buildDropdownField({
-    required String label,
-    required String value,
-    required List<String> options,
-    required ValueChanged<String?> onChanged,
-    bool isRequired = false,
-  }) {
-    final validValue = options.contains(value) ? value : options.first;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: AppColors.textDark,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (isRequired)
-              const Text(
-                ' *',
-                style: TextStyle(
-                  color: AppColors.errorRed,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.line, width: 1.0),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: validValue,
-              isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.muted),
-              items: options.map((opt) {
-                return DropdownMenuItem<String>(
-                  value: opt,
-                  child: Text(
-                    opt,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: onChanged,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   // ==========================================
   // Bottom Action Buttons
