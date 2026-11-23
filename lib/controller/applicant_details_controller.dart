@@ -2,8 +2,10 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/co_applicant_form_options_model.dart';
+import '../models/add_co_applicant_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
+import 'apply_loan_controller.dart';
 
 /// Co-applicant data model
 class CoApplicantModel {
@@ -60,6 +62,18 @@ class ApplicantDetailsController extends GetxController {
   // Loading state for GET /co-applicants/form-options
   final isLoadingFormOptions = false.obs;
   final formOptionsData = Rxn<CoApplicantFormOptionsData>();
+
+  // Adding Co-Applicant State
+  final isAddingCoApplicant = false.obs;
+  final leadId = Rxn<dynamic>();
+
+  dynamic get currentLeadId {
+    if (leadId.value != null) return leadId.value;
+    if (Get.isRegistered<ApplyLoanController>()) {
+      return Get.find<ApplyLoanController>().leadStoreData.value?.leadId;
+    }
+    return null;
+  }
 
   // Dynamic Options strictly from GET /co-applicants/form-options API
   final apiRelationshipOptions = <String>[].obs;
@@ -331,14 +345,15 @@ class ApplicantDetailsController extends GetxController {
     selectedEmploymentType.value = type;
   }
 
-  void addCoApplicant({String? role}) {
+  Future<bool> addCoApplicant({String? role}) async {
     // Validate text form fields only when submit button is pressed
     if (addCoAppFormKey.currentState?.validate() != true) {
-      return;
+      return false;
     }
 
     final name = fullNameController.text.trim();
-    final mobile = mobileNumberController.text.trim();
+    final rawMobile = mobileNumberController.text.trim();
+    final mobile = rawMobile.replaceAll(RegExp(r'[^0-9]'), '');
     final relationship = selectedRelationship.value.trim();
     final appType = selectedApplicantType.value.trim();
     final empType = selectedEmploymentType.value.trim();
@@ -353,7 +368,7 @@ class ApplicantDetailsController extends GetxController {
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
-      return;
+      return false;
     }
 
     if (empType.isEmpty) {
@@ -365,37 +380,99 @@ class ApplicantDetailsController extends GetxController {
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
-      return;
+      return false;
     }
 
-    coApplicants.add(
-      CoApplicantModel(
-        name: name,
-        relationship: relationship,
-        mobileNumber: mobile.startsWith('+91') ? mobile : '+91 $mobile',
+    final activeLeadId = currentLeadId;
+    if (activeLeadId == null) {
+      Get.snackbar(
+        'Notice',
+        'Lead ID not found. Please submit your application first.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    }
+
+    isAddingCoApplicant.value = true;
+    try {
+      final res = await ApiService.addCoApplicant(
+        coApplicantName: name,
+        coApplicantMobile: mobile,
+        coRelationship: relationship,
         applicantType: appType,
         employmentType: empType,
-        role: assignedRole,
-        status: coAppUploadedFiles.isNotEmpty ? 'Documents attached' : 'Link sent',
-        documents: Map.from(coAppUploadedFiles),
-      ),
-    );
+        leadId: activeLeadId,
+      );
 
-    // Switch tab to the newly added co-applicant
-    selectedTabIndex.value = 1;
+      if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
+        final model = AddCoApplicantResponseModel.fromJson(res);
+        coApplicants.add(
+          CoApplicantModel(
+            name: model.data?.coApplicant?.name ?? name,
+            relationship: model.data?.coApplicant?.relationship ?? relationship,
+            mobileNumber: mobile.startsWith('+91') ? mobile : '+91 $mobile',
+            applicantType: model.data?.applicantType ?? appType,
+            employmentType: model.data?.employmentType ?? empType,
+            role: assignedRole,
+            status: 'Documents pending',
+            documents: Map.from(coAppUploadedFiles),
+          ),
+        );
 
-    // Reset controllers and uploaded files for next time
-    fullNameController.clear();
-    mobileNumberController.clear();
-    selectedRelationship.value = '';
-    selectedApplicantType.value = formOptionsData.value?.addForm
-            .firstWhereOrNull((f) => f.name == 'applicant_type')
-            ?.defaultValue ??
-        (apiApplicantTypeOptions.isNotEmpty ? apiApplicantTypeOptions.first : '');
-    selectedEmploymentType.value = '';
-    coAppUploadedFiles.clear();
+        Get.snackbar(
+          'Success',
+          res['message']?.toString() ?? 'Co-Applicant added successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
 
-    Get.back(); // Pop Add Co-applicant screen
+        // Switch tab to the newly added co-applicant
+        selectedTabIndex.value = 1;
+
+        // Reset controllers and uploaded files for next time
+        fullNameController.clear();
+        mobileNumberController.clear();
+        selectedRelationship.value = '';
+        selectedApplicantType.value = formOptionsData.value?.addForm
+                .firstWhereOrNull((f) => f.name == 'applicant_type')
+                ?.defaultValue ??
+            (apiApplicantTypeOptions.isNotEmpty ? apiApplicantTypeOptions.first : '');
+        selectedEmploymentType.value = '';
+        coAppUploadedFiles.clear();
+
+        Get.back(); // Pop Add Co-applicant screen
+        return true;
+      } else {
+        final msg = ApiService.getErrorMessage(res);
+        Get.snackbar(
+          'Notice',
+          msg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Exception in addCoApplicant: $e');
+      Get.snackbar(
+        'Notice',
+        'Failed to add co-applicant. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return false;
+    } finally {
+      isAddingCoApplicant.value = false;
+    }
   }
 
   @override

@@ -763,33 +763,47 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
             flex: 7,
             child: SizedBox(
               height: 52,
-              child: ElevatedButton(
-                onPressed: () => controller.addCoApplicant(role: widget.role),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navy,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              child: Obx(
+                () => ElevatedButton(
+                  onPressed: controller.isAddingCoApplicant.value
+                      ? null
+                      : () => controller.addCoApplicant(role: widget.role),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Add ${widget.role}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: AppColors.amber,
-                      size: 16,
-                    ),
-                  ],
+                  child: controller.isAddingCoApplicant.value
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Add ${widget.role}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: AppColors.amber,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                 ),
               ),
             ),

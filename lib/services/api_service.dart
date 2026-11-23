@@ -1364,4 +1364,55 @@ class ApiService {
       };
     }
   }
+
+  /// Add Co-Applicant API: POST {{baseUrl}}/co-applicants
+  static Future<Map<String, dynamic>> addCoApplicant({
+    required String coApplicantName,
+    required String coApplicantMobile,
+    required String coRelationship,
+    required String applicantType,
+    required String employmentType,
+    required dynamic leadId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'co_applicant_name': coApplicantName,
+      'co_applicant_mobile': coApplicantMobile,
+      'co_relationship': coRelationship,
+      'applicant_type': applicantType,
+      'employment_type': employmentType,
+      'lead_id': leadId,
+    });
+
+    try {
+      debugPrint('========== Add Co-Applicant ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Body: $body');
+
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in addCoApplicant: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to add co-applicant. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }
