@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../controller/profile_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import '../widgets/custom_dropdown.dart';
 
 /// Screen displaying user personal details, with an edit action button in header.
-/// Fields are read-only by default and become editable only after tapping edit.
+/// Fields match update profile API body:
+/// { name, email, dob, gender, marital_status, address, address_type }
 class PersonalDetailsScreen extends StatefulWidget {
   final bool initiallyEditing;
 
@@ -20,12 +22,20 @@ class PersonalDetailsScreen extends StatefulWidget {
 
 class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   late final ProfileController profileController;
-  late final TextEditingController firstNameController;
-  late final TextEditingController lastNameController;
+  late final TextEditingController nameController;
   late final TextEditingController emailController;
+  late final TextEditingController dobController;
   late final TextEditingController addressController;
 
+  late String selectedGender;
+  late String selectedMaritalStatus;
+  late String selectedAddressType;
+
   late bool _isEditing;
+
+  final genderOptions = const ['Male', 'Female', 'Other'];
+  final maritalStatusOptions = const ['Married', 'Single', 'Divorced', 'Widowed'];
+  final addressTypeOptions = const ['Owned', 'Rented', 'Parental', 'Company Provided', 'Other'];
 
   @override
   void initState() {
@@ -35,33 +45,36 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         ? Get.find<ProfileController>()
         : Get.put(ProfileController());
 
-    firstNameController =
-        TextEditingController(text: profileController.firstName.value);
-    lastNameController =
-        TextEditingController(text: profileController.lastName.value);
-    emailController =
-        TextEditingController(text: profileController.email.value);
-    addressController =
-        TextEditingController(text: profileController.address.value);
+    nameController = TextEditingController(text: profileController.name.value);
+    emailController = TextEditingController(text: profileController.email.value);
+    dobController = TextEditingController(text: profileController.dob.value);
+    addressController = TextEditingController(text: profileController.address.value);
+
+    selectedGender = profileController.gender.value.isNotEmpty ? profileController.gender.value : 'Male';
+    selectedMaritalStatus = profileController.maritalStatus.value.isNotEmpty ? profileController.maritalStatus.value : 'Married';
+    selectedAddressType = profileController.addressType.value.isNotEmpty ? profileController.addressType.value : 'Owned';
 
     profileController.clearTempImage();
   }
 
   @override
   void dispose() {
-    firstNameController.dispose();
-    lastNameController.dispose();
+    nameController.dispose();
     emailController.dispose();
+    dobController.dispose();
     addressController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     profileController.saveProfile(
-      first: firstNameController.text.trim(),
-      last: lastNameController.text.trim(),
+      fullName: nameController.text.trim(),
       emailAddress: emailController.text.trim(),
+      dateOfBirth: dobController.text.trim(),
+      userGender: selectedGender,
+      userMaritalStatus: selectedMaritalStatus,
       addr: addressController.text.trim(),
+      addrType: selectedAddressType,
     );
 
     setState(() {
@@ -82,13 +95,55 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
   void _cancelEditing() {
     setState(() {
-      firstNameController.text = profileController.firstName.value;
-      lastNameController.text = profileController.lastName.value;
+      nameController.text = profileController.name.value;
       emailController.text = profileController.email.value;
+      dobController.text = profileController.dob.value;
+      selectedGender = profileController.gender.value;
+      selectedMaritalStatus = profileController.maritalStatus.value;
       addressController.text = profileController.address.value;
+      selectedAddressType = profileController.addressType.value;
       profileController.clearTempImage();
       _isEditing = false;
     });
+  }
+
+  Future<void> _pickDateOfBirth(BuildContext context) async {
+    if (!_isEditing) return;
+
+    DateTime initialDate;
+    try {
+      initialDate = DateTime.parse(dobController.text.trim());
+    } catch (_) {
+      initialDate = DateTime(1992, 3, 20);
+    }
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1940),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.navy,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final y = picked.year.toString().padLeft(4, '0');
+      final m = picked.month.toString().padLeft(2, '0');
+      final d = picked.day.toString().padLeft(2, '0');
+      setState(() {
+        dobController.text = '$y-$m-$d';
+      });
+    }
   }
 
   @override
@@ -113,8 +168,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Card 1: Personal Information (First Name & Last Name)
-                    _buildPersonalInfoCard(),
+                    // Card 1: Personal Information (Name, DOB, Gender, Marital Status)
+                    _buildPersonalInfoCard(context),
 
                     const SizedBox(height: 16),
 
@@ -123,7 +178,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Card 3: Address Details
+                    // Card 3: Address Details (Address, Address Type)
                     _buildAddressDetailsCard(),
 
                     const SizedBox(height: 16),
@@ -140,7 +195,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Changing your name needs a fresh KYC check. Mobile number is linked to your account.',
+                            'Personal details are synced with your loan application profile and KYC records.',
                             style: TextStyle(
                               color: AppColors.muted,
                               fontSize: 12,
@@ -223,9 +278,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 color: _isEditing ? AppColors.navy : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _isEditing
-                      ? AppColors.navy
-                      : AppColors.line,
+                  color: _isEditing ? AppColors.navy : AppColors.line,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -341,41 +394,90 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
-  /// Card 1: Personal Information (First name & Last name)
-  Widget _buildPersonalInfoCard() {
+  /// Card 1: Personal Information (Single Full Name, Date of Birth, Gender, Marital Status)
+  Widget _buildPersonalInfoCard(BuildContext context) {
     return _buildSectionCard(
       icon: Icons.info_rounded,
       iconColor: AppColors.primaryPurple,
       title: 'Personal Information',
       children: [
+        // Single Full Name Field (Instead of separate First Name & Last Name)
+        _buildFieldLabel('Full Name'),
+        const SizedBox(height: 6),
+        _PersonalInputField(
+          controller: nameController,
+          hintText: 'Enter Full Name',
+          readOnly: !_isEditing,
+        ),
+        const SizedBox(height: 14),
+
+        // Date of Birth Field (with DatePicker tap)
+        _buildFieldLabel('Date of Birth'),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: () => _pickDateOfBirth(context),
+          child: AbsorbPointer(
+            absorbing: _isEditing,
+            child: _PersonalInputField(
+              controller: dobController,
+              hintText: 'YYYY-MM-DD',
+              readOnly: !_isEditing,
+              suffixIcon: const Icon(
+                Icons.calendar_today_rounded,
+                size: 18,
+                color: AppColors.muted,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Gender & Marital Status Fields
         Row(
           children: [
+            // Gender Dropdown / Readonly Box
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildFieldLabel('First name'),
+                  _buildFieldLabel('Gender'),
                   const SizedBox(height: 6),
-                  _PersonalInputField(
-                    controller: firstNameController,
-                    hintText: 'Aarav',
-                    readOnly: !_isEditing,
-                  ),
+                  if (_isEditing)
+                    CustomAppDropdown(
+                      label: '',
+                      value: selectedGender,
+                      items: genderOptions,
+                      onChanged: (val) {
+                        setState(() => selectedGender = val);
+                      },
+                      hintText: 'Select Gender',
+                    )
+                  else
+                    _buildReadOnlyDisplayBox(selectedGender),
                 ],
               ),
             ),
             const SizedBox(width: 12),
+
+            // Marital Status Dropdown / Readonly Box
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildFieldLabel('Last name'),
+                  _buildFieldLabel('Marital Status'),
                   const SizedBox(height: 6),
-                  _PersonalInputField(
-                    controller: lastNameController,
-                    hintText: 'Mehta',
-                    readOnly: !_isEditing,
-                  ),
+                  if (_isEditing)
+                    CustomAppDropdown(
+                      label: '',
+                      value: selectedMaritalStatus,
+                      items: maritalStatusOptions,
+                      onChanged: (val) {
+                        setState(() => selectedMaritalStatus = val);
+                      },
+                      hintText: 'Select Status',
+                    )
+                  else
+                    _buildReadOnlyDisplayBox(selectedMaritalStatus),
                 ],
               ),
             ),
@@ -436,11 +538,13 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           ),
         ),
         const SizedBox(height: 14),
+
+        // Email Address
         _buildFieldLabel('Email Address'),
         const SizedBox(height: 6),
         _PersonalInputField(
           controller: emailController,
-          hintText: 'aarav@example.com',
+          hintText: 'rahul.sharma@example.com',
           keyboardType: TextInputType.emailAddress,
           readOnly: !_isEditing,
         ),
@@ -448,22 +552,62 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     );
   }
 
-  /// Card 3: Address Details (Address)
+  /// Card 3: Address Details (Address, Address Type)
   Widget _buildAddressDetailsCard() {
     return _buildSectionCard(
       icon: Icons.location_on_rounded,
       iconColor: AppColors.primaryPurple,
       title: 'Address Details',
       children: [
+        // Address Text
         _buildFieldLabel('Address'),
         const SizedBox(height: 6),
         _PersonalInputField(
           controller: addressController,
-          hintText: '123, MG Road, Bengaluru 560001',
+          hintText: 'Enter complete address',
           maxLines: 2,
           readOnly: !_isEditing,
         ),
+        const SizedBox(height: 14),
+
+        // Address Type Dropdown (Owned, Rented, Parental, etc.)
+        _buildFieldLabel('Address Type'),
+        const SizedBox(height: 6),
+        if (_isEditing)
+          CustomAppDropdown(
+            label: '',
+            value: selectedAddressType,
+            items: addressTypeOptions,
+            onChanged: (val) {
+              setState(() => selectedAddressType = val);
+            },
+            hintText: 'Select Address Type',
+          )
+        else
+          _buildReadOnlyDisplayBox(selectedAddressType),
       ],
+    );
+  }
+
+  /// Read-only container displaying a selected value cleanly
+  Widget _buildReadOnlyDisplayBox(String text) {
+    return Container(
+      height: 48,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.line),
+      ),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: AppColors.textDark,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -580,26 +724,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'Save changes',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 6),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      size: 16,
-                      color: Colors.white,
-                    ),
-                  ],
+                child: const Text(
+                  'Save changes',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -610,20 +742,22 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   }
 }
 
-/// Custom Focusable Input Field matching card style with readOnly support
+/// Dynamic focusable input field for personal details screen
 class _PersonalInputField extends StatefulWidget {
   final TextEditingController controller;
   final String hintText;
+  final bool readOnly;
   final TextInputType keyboardType;
   final int maxLines;
-  final bool readOnly;
+  final Widget? suffixIcon;
 
   const _PersonalInputField({
     required this.controller,
     required this.hintText,
+    this.readOnly = false,
     this.keyboardType = TextInputType.text,
     this.maxLines = 1,
-    this.readOnly = false,
+    this.suffixIcon,
   });
 
   @override
@@ -654,18 +788,16 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
 
   @override
   Widget build(BuildContext context) {
-    final isFieldFocused = !widget.readOnly && _isFocused;
+    final bool isFieldFocused = !widget.readOnly && _isFocused;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       decoration: BoxDecoration(
-        color: widget.readOnly
-            ? AppColors.canvas
-            : (isFieldFocused ? Colors.white : AppColors.canvas),
+        color: widget.readOnly ? AppColors.canvas : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isFieldFocused
-              ? AppColors.primaryPurple
+              ? AppColors.indigo
               : AppColors.line,
           width: isFieldFocused ? 1.5 : 1.0,
         ),
@@ -681,9 +813,7 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
         keyboardType: widget.keyboardType,
         maxLines: widget.maxLines,
         style: TextStyle(
-          color: widget.readOnly
-              ? AppColors.textDark
-              : AppColors.textDark,
+          color: AppColors.textDark,
           fontSize: 14,
           fontWeight: widget.readOnly ? FontWeight.w600 : FontWeight.w700,
         ),
@@ -694,6 +824,7 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
+          suffixIcon: widget.suffixIcon,
           contentPadding: EdgeInsets.symmetric(
             vertical: widget.maxLines > 1 ? 0 : 13,
           ),
