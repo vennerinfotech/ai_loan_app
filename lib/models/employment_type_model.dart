@@ -302,6 +302,7 @@ class LoanDocumentItem {
   final String? status;
   final List<dynamic> files;
   final List<UploadModeItem> uploadModes;
+  final List<String> requires;
 
   LoanDocumentItem({
     this.key,
@@ -316,6 +317,7 @@ class LoanDocumentItem {
     this.status,
     this.files = const [],
     this.uploadModes = const [],
+    this.requires = const [],
   });
 
   factory LoanDocumentItem.fromJson(Map<String, dynamic> json) {
@@ -342,6 +344,10 @@ class LoanDocumentItem {
               ?.map((item) => UploadModeItem.fromJson(Map<String, dynamic>.from(item)))
               .toList() ??
           [],
+      requires: (json['requires'] as List?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          [],
     );
   }
 
@@ -360,6 +366,7 @@ class LoanDocumentItem {
       'files': files,
       if (uploadModes.isNotEmpty)
         'upload_modes': uploadModes.map((e) => e.toJson()).toList(),
+      if (requires.isNotEmpty) 'requires': requires,
     };
   }
 }

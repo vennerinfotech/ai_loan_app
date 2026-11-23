@@ -419,15 +419,8 @@ class UploadDocumentsBody extends StatelessWidget {
   // Section 3: Required Document Proofs (Strictly from POST /loan/store-amount)
   // ==========================================
   Widget _buildRequiredDocumentProofsSection(ApplyLoanController controller, BuildContext context) {
-    // Documents loaded dynamically from POST /loan/store-amount only
-    // Exclude KYC documents (Aadhaar & PAN) already completed in Step 1
-    final dynamicDocs = controller.dynamicDocuments.where((doc) {
-      final cat = doc.category?.toLowerCase() ?? '';
-      final key = doc.key?.toLowerCase() ?? '';
-      if (cat == 'property' && !controller.hasPropertyDocuments.value) return false;
-      if (key == 'aadhar_card_front' || key == 'pan_card_image') return false;
-      return true;
-    }).toList();
+    // Documents loaded dynamically directly from POST /loan/store-amount API without static filtering
+    final dynamicDocs = controller.dynamicDocuments;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -1330,4 +1330,38 @@ class ApiService {
       };
     }
   }
+
+  /// Get Co-Applicant Form Options API: GET {{baseUrl}}/co-applicants/form-options
+  static Future<Map<String, dynamic>> getCoApplicantFormOptions({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/form-options');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Co-Applicant Form Options ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getCoApplicantFormOptions: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch co-applicant form options. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }
