@@ -5,6 +5,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../theme/app_colors.dart';
 import '../../controller/applicant_details_controller.dart';
 import '../../models/co_applicant_form_options_model.dart';
+import '../../models/add_co_applicant_model.dart';
 import '../../widgets/custom_dropdown.dart';
 import '../../widgets/image_picker_bottom_sheet.dart';
 
@@ -423,13 +424,14 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
     );
   }
 
-  /// Dynamic Document Upload Section rendered from API document options
+  /// Dynamic Document Upload Section rendered strictly from API response documents
   Widget _buildDocumentsUploadSection(
     BuildContext context,
     ApplicantDetailsController controller,
   ) {
     return Obx(() {
-      final docItems = controller.dynamicCoAppDocuments;
+      final docItems = controller.coAppDocuments;
+      if (docItems.isEmpty) return const SizedBox.shrink();
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,7 +477,7 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Render document upload cards
+          // Render document upload cards directly from API response items
           ...docItems.map((docItem) => _buildDocUploadCard(context, controller, docItem)),
         ],
       );
@@ -486,10 +488,18 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
   Widget _buildDocUploadCard(
     BuildContext context,
     ApplicantDetailsController controller,
-    CoAppDocumentConfigItem docItem,
+    CoAppDocumentItem docItem,
   ) {
+    final docKey = docItem.key ?? '';
+    final docLabel = docItem.label ?? docKey;
+    final isMulti = docItem.allowMultiple == true;
+    final acceptedFormats = docItem.acceptedFormats.isNotEmpty
+        ? docItem.acceptedFormats
+        : ['pdf', 'jpg', 'jpeg', 'png'];
+    final maxSize = docItem.maxSizeMb ?? 5;
+
     return Obx(() {
-      final files = controller.coAppUploadedFiles[docItem.key] ?? [];
+      final files = controller.coAppUploadedFiles[docKey] ?? [];
       final isUploaded = files.isNotEmpty;
 
       return Container(
@@ -523,7 +533,7 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                 ),
                 child: Center(
                   child: Icon(
-                    isUploaded ? Icons.check_circle_rounded : _getDocIcon(docItem.key),
+                    isUploaded ? Icons.check_circle_rounded : _getDocIcon(docKey),
                     color: isUploaded ? AppColors.successGreen : AppColors.navy,
                     size: 22,
                   ),
@@ -537,7 +547,7 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      docItem.label,
+                      docLabel,
                       style: const TextStyle(
                         color: AppColors.textDark,
                         fontSize: 13.5,
@@ -560,7 +570,7 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                       )
                     else
                       Text(
-                        'Formats: ${docItem.acceptedFormats.join(', ').toUpperCase()} (Max ${docItem.maxSizeMb}MB)',
+                        'Formats: ${acceptedFormats.join(', ').toUpperCase()} (Max ${maxSize}MB)',
                         style: const TextStyle(
                           color: AppColors.muted,
                           fontSize: 11.5,
@@ -577,7 +587,7 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
               if (isUploaded) ...[
                 // Remove File Button
                 GestureDetector(
-                  onTap: () => controller.removeCoAppFile(docItem.key),
+                  onTap: () => controller.removeCoAppFile(docKey),
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -591,16 +601,16 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                     ),
                   ),
                 ),
-                if (docItem.isMulti) ...[
+                if (isMulti) ...[
                   const SizedBox(width: 6),
                   GestureDetector(
                     onTap: () async {
                       final picked = await ImagePickerBottomSheet.show(
                         context: context,
-                        title: 'Upload ${docItem.label}',
+                        title: 'Upload $docLabel',
                       );
                       if (picked != null) {
-                        controller.addCoAppFile(docItem.key, picked);
+                        controller.addCoAppFile(docKey, picked);
                       }
                     },
                     child: Container(
@@ -625,10 +635,10 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                     onPressed: () async {
                       final picked = await ImagePickerBottomSheet.show(
                         context: context,
-                        title: 'Upload ${docItem.label}',
+                        title: 'Upload $docLabel',
                       );
                       if (picked != null) {
-                        controller.addCoAppFile(docItem.key, picked);
+                        controller.addCoAppFile(docKey, picked);
                       }
                     },
                     style: ElevatedButton.styleFrom(

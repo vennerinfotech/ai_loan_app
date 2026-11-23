@@ -9,6 +9,7 @@ import 'apply_loan_controller.dart';
 
 /// Co-applicant data model
 class CoApplicantModel {
+  final dynamic id;
   final String name;
   final String relationship;
   final String mobileNumber;
@@ -18,9 +19,11 @@ class CoApplicantModel {
   final String dob;
   final String monthlyIncome;
   final String status;
-  final Map<String, List<XFile>> documents;
+  final List<CoAppDocumentItem> documents;
+  final Map<String, List<XFile>> uploadedFiles;
 
   CoApplicantModel({
+    this.id,
     required this.name,
     required this.relationship,
     required this.mobileNumber,
@@ -29,25 +32,9 @@ class CoApplicantModel {
     this.role = 'Co-Applicant',
     this.dob = '',
     this.monthlyIncome = '',
-    this.status = 'Documents attached',
-    this.documents = const {},
-  });
-}
-
-/// Helper model for dynamic co-applicant document upload items
-class CoAppDocumentConfigItem {
-  final String key;
-  final String label;
-  final bool isMulti;
-  final List<String> acceptedFormats;
-  final int maxSizeMb;
-
-  CoAppDocumentConfigItem({
-    required this.key,
-    required this.label,
-    this.isMulti = false,
-    this.acceptedFormats = const ['pdf', 'jpg', 'jpeg', 'png'],
-    this.maxSizeMb = 5,
+    this.status = 'Documents pending',
+    this.documents = const [],
+    this.uploadedFiles = const {},
   });
 }
 
@@ -80,7 +67,10 @@ class ApplicantDetailsController extends GetxController {
   final apiApplicantTypeOptions = <String>[].obs;
   final apiOptionsByApplicantType = <String, List<String>>{}.obs;
 
-  // Uploaded files for the co-applicant being added
+  // Dynamic documents list strictly from API response (POST /co-applicants)
+  final coAppDocuments = <CoAppDocumentItem>[].obs;
+
+  // Uploaded files for the co-applicant: Map<docKey, List<XFile>>
   final coAppUploadedFiles = <String, List<XFile>>{}.obs;
 
   // List of co-applicants
@@ -152,126 +142,10 @@ class ApplicantDetailsController extends GetxController {
     return formOptionsData.value?.addForm ?? [];
   }
 
-  /// Dynamic document items to upload based on API documents options and employment type
-  List<CoAppDocumentConfigItem> get dynamicCoAppDocuments {
-    final docsConfig = formOptionsData.value?.documents;
-    if (docsConfig == null) {
-      return [];
-    }
-
-    final accepted = docsConfig.acceptedFormats.isNotEmpty
-        ? docsConfig.acceptedFormats
-        : ['pdf', 'jpg', 'jpeg', 'png'];
-    final profileFormats = docsConfig.profileImageFormats.isNotEmpty
-        ? docsConfig.profileImageFormats
-        : ['jpg', 'jpeg', 'png'];
-    final maxSize = docsConfig.maxSizeMb ?? 5;
-    final multiKeys = docsConfig.multiFileKeys;
-
-    final List<CoAppDocumentConfigItem> list = [
-      CoAppDocumentConfigItem(
-        key: 'profile_image',
-        label: selectedRole.value.toLowerCase() == 'guarantor'
-            ? 'Guarantor Photo'
-            : 'Co-Applicant Photo',
-        isMulti: false,
-        acceptedFormats: profileFormats,
-        maxSizeMb: maxSize,
-      ),
-      CoAppDocumentConfigItem(
-        key: 'aadhar_card',
-        label: 'Aadhaar Card',
-        isMulti: false,
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ),
-      CoAppDocumentConfigItem(
-        key: 'pan_card',
-        label: 'PAN Card',
-        isMulti: false,
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ),
-    ];
-
-    final empType = selectedEmploymentType.value.toLowerCase().trim();
-
-    if (empType == 'salaried') {
-      list.add(CoAppDocumentConfigItem(
-        key: 'bank_statement',
-        label: 'Bank Statement (Last 6 Months)',
-        isMulti: multiKeys.contains('bank_statement'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-      list.add(CoAppDocumentConfigItem(
-        key: 'latest_salary_slips',
-        label: 'Salary Slips (Last 3 Months)',
-        isMulti: multiKeys.contains('latest_salary_slips'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-      list.add(CoAppDocumentConfigItem(
-        key: 'form_16_itr',
-        label: 'Form 16 / ITR',
-        isMulti: multiKeys.contains('form_16_itr'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-    } else if (empType == 'self-employed') {
-      list.add(CoAppDocumentConfigItem(
-        key: 'bank_statement',
-        label: 'Bank Statement (Last 12 Months)',
-        isMulti: multiKeys.contains('bank_statement'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-      list.add(CoAppDocumentConfigItem(
-        key: 'form_16_itr',
-        label: 'ITR / Financial Statements',
-        isMulti: multiKeys.contains('form_16_itr'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-      list.add(CoAppDocumentConfigItem(
-        key: 'gst_3b',
-        label: 'GST Return / Business Proof',
-        isMulti: multiKeys.contains('gst_3b'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-    } else if (empType == 'freelancer' || empType == 'pensioner') {
-      list.add(CoAppDocumentConfigItem(
-        key: 'bank_statement',
-        label: 'Bank Statement',
-        isMulti: multiKeys.contains('bank_statement'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-      list.add(CoAppDocumentConfigItem(
-        key: 'other_doc',
-        label: 'Income / Pension Proof / Other Document',
-        isMulti: multiKeys.contains('other_doc'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-    } else if (empType.isNotEmpty) {
-      list.add(CoAppDocumentConfigItem(
-        key: 'other_doc',
-        label: 'Other Supporting Document',
-        isMulti: multiKeys.contains('other_doc'),
-        acceptedFormats: accepted,
-        maxSizeMb: maxSize,
-      ));
-    }
-
-    return list;
-  }
-
   void addCoAppFile(String docKey, XFile file) {
     final currentList = List<XFile>.from(coAppUploadedFiles[docKey] ?? []);
-    final multiKeys = formOptionsData.value?.documents?.multiFileKeys ?? [];
-    final isMulti = multiKeys.contains(docKey);
+    final docItem = coAppDocuments.firstWhereOrNull((d) => d.key == docKey);
+    final isMulti = docItem?.allowMultiple == true;
 
     if (isMulti) {
       currentList.add(file);
@@ -345,6 +219,7 @@ class ApplicantDetailsController extends GetxController {
     selectedEmploymentType.value = type;
   }
 
+  /// Submit Co-Applicant API: POST {{baseUrl}}/co-applicants
   Future<bool> addCoApplicant({String? role}) async {
     // Validate text form fields only when submit button is pressed
     if (addCoAppFormKey.currentState?.validate() != true) {
@@ -409,8 +284,15 @@ class ApplicantDetailsController extends GetxController {
 
       if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
         final model = AddCoApplicantResponseModel.fromJson(res);
+
+        // Directly store all document options returned in the API response
+        if (model.data?.documents.isNotEmpty == true) {
+          coAppDocuments.assignAll(model.data!.documents);
+        }
+
         coApplicants.add(
           CoApplicantModel(
+            id: model.data?.coApplicantId ?? model.data?.coApplicant?.id,
             name: model.data?.coApplicant?.name ?? name,
             relationship: model.data?.coApplicant?.relationship ?? relationship,
             mobileNumber: mobile.startsWith('+91') ? mobile : '+91 $mobile',
@@ -418,7 +300,8 @@ class ApplicantDetailsController extends GetxController {
             employmentType: model.data?.employmentType ?? empType,
             role: assignedRole,
             status: 'Documents pending',
-            documents: Map.from(coAppUploadedFiles),
+            documents: List<CoAppDocumentItem>.from(model.data?.documents ?? coAppDocuments),
+            uploadedFiles: Map.from(coAppUploadedFiles),
           ),
         );
 

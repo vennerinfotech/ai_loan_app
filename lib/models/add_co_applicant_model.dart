@@ -36,7 +36,7 @@ class AddCoApplicantData {
   final String? title;
   final String? employmentType;
   final String? applicantType;
-  final List<dynamic> documents;
+  final List<CoAppDocumentItem> documents;
   final Map<String, dynamic>? summary;
   final Map<String, dynamic>? upload;
 
@@ -62,7 +62,10 @@ class AddCoApplicantData {
       title: json['title']?.toString(),
       employmentType: json['employment_type']?.toString(),
       applicantType: json['applicant_type']?.toString(),
-      documents: (json['documents'] as List<dynamic>?) ?? [],
+      documents: (json['documents'] as List?)
+              ?.map((item) => CoAppDocumentItem.fromJson(Map<String, dynamic>.from(item)))
+              .toList() ??
+          [],
       summary: json['summary'] as Map<String, dynamic>?,
       upload: json['upload'] as Map<String, dynamic>?,
     );
@@ -104,5 +107,67 @@ class CoApplicantRecord {
       createdAt: json['created_at']?.toString(),
       updatedAt: json['updated_at']?.toString(),
     );
+  }
+}
+
+/// Dynamic document item directly parsed from the API response
+class CoAppDocumentItem {
+  final String? key;
+  final String? label;
+  final bool? allowMultiple;
+  final List<String> acceptedFormats;
+  final int? maxSizeMb;
+  final String? uploadField;
+  final bool? ocrAutofill;
+  final bool? uploaded;
+  final String? status;
+  final List<dynamic> files;
+
+  CoAppDocumentItem({
+    this.key,
+    this.label,
+    this.allowMultiple,
+    this.acceptedFormats = const [],
+    this.maxSizeMb,
+    this.uploadField,
+    this.ocrAutofill,
+    this.uploaded,
+    this.status,
+    this.files = const [],
+  });
+
+  factory CoAppDocumentItem.fromJson(Map<String, dynamic> json) {
+    return CoAppDocumentItem(
+      key: json['key']?.toString(),
+      label: json['label']?.toString(),
+      allowMultiple: json['allow_multiple'] as bool?,
+      acceptedFormats: (json['accepted_formats'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      maxSizeMb: json['max_size_mb'] is int
+          ? json['max_size_mb']
+          : int.tryParse(json['max_size_mb']?.toString() ?? ''),
+      uploadField: json['upload_field']?.toString(),
+      ocrAutofill: json['ocr_autofill'] as bool?,
+      uploaded: json['uploaded'] as bool?,
+      status: json['status']?.toString(),
+      files: (json['files'] as List?) ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (key != null) 'key': key,
+      if (label != null) 'label': label,
+      if (allowMultiple != null) 'allow_multiple': allowMultiple,
+      if (acceptedFormats.isNotEmpty) 'accepted_formats': acceptedFormats,
+      if (maxSizeMb != null) 'max_size_mb': maxSizeMb,
+      if (uploadField != null) 'upload_field': uploadField,
+      if (ocrAutofill != null) 'ocr_autofill': ocrAutofill,
+      if (uploaded != null) 'uploaded': uploaded,
+      if (status != null) 'status': status,
+      'files': files,
+    };
   }
 }
