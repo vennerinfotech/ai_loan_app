@@ -1095,4 +1095,126 @@ class ApiService {
       };
     }
   }
+
+  /// Update Profile Photo API: POST {{baseUrl}}/update-profile-photo
+  /// Multipart form-data with file field 'profile_photo'
+  static Future<Map<String, dynamic>> updateProfilePhoto({
+    required String filePath,
+    Uint8List? fileBytes,
+    String? filename,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/update-profile-photo');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    try {
+      final request = http.MultipartRequest('POST', url);
+      request.headers.addAll({
+        'Accept': 'application/json',
+        if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+      });
+
+      final resolvedName = filename ??
+          (filePath.isNotEmpty
+              ? filePath.split('/').last
+              : 'profile_photo.jpg');
+
+      if (fileBytes != null && fileBytes.isNotEmpty) {
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'profile_photo',
+            fileBytes,
+            filename: resolvedName,
+          ),
+        );
+      } else if (filePath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'profile_photo',
+            filePath,
+            filename: resolvedName,
+          ),
+        );
+      }
+
+      debugPrint('========== Update Profile Photo ==========');
+      debugPrint('--> POST (Multipart) $url');
+      debugPrint('File Path: $filePath');
+      debugPrint('Filename: $resolvedName');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in updateProfilePhoto: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to upload profile photo. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Update Personal Info API: POST {{baseUrl}}/update-personal-info
+  /// JSON body with {name, email, dob, gender, marital_status, address, address_type}
+  static Future<Map<String, dynamic>> updatePersonalInfo({
+    required String name,
+    required String email,
+    required String dob,
+    required String gender,
+    required String maritalStatus,
+    required String address,
+    required String addressType,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/update-personal-info');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'name': name.trim(),
+      'email': email.trim(),
+      'dob': dob.trim(),
+      'gender': gender.trim(),
+      'marital_status': maritalStatus.trim(),
+      'address': address.trim(),
+      'address_type': addressType.trim(),
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      debugPrint('========== Update Personal Info ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in updatePersonalInfo: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to update personal information. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }

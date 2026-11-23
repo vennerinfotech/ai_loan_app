@@ -66,31 +66,53 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     super.dispose();
   }
 
-  void _saveChanges() {
-    profileController.saveProfile(
-      fullName: nameController.text.trim(),
-      emailAddress: emailController.text.trim(),
-      dateOfBirth: dobController.text.trim(),
+  Future<void> _saveChanges() async {
+    if (profileController.isSaving.value) return;
+
+    final trimmedName = nameController.text.trim();
+    final trimmedEmail = emailController.text.trim();
+    final trimmedDob = dobController.text.trim();
+    final trimmedAddress = addressController.text.trim();
+
+    if (trimmedName.isEmpty) {
+      Get.snackbar(
+        'Validation Error',
+        'Please enter your full name',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.errorRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    if (trimmedEmail.isEmpty) {
+      Get.snackbar(
+        'Validation Error',
+        'Please enter your email address',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.errorRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    final success = await profileController.updateProfileAndPhoto(
+      fullName: trimmedName,
+      emailAddress: trimmedEmail,
+      dateOfBirth: trimmedDob,
       userGender: selectedGender,
       userMaritalStatus: selectedMaritalStatus,
-      addr: addressController.text.trim(),
+      addr: trimmedAddress,
       addrType: selectedAddressType,
     );
 
-    setState(() {
-      _isEditing = false;
-    });
-
-    Get.snackbar(
-      'Profile updated',
-      'Your personal details have been saved successfully',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: AppColors.navy,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(16),
-      borderRadius: 12,
-    );
+    if (success && mounted) {
+      setState(() {
+        _isEditing = false;
+      });
+    }
   }
 
   void _cancelEditing() {
@@ -319,7 +341,42 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             child: Obx(() {
               final tempBytes = profileController.tempImageBytes.value;
               final savedBytes = profileController.profileImageBytes.value;
+              final networkPhoto = profileController.photoUrl.value;
               final bytesToUse = tempBytes ?? savedBytes;
+
+              Widget avatarContent;
+              if (bytesToUse != null) {
+                avatarContent = Image.memory(
+                  bytesToUse,
+                  fit: BoxFit.cover,
+                  width: 86,
+                  height: 86,
+                );
+              } else if (networkPhoto.isNotEmpty) {
+                avatarContent = Image.network(
+                  networkPhoto,
+                  fit: BoxFit.cover,
+                  width: 86,
+                  height: 86,
+                  errorBuilder: (context, error, stackTrace) => Text(
+                    profileController.initials,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                );
+              } else {
+                avatarContent = Text(
+                  profileController.initials,
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
+                );
+              }
 
               return Container(
                 width: 86,
@@ -330,21 +387,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: bytesToUse != null
-                    ? Image.memory(
-                        bytesToUse,
-                        fit: BoxFit.cover,
-                        width: 86,
-                        height: 86,
-                      )
-                    : Text(
-                        profileController.initials,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                child: avatarContent,
               );
             }),
           ),
@@ -682,62 +725,79 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
       color: AppColors.lightBackground,
-      child: Row(
-        children: [
-          // Cancel Button
-          Expanded(
-            flex: 4,
-            child: SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _cancelEditing,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.line,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
+      child: Obx(() {
+        final isSaving = profileController.isSaving.value;
 
-          // Save changes Button
-          Expanded(
-            flex: 7,
-            child: SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _saveChanges,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.navy,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+        return Row(
+          children: [
+            // Cancel Button
+            Expanded(
+              flex: 4,
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: isSaving ? null : _cancelEditing,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.line,
+                    disabledBackgroundColor:
+                        AppColors.line.withValues(alpha: 0.6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Save changes',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w800,
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(width: 12),
+
+            // Save changes Button
+            Expanded(
+              flex: 7,
+              child: SizedBox(
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: isSaving ? null : _saveChanges,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    disabledBackgroundColor:
+                        AppColors.navy.withValues(alpha: 0.7),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: isSaving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save changes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 }

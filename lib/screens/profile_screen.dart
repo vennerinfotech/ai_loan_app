@@ -143,6 +143,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // AM Golden Avatar Circle with subtle shadow (or picked image)
                 Obx(() {
                   final imageBytes = profileController.profileImageBytes.value;
+                  final networkPhoto = profileController.photoUrl.value;
+
+                  Widget avatarContent;
+                  if (imageBytes != null) {
+                    avatarContent = Image.memory(
+                      imageBytes,
+                      fit: BoxFit.cover,
+                      width: 52,
+                      height: 52,
+                    );
+                  } else if (networkPhoto.isNotEmpty) {
+                    avatarContent = Image.network(
+                      networkPhoto,
+                      fit: BoxFit.cover,
+                      width: 52,
+                      height: 52,
+                      errorBuilder: (context, error, stackTrace) => Text(
+                        profileController.initials,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    );
+                  } else {
+                    avatarContent = Text(
+                      profileController.initials,
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    );
+                  }
+
                   return Container(
                     width: 52,
                     height: 52,
@@ -159,21 +195,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: imageBytes != null
-                        ? Image.memory(
-                            imageBytes,
-                            fit: BoxFit.cover,
-                            width: 52,
-                            height: 52,
-                          )
-                        : Text(
-                            profileController.initials,
-                            style: const TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                    child: avatarContent,
                   );
                 }),
                 const SizedBox(width: 14),

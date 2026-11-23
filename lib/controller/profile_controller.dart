@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../screens/login_with_mobile_screen.dart';
@@ -8,6 +9,9 @@ import '../theme/app_colors.dart';
 
 /// Controller managing user profile data, avatar image, and updates
 class ProfileController extends GetxController {
+  // UserModel instance holding the loaded user profile
+  final user = Rxn<UserModel>();
+
   // Profile fields matching update profile API body:
   // { name, email, dob, gender, marital_status, address, address_type }
   final name = 'Rahul Sharma'.obs;
@@ -20,13 +24,15 @@ class ProfileController extends GetxController {
   final maritalStatus = 'Married'.obs;
   final address = 'Flat 402, Sunshine Heights, Surat'.obs;
   final addressType = 'Owned'.obs;
+  final photoUrl = ''.obs;
+  final isSaving = false.obs;
   final isLoggingOut = false.obs;
 
-  // Saved profile image
+  // Saved profile image (local memory bytes)
   final profileImageBytes = Rxn<Uint8List>();
   final profileImagePath = ''.obs;
 
-  // Staged profile image during editing
+  // Staged profile image during editing (NOT uploaded until Save button is tapped)
   final tempImageBytes = Rxn<Uint8List>();
   final tempImagePath = ''.obs;
 
@@ -49,11 +55,20 @@ class ProfileController extends GetxController {
     return 'RS';
   }
 
+  /// Sets staged image when picked from camera/gallery.
+  /// API is NOT called here; only called when user taps Save Changes button.
   void setTempImage(Uint8List bytes, String path) {
     tempImageBytes.value = bytes;
     tempImagePath.value = path;
   }
 
+  /// Clears staged image if user cancels editing
+  void clearTempImage() {
+    tempImageBytes.value = null;
+    tempImagePath.value = '';
+  }
+
+  /// Updates profile in memory
   void saveProfile({
     String? fullName,
     String? first,
@@ -86,14 +101,160 @@ class ProfileController extends GetxController {
     if (tempImageBytes.value != null) {
       profileImageBytes.value = tempImageBytes.value;
       profileImagePath.value = tempImagePath.value;
-      tempImageBytes.value = null;
-      tempImagePath.value = '';
+      clearTempImage();
     }
   }
 
-  void clearTempImage() {
-    tempImageBytes.value = null;
-    tempImagePath.value = '';
+  /// Calls both update-profile-photo (if staged photo exists) and update-personal-info APIs.
+  /// Only invoked when user taps the Save / Update Profile button.
+  Future<bool> updateProfileAndPhoto({
+    required String fullName,
+    required String emailAddress,
+    required String dateOfBirth,
+    required String userGender,
+    required String userMaritalStatus,
+    required String addr,
+    required String addrType,
+  }) async {
+    isSaving.value = true;
+    try {
+      // 1. Upload photo if user staged a new photo during editing
+      if (tempImageBytes.value != null || tempImagePath.value.isNotEmpty) {
+        final photoResponse = await ApiService.updateProfilePhoto(
+          filePath: tempImagePath.value,
+          fileBytes: tempImageBytes.value,
+        );
+
+        final photoModel =
+            UpdateProfilePhotoResponseModel.fromJson(photoResponse);
+
+        if (photoModel.success &&
+            photoModel.photoUrl != null &&
+            photoModel.photoUrl!.isNotEmpty) {
+          photoUrl.value = photoModel.photoUrl!;
+          profileImageBytes.value = tempImageBytes.value;
+          profileImagePath.value = tempImagePath.value;
+          clearTempImage();
+        } else {
+          final errorMsg = ApiService.getErrorMessage(photoResponse);
+          Get.snackbar(
+            'Photo Upload Failed',
+            errorMsg.isNotEmpty ? errorMsg : 'Could not upload profile photo.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.errorRed,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+          isSaving.value = false;
+          return false;
+        }
+      }
+
+      // 2. Call update-personal-info API
+      final personalResponse = await ApiService.updatePersonalInfo(
+        name: fullName,
+        email: emailAddress,
+        dob: dateOfBirth,
+        gender: userGender,
+        maritalStatus: userMaritalStatus,
+        address: addr,
+        addressType: addrType,
+      );
+
+      final personalModel =
+          UpdatePersonalInfoResponseModel.fromJson(personalResponse);
+
+      if (personalModel.success) {
+        if (personalModel.user != null) {
+          user.value = personalModel.user;
+          if (personalModel.user!.name != null &&
+              personalModel.user!.name!.isNotEmpty) {
+            name.value = personalModel.user!.name!;
+            final parts = name.value.split(' ');
+            firstName.value = parts.first;
+            lastName.value = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          }
+          if (personalModel.user!.email != null &&
+              personalModel.user!.email!.isNotEmpty) {
+            email.value = personalModel.user!.email!;
+          }
+          if (personalModel.user!.dob != null &&
+              personalModel.user!.dob!.isNotEmpty) {
+            dob.value = personalModel.user!.dob!;
+          }
+          if (personalModel.user!.address != null &&
+              personalModel.user!.address!.isNotEmpty) {
+            address.value = personalModel.user!.address!;
+          }
+          if (personalModel.user!.phone != null &&
+              personalModel.user!.phone!.isNotEmpty) {
+            phone.value = personalModel.user!.phone!;
+          }
+        } else {
+          saveProfile(
+            fullName: fullName,
+            emailAddress: emailAddress,
+            dateOfBirth: dateOfBirth,
+            userGender: userGender,
+            userMaritalStatus: userMaritalStatus,
+            addr: addr,
+            addrType: addrType,
+          );
+        }
+
+        gender.value = userGender;
+        maritalStatus.value = userMaritalStatus;
+        addressType.value = addrType;
+
+        // Persist updated user name to session
+        await SessionManager.saveLoginSession(name: name.value);
+
+        Get.snackbar(
+          'Success',
+          personalModel.message.isNotEmpty
+              ? personalModel.message
+              : 'Personal information updated successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        );
+
+        isSaving.value = false;
+        return true;
+      } else {
+        final errorMsg = ApiService.getErrorMessage(personalResponse);
+        Get.snackbar(
+          'Update Failed',
+          errorMsg.isNotEmpty
+              ? errorMsg
+              : (personalModel.message.isNotEmpty
+                  ? personalModel.message
+                  : 'Failed to update personal details.'),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.errorRed,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        isSaving.value = false;
+        return false;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in updateProfileAndPhoto: $e');
+      }
+      Get.snackbar(
+        'Error',
+        'An unexpected error occurred while updating profile.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.errorRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      isSaving.value = false;
+      return false;
+    }
   }
 
   /// Logout user: calls POST /logout, clears session, and navigates to login
