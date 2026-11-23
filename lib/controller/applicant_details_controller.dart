@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/co_applicant_form_options_model.dart';
 import '../models/add_co_applicant_model.dart';
+import '../models/co_applicants_list_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'apply_loan_controller.dart';
@@ -73,8 +74,34 @@ class ApplicantDetailsController extends GetxController {
   // Uploaded files for the co-applicant: Map<docKey, List<XFile>>
   final coAppUploadedFiles = <String, List<XFile>>{}.obs;
 
-  // List of co-applicants
+  // List of co-applicants from API (GET /co-applicants)
+  final isLoadingCoApplicants = false.obs;
+  final coApplicantsList = <CoApplicantItem>[].obs;
   final coApplicants = <CoApplicantModel>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchCoApplicants();
+  }
+
+  /// Fetch Co-Applicants List API: GET {{baseUrl}}/co-applicants
+  Future<void> fetchCoApplicants() async {
+    isLoadingCoApplicants.value = true;
+    try {
+      final res = await ApiService.getCoApplicants();
+      if (res['success'] == true || res['status_code'] == 200) {
+        final model = CoApplicantsListResponseModel.fromJson(res);
+        if (model.data != null) {
+          coApplicantsList.assignAll(model.data!.coApplicants);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in fetchCoApplicants: $e');
+    } finally {
+      isLoadingCoApplicants.value = false;
+    }
+  }
 
   // Form key for Add Co-Applicant screen validation
   final addCoAppFormKey = GlobalKey<FormState>();
@@ -313,6 +340,9 @@ class ApplicantDetailsController extends GetxController {
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
         );
+
+        // Refresh co-applicants list from GET /co-applicants
+        fetchCoApplicants();
 
         // Switch tab to the newly added co-applicant
         selectedTabIndex.value = 1;

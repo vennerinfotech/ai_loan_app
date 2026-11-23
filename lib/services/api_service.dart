@@ -1415,4 +1415,38 @@ class ApiService {
       };
     }
   }
+
+  /// Get Co-Applicants List API: GET {{baseUrl}}/co-applicants
+  static Future<Map<String, dynamic>> getCoApplicants({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Co-Applicants ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getCoApplicants: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch co-applicants list. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }
