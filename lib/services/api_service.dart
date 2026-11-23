@@ -996,60 +996,67 @@ class ApiService {
     }
   }
 
-  /// Select Employment Type API: POST {{baseUrl}}/loan/employment-type
-  /// Uses form-data matching Postman collection
-  static Future<Map<String, dynamic>> selectEmploymentType({
+  /// Store Loan Amount and Details API: POST {{baseUrl}}/loan/store-amount
+  /// Uses raw JSON body matching Postman collection
+  static Future<Map<String, dynamic>> storeLoanAmount({
+    required dynamic amount,
+    required String loanType,
     required String employmentType,
-    String? loanType,
-    dynamic loanAmount,
+    dynamic tenureMonths,
     String? businessEntity,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/loan/employment-type');
+    final url = Uri.parse('$baseUrl/loan/store-amount');
     final authToken = token ?? await SessionManager.getAuthToken();
 
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final Map<String, dynamic> bodyMap = {
+      'amount': amount is num ? amount : (num.tryParse(amount.toString()) ?? amount),
+      'loan_type': loanType.trim(),
+      'employment_type': employmentType.trim(),
+      'business_entity': businessEntity ?? '',
+    };
+    if (tenureMonths != null) {
+      bodyMap['tenure_months'] = tenureMonths is int
+          ? tenureMonths
+          : (int.tryParse(tenureMonths.toString()) ?? tenureMonths);
+    }
+
+    final body = jsonEncode(bodyMap);
+
     try {
-      final request = http.MultipartRequest('POST', url);
-      request.headers['Accept'] = 'application/json';
-      if (authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authToken';
-      }
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
 
-      request.fields['employment_type'] = employmentType;
-      if (loanType != null && loanType.trim().isNotEmpty) {
-        request.fields['loan_type'] = loanType.trim();
-      }
-      if (loanAmount != null) {
-        request.fields['loan_amount'] = loanAmount.toString();
-      }
-      if (businessEntity != null && businessEntity.trim().isNotEmpty) {
-        request.fields['business_entity'] = businessEntity.trim();
-      }
-
-      debugPrint('========== Select Employment Type ==========');
-      debugPrint('--> POST (form-data) $url');
-      debugPrint('Fields: ${request.fields}');
-
-      final streamed = await request.send();
-      final response = await http.Response.fromStream(streamed);
-
+      debugPrint('========== Store Loan Amount ==========');
+      debugPrint('--> POST (JSON) $url');
+      debugPrint('Headers: $headers');
+      debugPrint('Request Body: $body');
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
       final Map<String, dynamic> data = jsonDecode(response.body);
       return data;
     } catch (e) {
-      debugPrint('Exception in selectEmploymentType: $e');
+      debugPrint('Exception in storeLoanAmount: $e');
       return {
         'success': false,
         'status_code': 500,
-        'message': 'Failed to select employment type. Please try again.',
+        'message': 'Failed to store loan amount. Please try again.',
       };
     }
   }
 
   /// Calculate EMI API: POST {{baseUrl}}/emi-calculate
-  /// Uses form-data matching Postman collection
+  /// Uses form-data matching Postman collection (loan_amount, interest_rate, tenure_months)
   static Future<Map<String, dynamic>> calculateEmi({
     required dynamic loanAmount,
     dynamic interestRate,

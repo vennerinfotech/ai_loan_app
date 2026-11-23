@@ -261,20 +261,18 @@ class UploadDocumentsBody extends StatelessWidget {
   }
 
   // ==========================================
-  // Section 2: Required Document Proofs (Header OUTSIDE, individual demo-style cards)
+  // Section 2: Required Document Proofs (Strictly from POST /loan/store-amount)
   // ==========================================
   Widget _buildRequiredDocumentProofsSection(ApplyLoanController controller, BuildContext context) {
-    // Filter documents from POST /loan/employment-type:
-    // Exclude property documents & already uploaded KYC documents
+    // Documents loaded dynamically from POST /loan/store-amount only
+    // Exclude KYC documents (Aadhaar & PAN) already completed in Step 1
     final dynamicDocs = controller.dynamicDocuments.where((doc) {
       final cat = doc.category?.toLowerCase() ?? '';
       final key = doc.key?.toLowerCase() ?? '';
-      if (cat == 'property') return false;
+      if (cat == 'property' && !controller.hasPropertyDocuments.value) return false;
       if (key == 'aadhar_card_front' || key == 'pan_card_image') return false;
       return true;
     }).toList();
-
-    final hasDynamic = dynamicDocs.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,11 +309,29 @@ class UploadDocumentsBody extends StatelessWidget {
         ),
         const SizedBox(height: 12),
 
-        // Individual Document Cards matching previous demo UI
-        if (hasDynamic)
+        // Only render documents from POST /loan/store-amount API
+        if (dynamicDocs.isNotEmpty)
           ...dynamicDocs.map((doc) => _buildDemoStyleDynamicDocCard(controller, doc, context))
         else
-          ...controller.activeDocs.map((doc) => _buildDemoStyleStaticDocCard(controller, doc, context)),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: const Center(
+              child: Text(
+                'No additional document proofs required for this loan selection.',
+                style: TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -479,173 +495,6 @@ class UploadDocumentsBody extends StatelessWidget {
             ),
 
             // Smooth linear progress bar widget inside the card during upload
-            if (isUploading)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: const LinearProgressIndicator(
-                    minHeight: 4,
-                    backgroundColor: AppColors.indigoTint,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.indigo),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-    });
-  }
-
-  /// Individual Fallback Document Card matching the demo UI
-  Widget _buildDemoStyleStaticDocCard(
-    ApplyLoanController controller,
-    LoanDocItem doc,
-    BuildContext context,
-  ) {
-    return Obx(() {
-      final isAdded = doc.isAdded.value;
-      final isUploading = doc.isUploading.value;
-
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isUploading
-                ? AppColors.indigo
-                : (isAdded ? AppColors.indigo.withValues(alpha: 0.35) : AppColors.line),
-            width: isUploading ? 1.4 : 1.2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              child: Row(
-                children: [
-                  _buildDocLeadingIcon(doc.title, isAdded, isUploading),
-                  const SizedBox(width: 14),
-
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          doc.title,
-                          style: const TextStyle(
-                            color: AppColors.textDark,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        if (isUploading)
-                          const Text(
-                            'Uploading...',
-                            style: TextStyle(
-                              color: AppColors.indigo,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          )
-                        else if (isAdded)
-                          Text(
-                            doc.fileName.value.isNotEmpty
-                                ? '${doc.fileName.value} · ${doc.fileSize.value}'
-                                : 'Uploaded ✓',
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          )
-                        else
-                          Text(
-                            doc.subtitle.isNotEmpty
-                                ? doc.subtitle
-                                : 'PDF, JPG or PNG · max 5 MB',
-                            style: const TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  if (isAdded)
-                    GestureDetector(
-                      onTap: () => controller.removeDocument(doc),
-                      child: Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.canvas,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: AppColors.muted,
-                          size: 19,
-                        ),
-                      ),
-                    )
-                  else if (isUploading)
-                    const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: AppColors.indigo,
-                      ),
-                    )
-                  else
-                    GestureDetector(
-                      onTap: () => controller.pickAndUploadDocument(doc, context: context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppColors.navy,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.upload_rounded,
-                              color: Colors.white,
-                              size: 14,
-                            ),
-                            SizedBox(width: 5),
-                            Text(
-                              'Upload',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
             if (isUploading)
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),

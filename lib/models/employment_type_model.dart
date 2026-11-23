@@ -118,6 +118,8 @@ class DetailFieldItem {
   final String? label;
   final String? type;
   final bool? required;
+  final String? alias;
+  final bool? affectsDocuments;
   final List<String> options;
 
   DetailFieldItem({
@@ -125,6 +127,8 @@ class DetailFieldItem {
     this.label,
     this.type,
     this.required,
+    this.alias,
+    this.affectsDocuments,
     this.options = const [],
   });
 
@@ -134,6 +138,8 @@ class DetailFieldItem {
       label: json['label']?.toString(),
       type: json['type']?.toString(),
       required: json['required'] as bool?,
+      alias: json['alias']?.toString(),
+      affectsDocuments: json['affects_documents'] as bool?,
       options: (json['options'] as List?)
               ?.map((item) => item.toString())
               .toList() ??
@@ -147,6 +153,8 @@ class DetailFieldItem {
       if (label != null) 'label': label,
       if (type != null) 'type': type,
       if (required != null) 'required': required,
+      if (alias != null) 'alias': alias,
+      if (affectsDocuments != null) 'affects_documents': affectsDocuments,
       if (options.isNotEmpty) 'options': options,
     };
   }

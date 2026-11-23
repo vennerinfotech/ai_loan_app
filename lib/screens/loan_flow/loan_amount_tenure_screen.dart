@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
@@ -32,14 +31,8 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
   void initState() {
     super.initState();
     final controller = Get.find<ApplyLoanController>();
-    if (controller.monthlyEmi.value == 0) {
-      controller.calculateEmiApi().then((_) {
-        if (mounted) {
-          _amountController.text =
-              controller.loanAmount.value.toInt().toString();
-          setState(() {});
-        }
-      });
+    if (controller.loanAmount.value <= 0) {
+      controller.loanAmount.value = 500000;
     }
     _amountController = TextEditingController(
       text: controller.loanAmount.value.toInt().toString(),
@@ -145,10 +138,6 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
 
                   // 1. Interactive Loan Amount Card
                   _buildLoanAmountCard(controller),
-                  const SizedBox(height: 20),
-
-                  // 2. Estimated EMI Hero Banner Card
-                  _buildEmiBannerCard(controller),
                 ],
               ),
             ),
@@ -439,153 +428,6 @@ class _LoanAmountTenureBodyState extends State<LoanAmountTenureBody> {
     );
   }
 
-  /// Royal blue banner showing live calculated EMI & Total Interest from API
-  Widget _buildEmiBannerCard(ApplyLoanController controller) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: AppColors.dashboardCardGradient,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardGradientEnd.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Background Cosmic Curve Painter
-          const Positioned.fill(
-            child: CustomPaint(
-              painter: _LoanEmiCosmicPainter(),
-            ),
-          ),
-
-          // Content Row
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Left: Estimated monthly EMI
-                Expanded(
-                  flex: 6,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Estimated monthly EMI',
-                        style: TextStyle(
-                          color: AppColors.secondaryTextColor2,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Obx(
-                        () => controller.isCalculatingEmi.value
-                            ? const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 4),
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.amber,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                controller.formatIndianCurrency(
-                                  controller.monthlyEmi.value > 0
-                                      ? controller.monthlyEmi.value
-                                      : controller.estimatedMonthlyEmi,
-                                ),
-                                style: const TextStyle(
-                                  color: AppColors.amber,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                      ),
-                      const SizedBox(height: 6),
-                      Obx(
-                        () => Text(
-                          'Indicative at ${controller.apiInterestRate.value > 0 ? controller.apiInterestRate.value : controller.annualInterestRate.value}% p.a. · final rate after review',
-                          style: const TextStyle(
-                            color: AppColors.secondaryTextColor2,
-                            fontSize: 10.5,
-                            height: 1.25,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Right: Total interest & Total payable
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Total\ninterest',
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          color: AppColors.secondaryTextColor2,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Obx(
-                        () => Text(
-                          controller.formatIndianCurrency(
-                            controller.totalInterest.value > 0
-                                ? controller.totalInterest.value
-                                : controller.totalInterestPayable,
-                          ),
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 15.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Obx(() {
-                        if (controller.totalPayable.value > 0) {
-                          return Text(
-                            'Payable: ${controller.formatIndianCurrency(controller.totalPayable.value)}',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              color: AppColors.secondaryTextColor2,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBottomButtons(BuildContext context, ApplyLoanController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
@@ -706,36 +548,4 @@ class _DualColorThumbShape extends SliderComponentShape {
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, innerRadius, innerPaint);
   }
-}
-
-/// Custom painter for tilted elliptical cosmic orbit loop on Loan EMI Banner,
-/// matching the exact design pattern used on the PAN card in Review PAN Details screen.
-class _LoanEmiCosmicPainter extends CustomPainter {
-  const _LoanEmiCosmicPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.translate(size.width - 50, size.height * 0.44);
-    canvas.rotate(-23 * math.pi / 180);
-
-    final paint = Paint()
-      ..color = AppColors.indigo.withValues(alpha: 0.38)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.25;
-
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset.zero,
-        width: 170,
-        height: 68,
-      ),
-      paint,
-    );
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -442,12 +442,15 @@ class EmploymentTypeBody extends StatelessWidget {
     switch (iconKey) {
       case 'briefcase':
         return Icons.work_outline_rounded;
+      case 'user':
+        return Icons.person_outline_rounded;
       case 'home_office':
         return Icons.storefront_outlined;
       case 'laptop':
         return Icons.laptop_mac_rounded;
       case 'pension':
-        return Icons.north_rounded;
+      case 'person-cane':
+        return Icons.elderly_rounded;
       default:
         return Icons.person_outline_rounded;
     }

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../models/employment_type_model.dart';
 import '../models/emi_calculation_model.dart';
 import '../models/loan_types_model.dart';
+import '../models/store_loan_amount_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
@@ -66,11 +67,7 @@ class ApplyLoanController extends GetxController {
     if (currentStep.value != step) {
       stepHistory.add(step);
       currentStep.value = step;
-      if (step == 2) {
-        if (monthlyEmi.value == 0) {
-          calculateEmiApi();
-        }
-      } else if (step == 3) {
+      if (step == 3) {
         if (apiEmploymentTypes.isEmpty) {
           fetchEmploymentTypes();
         }
@@ -308,6 +305,8 @@ class ApplyLoanController extends GetxController {
   final isCalculatingEmi = false.obs;
   final isEmiLoaded = false.obs;
   final emiCalculationData = Rxn<EmiCalculationData>();
+  final principalPercent = 86.7.obs;
+  final interestPercent = 13.3.obs;
   Timer? _emiDebounceTimer;
 
   final tenureOptions = const [5, 10, 15, 20];
@@ -315,57 +314,14 @@ class ApplyLoanController extends GetxController {
 
   void setLoanAmount(double amount) {
     loanAmount.value = amount;
-    _emiDebounceTimer?.cancel();
-    _emiDebounceTimer = Timer(const Duration(milliseconds: 300), () {
-      calculateEmiApi(amount: amount);
-    });
   }
 
   void setTenureYears(int years) {
     selectedTenureYears.value = years;
+    tenureMonths.value = (years * 12).toDouble();
   }
 
-  /// Calls POST {{baseUrl}}/emi-calculate
-  /// Per user requirement: passes only loan_amount
-  Future<void> calculateEmiApi({double? amount}) async {
-    final amt = amount ?? loanAmount.value;
-    isCalculatingEmi.value = true;
-    try {
-      // Per user instruction: pass only amount
-      var res = await ApiService.calculateEmi(loanAmount: amt.toInt());
-
-      // If backend validator requires interest_rate / tenure_months, fallback with defaults
-      if (res['status_code'] == 422 && res['errors'] is Map) {
-        final errors = res['errors'] as Map;
-        if (errors.containsKey('interest_rate') || errors.containsKey('tenure_months')) {
-          res = await ApiService.calculateEmi(
-            loanAmount: amt.toInt(),
-            interestRate: 9.5,
-            tenureMonths: 36,
-          );
-        }
-      }
-
-      if (res['success'] == true || res['status_code'] == 200) {
-        final model = EmiCalculationResponseModel.fromJson(res);
-        if (model.data != null) {
-          emiCalculationData.value = model.data;
-          monthlyEmi.value = model.data!.monthlyEmi?.toInt() ?? 0;
-          totalInterest.value = model.data!.totalInterest?.toInt() ?? 0;
-          totalPayable.value = model.data!.totalPayable?.toInt() ?? 0;
-          if (model.data!.interestRate != null) {
-            apiInterestRate.value = model.data!.interestRate!.toDouble();
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error calculating EMI: $e');
-    } finally {
-      isCalculatingEmi.value = false;
-    }
-  }
-
-  /// Monthly EMI (strictly dynamic from API response, no static dummy math)
+  /// Monthly EMI
   int get estimatedMonthlyEmi => monthlyEmi.value;
 
   /// Total Interest Payable (strictly dynamic from API response, no static dummy math)
@@ -400,6 +356,12 @@ class ApplyLoanController extends GetxController {
   final apiEmploymentTypes = <EmploymentTypeItem>[].obs;
   final employmentTypesData = Rxn<EmploymentTypesData>();
   final selectionData = Rxn<EmploymentTypeSelectionData>();
+  final storeLoanAmountData = Rxn<StoreLoanAmountData>();
+  final isVehicleLoan = false.obs;
+  final hasPropertyDocuments = false.obs;
+  final dynamicEmploymentDetailFields = <DetailFieldItem>[].obs;
+  final dynamicSalaryModes = <SalaryModeItem>[].obs;
+  final dynamicFormSections = <FormSectionItem>[].obs;
   final dynamicDocuments = <LoanDocumentItem>[].obs;
 
   // Selected salary mode (for salaried)
@@ -503,23 +465,42 @@ class ApplyLoanController extends GetxController {
     }
   }
 
-  /// Calls POST {{baseUrl}}/loan/employment-type
+  /// Calls POST {{baseUrl}}/loan/store-amount
   Future<bool> submitEmploymentTypeSelection() async {
     isSelectingEmploymentType.value = true;
     try {
-      final res = await ApiService.selectEmploymentType(
-        employmentType: selectedEmploymentType.value,
+      final res = await ApiService.storeLoanAmount(
+        amount: loanAmount.value.toInt(),
         loanType: selectedLoanType.value,
-        loanAmount: loanAmount.value.toInt(),
+        employmentType: selectedEmploymentType.value,
+        tenureMonths: tenureMonths.value > 0
+            ? tenureMonths.value.toInt()
+            : (selectedTenureYears.value > 0 ? selectedTenureYears.value * 12 : 240),
         businessEntity: selectedEmploymentType.value.toLowerCase().contains('self')
             ? getDropdownValueForField('business_entity', 'Proprietorship').value
-            : null,
+            : '',
       );
 
       if (res['status_code'] == 200 || res['success'] == true) {
-        final model = EmploymentTypeSelectionResponseModel.fromJson(res);
+        final model = StoreLoanAmountResponseModel.fromJson(res);
         if (model.data != null) {
-          selectionData.value = model.data;
+          storeLoanAmountData.value = model.data;
+          if (model.data!.isVehicleLoan != null) {
+            isVehicleLoan.value = model.data!.isVehicleLoan!;
+          }
+          if (model.data!.hasPropertyDocuments != null) {
+            hasPropertyDocuments.value = model.data!.hasPropertyDocuments!;
+          }
+          if (model.data!.employmentDetailFields.isNotEmpty) {
+            dynamicEmploymentDetailFields.assignAll(model.data!.employmentDetailFields);
+          }
+          if (model.data!.salaryModes.isNotEmpty) {
+            dynamicSalaryModes.assignAll(model.data!.salaryModes);
+          }
+          if (model.data!.formSections.isNotEmpty) {
+            dynamicFormSections.assignAll(model.data!.formSections);
+          }
+
           dynamicDocuments.assignAll(model.data!.documents);
 
           // Initialize checkboxes: default to checked for all documents
