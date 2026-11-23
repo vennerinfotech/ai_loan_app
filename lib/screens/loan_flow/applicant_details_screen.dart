@@ -20,7 +20,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         child: Column(
           children: [
             // Top Bar
-            _buildTopBar(context),
+            _buildTopBar(context, controller),
 
             // Main Content
             Expanded(
@@ -51,11 +51,6 @@ class ApplicantDetailsScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     _buildPersonalContactCard(controller),
 
-                    const SizedBox(height: 20),
-
-                    // "+ Add another co-applicant" Button
-                    _buildAddCoApplicantButton(),
-
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -70,8 +65,11 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// Top Bar with squircle back button and centered title
-  Widget _buildTopBar(BuildContext context) {
+  /// Top Bar with squircle back button, centered title, and add co-applicant action button
+  Widget _buildTopBar(
+    BuildContext context,
+    ApplicantDetailsController controller,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
@@ -94,6 +92,8 @@ class ApplicantDetailsScreen extends StatelessWidget {
               ),
             ),
           ),
+
+          // Screen Title
           const Expanded(
             child: Center(
               child: Text(
@@ -107,8 +107,25 @@ class ApplicantDetailsScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Spacer for symmetry
-          const SizedBox(width: 40),
+
+          // Header Action Button: Add another co-applicant / guarantor
+          GestureDetector(
+            onTap: () => _showSelectMemberRoleBottomSheet(context, controller),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.line, width: 1.2),
+              ),
+              child: const Icon(
+                Icons.person_add_alt_1_rounded,
+                size: 20,
+                color: AppColors.navy,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -188,9 +205,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
 
       final avatarInitials = isPrimary ? 'AM' : (coApp != null ? 'SM' : 'CA');
       final name = isPrimary ? 'Aarav Mehta' : (coApp?.name ?? 'Saanvi Mehta');
+      final memberRole = coApp?.role ?? 'Co-applicant';
       final subtitle = isPrimary
           ? 'Primary applicant · Salaried'
-          : 'Co-applicant · ${coApp?.relationship ?? "Spouse"}';
+          : '$memberRole · ${coApp?.relationship ?? "Spouse"}';
 
       return Container(
         height: 84,
@@ -246,14 +264,39 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17.5,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                name,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17.5,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.3,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (!isPrimary && coApp != null) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  coApp.role,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 3),
                         Text(
@@ -530,36 +573,175 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// "+ Add another co-applicant" outline button
-  Widget _buildAddCoApplicantButton() {
+
+  /// Opens bottom sheet to select Co-Applicant or Guarantor
+  void _showSelectMemberRoleBottomSheet(
+    BuildContext context,
+    ApplicantDetailsController controller,
+  ) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag indicator handle
+            Center(
+              child: Container(
+                width: 38,
+                height: 4.5,
+                decoration: BoxDecoration(
+                  color: AppColors.line,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Header Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Add Member',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Get.back(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.muted,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Select role for the new member you want to add:',
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // Option 1: Co-Applicant
+            _buildRoleOptionCard(
+              title: 'Co-Applicant',
+              subtitle: 'Shares loan liability and improves loan eligibility',
+              icon: Icons.people_alt_rounded,
+              onTap: () {
+                Get.back();
+                controller.selectRole('Co-Applicant');
+                Get.to(() => const AddCoApplicantScreen(role: 'Co-Applicant'));
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Option 2: Guarantor
+            _buildRoleOptionCard(
+              title: 'Guarantor',
+              subtitle: 'Guarantees repayment without sharing loan ownership',
+              icon: Icons.verified_user_rounded,
+              onTap: () {
+                Get.back();
+                controller.selectRole('Guarantor');
+                Get.to(() => const AddCoApplicantScreen(role: 'Guarantor'));
+              },
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  Widget _buildRoleOptionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () => Get.to(() => const AddCoApplicantScreen()),
+      onTap: onTap,
       child: Container(
-        height: 48,
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.indigoTint,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: AppColors.indigoTint,
-            width: 1.2,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.line, width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.add_rounded,
-              color: AppColors.indigo,
-              size: 19,
-            ),
-            SizedBox(width: 8),
-            Text(
-              '+ Add another co-applicant',
-              style: TextStyle(
-                color: AppColors.indigo,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.indigoTint,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: AppColors.navy,
+                  size: 22,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 15,
+              color: AppColors.muted,
             ),
           ],
         ),

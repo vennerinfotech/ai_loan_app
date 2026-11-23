@@ -1,17 +1,26 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import '../../theme/app_colors.dart';
 import 'package:get/get.dart';
 import '../../controller/applicant_details_controller.dart';
+import '../../widgets/custom_dropdown.dart';
 
-/// Screen for adding a new co-applicant (Reference Image Right Screen)
+/// Screen for adding a new co-applicant or guarantor (Full Mobile Page Flow with Form Validation)
 class AddCoApplicantScreen extends StatelessWidget {
-  const AddCoApplicantScreen({super.key});
+  final String role;
+
+  const AddCoApplicantScreen({
+    super.key,
+    this.role = 'Co-Applicant',
+  });
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.isRegistered<ApplicantDetailsController>()
         ? Get.find<ApplicantDetailsController>()
         : Get.put(ApplicantDetailsController());
+
+    final isGuarantor = role.toLowerCase() == 'guarantor';
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -25,133 +34,239 @@ class AddCoApplicantScreen extends StatelessWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Heading
-                    const Text(
-                      'Who is applying with you?',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                child: Form(
+                  key: controller.addCoAppFormKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Heading & Subtitle
+                      Text(
+                        isGuarantor
+                            ? 'Who is guaranteeing your loan?'
+                            : 'Who is applying with you?',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'A co-applicant with steady income can raise your loan eligibility.',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        height: 1.35,
+                      const SizedBox(height: 6),
+                      Text(
+                        isGuarantor
+                            ? 'A guarantor provides assurance to lenders and helps in loan approval.'
+                            : 'A co-applicant with steady income can raise your loan eligibility.',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 22),
+                      const SizedBox(height: 22),
 
-                    // Relationship label & chips
-                    const Text(
-                      'Relationship',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _buildRelationshipChips(controller),
-
-                    const SizedBox(height: 20),
-
-                    // Full Name
-                    const Text(
-                      'Full name',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildFullNameField(controller),
-
-                    const SizedBox(height: 18),
-
-                    // Mobile Number
-                    const Text(
-                      'Mobile number',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildMobileField(controller),
-
-                    const SizedBox(height: 18),
-
-                    // Date of birth & Monthly Income
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Date of birth',
-                                style: TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              _buildPillInput(
-                                controller: controller.dobController,
-                                hintText: 'DD / MM / YYYY',
-                              ),
-                            ],
+                      // 1. Full Name
+                      _buildFieldLabel(isGuarantor ? 'Guarantor name' : 'Co-applicant name'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller.fullNameController,
+                        keyboardType: TextInputType.name,
+                        validator: (val) {
+                          final text = val?.trim() ?? '';
+                          if (text.isEmpty) {
+                            return isGuarantor
+                                ? 'Please enter guarantor name'
+                                : 'Please enter co-applicant name';
+                          }
+                          if (text.length < 2) {
+                            return 'Name must be at least 2 characters';
+                          }
+                          return null;
+                        },
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: isGuarantor
+                              ? 'Enter Guarantor Name'
+                              : 'Enter Co-Applicant Name',
+                          hintStyle: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.inputFill,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.indigo, width: 1.5),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.errorRed, width: 1.2),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.errorRed, width: 1.5),
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Monthly income',
-                                style: TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
+                      ),
+                      const SizedBox(height: 18),
+
+                      // 2. Mobile Number
+                      _buildFieldLabel('Mobile number'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: controller.mobileNumberController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
+                        validator: (val) {
+                          final text = val?.trim() ?? '';
+                          if (text.isEmpty) {
+                            return 'Please enter mobile number';
+                          }
+                          if (text.length != 10) {
+                            return 'Please enter a valid 10-digit mobile number';
+                          }
+                          return null;
+                        },
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          prefixIcon: Padding(
+                            padding: const EdgeInsets.only(left: 16, right: 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text(
+                                  '+91',
+                                  style: TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              _buildPillInput(
-                                controller: controller.incomeController,
-                                hintText: '₹ 0',
-                                keyboardType: TextInputType.number,
-                              ),
-                            ],
+                                const SizedBox(width: 10),
+                                Container(
+                                  width: 1,
+                                  height: 22,
+                                  color: AppColors.line,
+                                ),
+                              ],
+                            ),
+                          ),
+                          hintText: 'Enter 10-Digit Mobile Number',
+                          hintStyle: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          filled: true,
+                          fillColor: AppColors.inputFill,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.indigo, width: 1.5),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.errorRed, width: 1.2),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: AppColors.errorRed, width: 1.5),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 18),
 
-                    const SizedBox(height: 22),
+                      // 3. Relationship to Applicant Dropdown
+                      Obx(
+                        () => CustomAppDropdown(
+                          label: 'Relationship to applicant',
+                          isRequired: true,
+                          hintText: 'Select Relationship',
+                          value: controller.selectedRelationship.value,
+                          items: controller.relationshipOptions,
+                          onChanged: (val) => controller.selectRelationship(val),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please select relationship';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 18),
 
-                    // Info banner
-                    _buildInfoBanner(),
+                      // 4. Applicant Type Dropdown (Financial / Non-Financial)
+                      Obx(
+                        () => CustomAppDropdown(
+                          label: 'Applicant type',
+                          isRequired: true,
+                          hintText: 'Select Applicant Type',
+                          value: controller.selectedApplicantType.value,
+                          items: controller.applicantTypeOptions,
+                          onChanged: (val) => controller.selectApplicantType(val),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please select applicant type';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 18),
 
-                    const SizedBox(height: 24),
-                  ],
+                      // 5. Dynamic Employment Type Dropdown
+                      Obx(
+                        () => CustomAppDropdown(
+                          label: 'Employment type',
+                          isRequired: true,
+                          hintText: 'Select Employment Type',
+                          value: controller.selectedEmploymentType.value,
+                          items: controller.currentEmploymentOptions,
+                          onChanged: (val) => controller.selectEmploymentType(val),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please select employment type';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Info banner
+                      _buildInfoBanner(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
 
-            // Bottom action buttons
+            // Bottom action buttons (Cancel & Add)
             _buildBottomButtons(context, controller),
           ],
         ),
@@ -183,11 +298,11 @@ class AddCoApplicantScreen extends StatelessWidget {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Center(
               child: Text(
-                'Add co-applicant',
-                style: TextStyle(
+                'Add ${role.toLowerCase()}',
+                style: const TextStyle(
                   color: AppColors.textDark,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -203,133 +318,27 @@ class AddCoApplicantScreen extends StatelessWidget {
     );
   }
 
-  /// Relationship selection chips
-  Widget _buildRelationshipChips(ApplicantDetailsController controller) {
-    return Obx(() {
-      return Wrap(
-        spacing: 10,
-        runSpacing: 10,
-        children: controller.relationshipOptions.map((rel) {
-          final isSelected = controller.selectedRelationship.value == rel;
-          return GestureDetector(
-            onTap: () => controller.selectRelationship(rel),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.navy : Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected ? AppColors.navy : AppColors.line,
-                  width: 1.2,
-                ),
-              ),
-              child: Text(
-                rel,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textDark,
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      );
-    });
-  }
-
-  /// Full name input field with dynamic focus styling
-  Widget _buildFullNameField(ApplicantDetailsController controller) {
-    return _CoAppFocusableField(
-      controller: controller.fullNameController,
-      hintText: 'Saanvi Mehta',
-    );
-  }
-
-  /// Mobile number input field with country code prefix
-  Widget _buildMobileField(ApplicantDetailsController controller) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppColors.inputFill,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              '+91',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 22,
-            color: AppColors.line,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              controller: controller.mobileNumberController,
-              keyboardType: TextInputType.phone,
-              style: const TextStyle(
-                color: AppColors.indigo,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-              decoration: const InputDecoration(
-                hintText: '98765 43210',
-                hintStyle: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Reusable input pill box for DOB and Monthly Income
-  Widget _buildPillInput({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: AppColors.inputFill,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(
-          color: AppColors.indigo,
-          fontSize: 14.5,
-          fontWeight: FontWeight.w700,
-        ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 14,
+  /// Label with red asterisk
+  Widget _buildFieldLabel(String title) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textDark,
+            fontSize: 13,
             fontWeight: FontWeight.w700,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: InputBorder.none,
         ),
-      ),
+        const Text(
+          ' *',
+          style: TextStyle(
+            color: AppColors.errorRed,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 
@@ -366,7 +375,7 @@ class AddCoApplicantScreen extends StatelessWidget {
     );
   }
 
-  /// Bottom action button row: Cancel and Add co-applicant
+  /// Bottom action button row: Cancel and Add co-applicant / guarantor
   Widget _buildBottomButtons(
     BuildContext context,
     ApplicantDetailsController controller,
@@ -403,13 +412,13 @@ class AddCoApplicantScreen extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // Add co-applicant Button
+          // Add Button
           Expanded(
             flex: 7,
             child: SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: controller.addCoApplicant,
+                onPressed: () => controller.addCoApplicant(role: role),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.navy,
                   shape: RoundedRectangleBorder(
@@ -419,17 +428,17 @@ class AddCoApplicantScreen extends StatelessWidget {
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
-                      'Add co-applicant',
-                      style: TextStyle(
+                      'Add $role',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    SizedBox(width: 8),
-                    Icon(
+                    const SizedBox(width: 8),
+                    const Icon(
                       Icons.arrow_forward_rounded,
                       color: AppColors.amber,
                       size: 16,
@@ -440,78 +449,6 @@ class AddCoApplicantScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Dynamic focusable input field for Co-Applicant
-class _CoAppFocusableField extends StatefulWidget {
-  final TextEditingController controller;
-  final String hintText;
-
-  const _CoAppFocusableField({
-    required this.controller,
-    required this.hintText,
-  });
-
-  @override
-  State<_CoAppFocusableField> createState() => _CoAppFocusableFieldState();
-}
-
-class _CoAppFocusableFieldState extends State<_CoAppFocusableField> {
-  final FocusNode _focusNode = FocusNode();
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode.addListener(() {
-      if (mounted) {
-        setState(() {
-          _isFocused = _focusNode.hasFocus;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      height: 50,
-      decoration: BoxDecoration(
-        color: _isFocused ? Colors.white : AppColors.inputFill,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: _isFocused ? AppColors.indigo : Colors.transparent,
-          width: 1.5,
-        ),
-      ),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: _focusNode,
-        style: const TextStyle(
-          color: AppColors.textDark,
-          fontSize: 14.5,
-          fontWeight: FontWeight.w700,
-        ),
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 14.5,
-            fontWeight: FontWeight.w600,
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          border: InputBorder.none,
-        ),
       ),
     );
   }

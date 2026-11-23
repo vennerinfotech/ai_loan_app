@@ -3,7 +3,8 @@ import '../theme/app_colors.dart';
 
 /// Reusable overlay-based Custom Dropdown widget matching Finsphere AI theme.
 /// Replaces standard DropdownButton / modal bottom sheet with a floating overlay menu.
-class CustomAppDropdown extends StatefulWidget {
+/// Supports standard Flutter Form validation via [validator].
+class CustomAppDropdown extends StatelessWidget {
   final String label;
   final String value;
   final List<String> items;
@@ -12,6 +13,7 @@ class CustomAppDropdown extends StatefulWidget {
   final String? hintText;
   final bool compact;
   final bool isRequired;
+  final FormFieldValidator<String>? validator;
 
   const CustomAppDropdown({
     super.key,
@@ -23,13 +25,85 @@ class CustomAppDropdown extends StatefulWidget {
     this.hintText,
     this.compact = false,
     this.isRequired = false,
+    this.validator,
   });
 
   @override
-  State<CustomAppDropdown> createState() => _CustomAppDropdownState();
+  Widget build(BuildContext context) {
+    if (validator != null) {
+      return FormField<String>(
+        initialValue: value,
+        validator: validator,
+        builder: (FormFieldState<String> fieldState) {
+          // If outer reactive value changed, update field state
+          if (fieldState.value != value) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (fieldState.mounted) {
+                fieldState.didChange(value);
+              }
+            });
+          }
+
+          return _CustomAppDropdownInternal(
+            label: label,
+            value: value,
+            items: items,
+            prefixIcon: prefixIcon,
+            onChanged: (val) {
+              fieldState.didChange(val);
+              onChanged(val);
+            },
+            hintText: hintText,
+            compact: compact,
+            isRequired: isRequired,
+            errorText: fieldState.errorText,
+          );
+        },
+      );
+    }
+
+    return _CustomAppDropdownInternal(
+      label: label,
+      value: value,
+      items: items,
+      prefixIcon: prefixIcon,
+      onChanged: onChanged,
+      hintText: hintText,
+      compact: compact,
+      isRequired: isRequired,
+      errorText: null,
+    );
+  }
 }
 
-class _CustomAppDropdownState extends State<CustomAppDropdown> {
+class _CustomAppDropdownInternal extends StatefulWidget {
+  final String label;
+  final String value;
+  final List<String> items;
+  final IconData? prefixIcon;
+  final ValueChanged<String> onChanged;
+  final String? hintText;
+  final bool compact;
+  final bool isRequired;
+  final String? errorText;
+
+  const _CustomAppDropdownInternal({
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.prefixIcon,
+    this.hintText,
+    this.compact = false,
+    this.isRequired = false,
+    this.errorText,
+  });
+
+  @override
+  State<_CustomAppDropdownInternal> createState() => _CustomAppDropdownInternalState();
+}
+
+class _CustomAppDropdownInternalState extends State<_CustomAppDropdownInternal> {
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
@@ -123,6 +197,7 @@ class _CustomAppDropdownState extends State<CustomAppDropdown> {
     final double horizontalPadding = widget.compact ? 12.0 : 14.0;
     final double labelSpacing = widget.compact ? 4.0 : 6.0;
     final double containerHeight = widget.compact ? 40.0 : 48.0;
+    final bool hasError = widget.errorText != null && widget.errorText!.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,8 +239,10 @@ class _CustomAppDropdownState extends State<CustomAppDropdown> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: _isOpen ? AppColors.navy : AppColors.line,
-                  width: _isOpen ? 1.4 : 1.0,
+                  color: hasError
+                      ? AppColors.errorRed
+                      : (_isOpen ? AppColors.navy : AppColors.line),
+                  width: (hasError || _isOpen) ? 1.4 : 1.0,
                 ),
                 boxShadow: _isOpen
                     ? [
@@ -182,7 +259,9 @@ class _CustomAppDropdownState extends State<CustomAppDropdown> {
                   if (widget.prefixIcon != null) ...[
                     Icon(
                       widget.prefixIcon,
-                      color: _isOpen ? AppColors.navy : AppColors.muted,
+                      color: hasError
+                          ? AppColors.errorRed
+                          : (_isOpen ? AppColors.navy : AppColors.muted),
                       size: widget.compact ? 17 : 19,
                     ),
                     const SizedBox(width: 10),
@@ -204,7 +283,9 @@ class _CustomAppDropdownState extends State<CustomAppDropdown> {
                     duration: const Duration(milliseconds: 180),
                     child: Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: _isOpen ? AppColors.navy : AppColors.muted,
+                      color: hasError
+                          ? AppColors.errorRed
+                          : (_isOpen ? AppColors.navy : AppColors.muted),
                       size: widget.compact ? 18 : 20,
                     ),
                   ),
@@ -213,6 +294,20 @@ class _CustomAppDropdownState extends State<CustomAppDropdown> {
             ),
           ),
         ),
+        if (hasError) ...[
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              widget.errorText!,
+              style: const TextStyle(
+                color: AppColors.errorRed,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
