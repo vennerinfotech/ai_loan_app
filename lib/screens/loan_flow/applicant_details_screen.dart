@@ -27,27 +27,35 @@ class ApplicantDetailsScreen extends StatelessWidget {
 
             // Main Content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Segmented Tabs: "Applicant" | "Co-applicant · X"
-                    _buildSegmentedTabs(controller),
+              child: RefreshIndicator(
+                color: AppColors.navy,
+                backgroundColor: Colors.white,
+                onRefresh: () async {
+                  await controller.fetchCoApplicants();
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Segmented Tabs: "Applicant" | "Co-applicant · X"
+                      _buildSegmentedTabs(controller),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Switch between Primary Applicant and Co-applicants card list
-                    Obx(() {
-                      if (controller.selectedTabIndex.value == 0) {
-                        return _buildPrimaryApplicantContent(controller);
-                      } else {
-                        return _buildCoApplicantsCardList(context, controller);
-                      }
-                    }),
+                      // Switch between Primary Applicant and Co-applicants card list
+                      Obx(() {
+                        if (controller.selectedTabIndex.value == 0) {
+                          return _buildPrimaryApplicantContent(controller);
+                        } else {
+                          return _buildCoApplicantsCardList(context, controller);
+                        }
+                      }),
 
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -91,32 +99,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
     ApplicantDetailsController controller,
   ) {
     if (controller.isLoadingCoApplicants.value) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 40),
-        child: Center(
-          child: Column(
-            children: const [
-              SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  color: AppColors.navy,
-                ),
-              ),
-              SizedBox(height: 14),
-              Text(
-                'Fetching co-applicants...',
-                style: TextStyle(
-                  color: AppColors.muted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildSkeletonCoApplicantCards();
     }
 
     final list = controller.coApplicantsList;
@@ -124,30 +107,8 @@ class ApplicantDetailsScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header with count & refresh button
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('CO-APPLICANTS (${list.length})'),
-            GestureDetector(
-              onTap: () => controller.fetchCoApplicants(),
-              child: Row(
-                children: const [
-                  Icon(Icons.refresh_rounded, size: 15, color: AppColors.indigo),
-                  SizedBox(width: 4),
-                  Text(
-                    'Refresh',
-                    style: TextStyle(
-                      color: AppColors.indigo,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        // Header with count
+        _buildSectionHeader('CO-APPLICANTS (${list.length})'),
         const SizedBox(height: 12),
 
         if (list.isEmpty)
@@ -870,11 +831,18 @@ class ApplicantDetailsScreen extends StatelessWidget {
 
                 final profile = details.coApplicant!;
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                return RefreshIndicator(
+                  color: AppColors.navy,
+                  backgroundColor: Colors.white,
+                  onRefresh: () async {
+                    await controller.fetchCoApplicantDetails(coApplicantId);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                       // Profile Hero Card
                       _buildDetailHeroCard(profile, details),
 
@@ -1150,7 +1118,8 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       const SizedBox(height: 20),
                     ],
                   ),
-                );
+                ),
+              );
               }),
             ),
           ],
@@ -1535,6 +1504,132 @@ class ApplicantDetailsScreen extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// Skeleton shimmer placeholder for co-applicants list
+  Widget _buildSkeletonCoApplicantCards() {
+    return Skeletonizer(
+      enabled: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('CO-APPLICANTS (2)'),
+          const SizedBox(height: 12),
+          for (int i = 0; i < 2; i++)
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            color: AppColors.canvas,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 150,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: AppColors.canvas,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 65,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.canvas,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    width: 65,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.canvas,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: AppColors.line),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        _buildCoAppInfoRow(
+                          icon: Icons.phone_outlined,
+                          label: 'Mobile',
+                          value: '+91 98XXXX0001',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCoAppInfoRow(
+                          icon: Icons.work_outline_rounded,
+                          label: 'Employment',
+                          value: 'Salaried Professional',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCoAppInfoRow(
+                          icon: Icons.credit_card_outlined,
+                          label: 'PAN Number',
+                          value: 'XXXXX6789K',
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCoAppInfoRow(
+                          icon: Icons.badge_outlined,
+                          label: 'Aadhaar Number',
+                          value: 'XXXX XXXX 7777',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: AppColors.line),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text('Edit', style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w700)),
+                        Text('|', style: TextStyle(color: AppColors.line)),
+                        Text('View Details', style: TextStyle(color: AppColors.indigo, fontWeight: FontWeight.w700)),
+                        Text('|', style: TextStyle(color: AppColors.line)),
+                        Text('Delete', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
