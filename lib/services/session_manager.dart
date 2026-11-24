@@ -6,6 +6,7 @@ class SessionManager {
   static const String keyIsLogin = 'is_login';
   static const String keyUserPhone = 'user_phone';
   static const String keyUserName = 'user_name';
+  static const String keyUserId = 'user_id';
   static const String keyAuthToken = 'auth_token';
   static const String keyCurrentStep = 'current_step';
 
@@ -14,6 +15,7 @@ class SessionManager {
     String? phone,
     String? name,
     String? token,
+    dynamic userId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyIsLogin, 'true');
@@ -25,6 +27,9 @@ class SessionManager {
     }
     if (token != null && token.trim().isNotEmpty) {
       await prefs.setString(keyAuthToken, token.trim());
+    }
+    if (userId != null && userId.toString().trim().isNotEmpty) {
+      await prefs.setString(keyUserId, userId.toString().trim());
     }
   }
 
@@ -53,12 +58,26 @@ class SessionManager {
     return prefs.getString(keyUserName) ?? '';
   }
 
+  /// Get saved user ID
+  static Future<String> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserId) ?? '';
+  }
+
+  /// Save user ID
+  static Future<void> saveUserId(dynamic userId) async {
+    if (userId == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyUserId, userId.toString().trim());
+  }
+
   /// Clear login session completely
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(keyIsLogin);
     await prefs.remove(keyUserPhone);
     await prefs.remove(keyUserName);
+    await prefs.remove(keyUserId);
     await prefs.remove(keyAuthToken);
     await prefs.remove(keyCurrentStep);
     await prefs.clear();

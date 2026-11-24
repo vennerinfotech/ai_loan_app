@@ -1626,4 +1626,40 @@ class ApiService {
       };
     }
   }
+
+  /// Get Applicant Details API: GET {{baseUrl}}/applicants/{user_id}
+  static Future<Map<String, dynamic>> getApplicantDetails({
+    required dynamic userId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/applicants/$userId');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Applicant Details ==========');
+      debugPrint('--> GET $url');
+      debugPrint('Headers: $headers');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getApplicantDetails: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch applicant details. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }

@@ -5,9 +5,12 @@ import '../models/co_applicant_form_options_model.dart';
 import '../models/add_co_applicant_model.dart';
 import '../models/co_applicants_list_model.dart';
 import '../models/co_applicant_detail_model.dart';
+import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
+import '../services/session_manager.dart';
 import '../theme/app_colors.dart';
 import 'apply_loan_controller.dart';
+import 'dashboard_controller.dart';
 
 /// Co-applicant data model
 class CoApplicantModel {
@@ -79,6 +82,10 @@ class ApplicantDetailsController extends GetxController {
   final isLoadingCoApplicants = false.obs;
   final coApplicantsList = <CoApplicantItem>[].obs;
   final coApplicants = <CoApplicantModel>[].obs;
+
+  // Primary Applicant Details API state (GET /applicants/{id})
+  final isLoadingApplicantDetails = false.obs;
+  final applicantDetailsData = Rxn<ApplicantDetailModel>();
 
   // Co-Applicant Details API state (GET /co-applicants/{id})
   final isLoadingCoAppDetails = false.obs;
@@ -253,7 +260,43 @@ class ApplicantDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    fetchApplicantDetails();
     fetchCoApplicants();
+  }
+
+  /// Fetch Applicant Details API: GET {{baseUrl}}/applicants/{user_id}
+  Future<void> fetchApplicantDetails({dynamic userId}) async {
+    isLoadingApplicantDetails.value = true;
+    try {
+      dynamic effectiveUserId = userId;
+      if (effectiveUserId == null || effectiveUserId.toString().trim().isEmpty) {
+        final savedId = await SessionManager.getUserId();
+        if (savedId.isNotEmpty) effectiveUserId = savedId;
+      }
+      if ((effectiveUserId == null || effectiveUserId.toString().trim().isEmpty) &&
+          Get.isRegistered<DashboardController>()) {
+        final dashId = Get.find<DashboardController>().dashboardData.value?.user?.id;
+        if (dashId != null) effectiveUserId = dashId;
+      }
+      // Fallback default user ID 1 matching collection
+      effectiveUserId ??= 1;
+
+      final res = await ApiService.getApplicantDetails(userId: effectiveUserId);
+      if (res['success'] == true || res['status_code'] == 200) {
+        final model = ApplicantDetailModel.fromJson(res);
+        applicantDetailsData.value = model;
+
+        if (model.applicant?.id != null) {
+          SessionManager.saveUserId(model.applicant!.id);
+        }
+      } else {
+        debugPrint('Notice in fetchApplicantDetails: ${res['message']}');
+      }
+    } catch (e) {
+      debugPrint('Error in fetchApplicantDetails: $e');
+    } finally {
+      isLoadingApplicantDetails.value = false;
+    }
   }
 
   /// Fetch Co-Applicants List API: GET {{baseUrl}}/co-applicants

@@ -6,6 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/applicant_details_controller.dart';
 import '../../models/co_applicants_list_model.dart';
 import '../../models/co_applicant_detail_model.dart';
+import '../../models/applicant_detail_model.dart';
 import 'add_co_applicant_screen.dart';
 import 'recommended_loan_offers_screen.dart';
 
@@ -31,7 +32,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 color: AppColors.navy,
                 backgroundColor: Colors.white,
                 onRefresh: () async {
-                  await controller.fetchCoApplicants();
+                  await Future.wait([
+                    controller.fetchApplicantDetails(),
+                    controller.fetchCoApplicants(),
+                  ]);
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -70,25 +74,32 @@ class ApplicantDetailsScreen extends StatelessWidget {
 
   /// Primary applicant details tab content
   Widget _buildPrimaryApplicantContent(ApplicantDetailsController controller) {
+    if (controller.isLoadingApplicantDetails.value &&
+        controller.applicantDetailsData.value == null) {
+      return _buildSkeletonApplicantContent();
+    }
+
+    final data = controller.applicantDetailsData.value;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Profile Banner Card with cosmic background
-        _buildProfileBanner(controller),
+        _buildProfileBanner(controller, data),
 
         const SizedBox(height: 20),
 
         // Verification Section
         _buildSectionHeader('VERIFICATION'),
         const SizedBox(height: 8),
-        _buildVerificationCard(controller),
+        _buildVerificationCard(controller, data),
 
         const SizedBox(height: 20),
 
         // Personal & Contact Section
         _buildSectionHeader('PERSONAL & CONTACT'),
         const SizedBox(height: 8),
-        _buildPersonalContactCard(controller),
+        _buildPersonalContactCard(controller, data),
       ],
     );
   }
@@ -1953,8 +1964,73 @@ class ApplicantDetailsScreen extends StatelessWidget {
     });
   }
 
+  /// Shimmer skeleton for primary applicant tab
+  Widget _buildSkeletonApplicantContent() {
+    return Skeletonizer(
+      enabled: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 84,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildSectionHeader('VERIFICATION'),
+          const SizedBox(height: 8),
+          Container(
+            height: 180,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildSectionHeader('PERSONAL & CONTACT'),
+          const SizedBox(height: 8),
+          Container(
+            height: 260,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Profile Banner Card with cosmic orbit curves and avatar for primary applicant
-  Widget _buildProfileBanner(ApplicantDetailsController controller) {
+  Widget _buildProfileBanner(
+    ApplicantDetailsController controller, [
+    ApplicantDetailModel? data,
+  ]) {
+    final applicant = data?.applicant;
+    final loanApp = data?.loanApplications.isNotEmpty == true
+        ? data!.loanApplications.first
+        : null;
+
+    final name = applicant?.name?.trim().isNotEmpty == true
+        ? applicant!.name!.trim()
+        : 'Applicant';
+
+    final initials = name
+        .split(' ')
+        .where((e) => e.isNotEmpty)
+        .take(2)
+        .map((e) => e[0].toUpperCase())
+        .join();
+
+    final employment = loanApp?.employmentDetails?.employmentType ??
+        applicant?.currentResidenceType ??
+        'Salaried';
+
+    final hasPhoto = applicant?.profilePhotoUrl != null &&
+        applicant!.profilePhotoUrl!.trim().isNotEmpty;
+
     return Container(
       height: 84,
       clipBehavior: Clip.antiAlias,
@@ -1991,15 +2067,31 @@ class ApplicantDetailsScreen extends StatelessWidget {
                     color: AppColors.amber,
                     shape: BoxShape.circle,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   alignment: Alignment.center,
-                  child: const Text(
-                    'AM',
-                    style: TextStyle(
-                      color: AppColors.navy,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  child: hasPhoto
+                      ? Image.network(
+                          applicant.profilePhotoUrl!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Text(
+                            initials.isNotEmpty ? initials : 'AM',
+                            style: const TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        )
+                      : Text(
+                          initials.isNotEmpty ? initials : 'AM',
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 14),
 
@@ -2009,9 +2101,9 @@ class ApplicantDetailsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Aarav Mehta',
-                        style: TextStyle(
+                      Text(
+                        name,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17.5,
                           fontWeight: FontWeight.w800,
@@ -2021,7 +2113,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Primary applicant · Salaried',
+                        'Primary applicant · $employment',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
@@ -2052,8 +2144,33 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// Verification card container with Aadhaar, PAN, and Mobile rows
-  Widget _buildVerificationCard(ApplicantDetailsController controller) {
+  /// Verification card container with Aadhaar, PAN, Mobile, and CIBIL rows
+  Widget _buildVerificationCard(
+    ApplicantDetailsController controller, [
+    ApplicantDetailModel? data,
+  ]) {
+    final kyc = data?.kyc;
+    final applicant = data?.applicant;
+
+    final aadhaarNum = applicant?.aadhaarCardNumber ?? kyc?.aadhaar?.number;
+    final maskedAadhaar = aadhaarNum != null && aadhaarNum.length >= 4
+        ? '•••• •••• ${aadhaarNum.substring(aadhaarNum.length - 4)}'
+        : 'Identity verified';
+
+    final isAadhaarVerified =
+        kyc?.aadhaar?.status == 'verified' || kyc?.aadhaar?.uploaded == true;
+
+    final panNum =
+        applicant?.panCardNumber ?? kyc?.pan?.number ?? 'Tax ID verified';
+    final isPanVerified =
+        kyc?.pan?.status == 'verified' || kyc?.pan?.uploaded == true;
+
+    final phoneNum = applicant?.phone != null && applicant!.phone!.isNotEmpty
+        ? '+91 ${applicant.phone}'
+        : '+91 ••••• •••••';
+
+    final cibil = kyc?.cibilScore;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2065,29 +2182,48 @@ class ApplicantDetailsScreen extends StatelessWidget {
           _buildVerificationRow(
             icon: Icons.shield_outlined,
             title: 'Aadhaar',
-            subtitle: 'Identity verified',
-            badgeText: 'Verified',
-            badgeBg: AppColors.successGreenBg,
-            badgeColor: AppColors.successGreen,
+            subtitle: maskedAadhaar,
+            badgeText: isAadhaarVerified ? 'Verified' : 'Pending',
+            badgeBg: isAadhaarVerified
+                ? AppColors.successGreenBg
+                : AppColors.canvas,
+            badgeColor:
+                isAadhaarVerified ? AppColors.successGreen : AppColors.muted,
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildVerificationRow(
             icon: Icons.credit_card_rounded,
             title: 'PAN card',
-            subtitle: 'Tax ID verified',
-            badgeText: 'Verified',
-            badgeBg: AppColors.successGreenBg,
-            badgeColor: AppColors.successGreen,
+            subtitle: panNum,
+            badgeText: isPanVerified ? 'Verified' : 'Pending',
+            badgeBg: isPanVerified
+                ? AppColors.successGreenBg
+                : AppColors.canvas,
+            badgeColor:
+                isPanVerified ? AppColors.successGreen : AppColors.muted,
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildVerificationRow(
             icon: Icons.chat_bubble_outline_rounded,
             title: 'Mobile OTP',
-            subtitle: '+91 98765 •••10',
+            subtitle: phoneNum,
             badgeText: 'Verified',
             badgeBg: AppColors.successGreenBg,
             badgeColor: AppColors.successGreen,
           ),
+          if (cibil != null && cibil > 0) ...[
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
+            _buildVerificationRow(
+              icon: Icons.speed_rounded,
+              title: 'CIBIL Score: $cibil',
+              subtitle: cibil >= 750
+                  ? 'Excellent credit profile'
+                  : 'Good credit profile',
+              badgeText: cibil >= 750 ? 'Strong' : 'Active',
+              badgeBg: AppColors.successGreenBg,
+              badgeColor: AppColors.successGreen,
+            ),
+          ],
         ],
       ),
     );
@@ -2170,7 +2306,29 @@ class ApplicantDetailsScreen extends StatelessWidget {
   }
 
   /// Personal & Contact info card container
-  Widget _buildPersonalContactCard(ApplicantDetailsController controller) {
+  Widget _buildPersonalContactCard(
+    ApplicantDetailsController controller, [
+    ApplicantDetailModel? data,
+  ]) {
+    final applicant = data?.applicant;
+
+    final name = applicant?.name ?? '-';
+    final dobGender =
+        '${applicant?.dateOfBirth ?? '-'} · ${applicant?.gender ?? '-'}';
+    final email = applicant?.email ?? '-';
+    final phone = applicant?.phone != null && applicant!.phone!.isNotEmpty
+        ? '+91 ${applicant.phone}'
+        : '-';
+    final address = applicant?.address ??
+        applicant?.communicationAddress ??
+        applicant?.permanentAddress ??
+        '-';
+    final cityState = (applicant?.city != null && applicant!.city!.isNotEmpty)
+        ? '${applicant.city}${applicant.state != null ? ', ${applicant.state}' : ''}'
+        : null;
+    final residence = applicant?.currentResidenceType;
+    final marital = applicant?.maritalStatus;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2182,26 +2340,56 @@ class ApplicantDetailsScreen extends StatelessWidget {
           _buildContactRow(
             icon: Icons.person_outline_rounded,
             label: 'Full name',
-            value: 'Aarav Mehta',
+            value: name,
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildContactRow(
             icon: Icons.calendar_today_outlined,
             label: 'Date of birth · Gender',
-            value: '15 Aug 1993 · Male',
+            value: dobGender,
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildContactRow(
             icon: Icons.mail_outline_rounded,
             label: 'Email',
-            value: 'aarav@example.com',
+            value: email,
+          ),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
+          _buildContactRow(
+            icon: Icons.phone_android_rounded,
+            label: 'Mobile number',
+            value: phone,
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildContactRow(
             icon: Icons.location_on_outlined,
             label: 'Address',
-            value: '123, MG Road, Bengaluru, Karnataka – 560001',
+            value: address,
           ),
+          if (cityState != null) ...[
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
+            _buildContactRow(
+              icon: Icons.apartment_rounded,
+              label: 'City · State',
+              value: cityState,
+            ),
+          ],
+          if (residence != null && residence.isNotEmpty) ...[
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
+            _buildContactRow(
+              icon: Icons.home_outlined,
+              label: 'Residence type',
+              value: residence,
+            ),
+          ],
+          if (marital != null && marital.isNotEmpty) ...[
+            const Divider(height: 1, color: AppColors.canvas, indent: 56),
+            _buildContactRow(
+              icon: Icons.favorite_border_rounded,
+              label: 'Marital status',
+              value: marital,
+            ),
+          ],
         ],
       ),
     );
