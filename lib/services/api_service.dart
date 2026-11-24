@@ -1578,7 +1578,7 @@ class ApiService {
     }
   }
 
-  /// Get Bank Loan Suggestions API: GET {{baseUrl}}/loan-suggestions
+  /// Get Bank Loan Suggestions API: POST {{baseUrl}}/loan-suggestions
   static Future<Map<String, dynamic>> getLoanSuggestions({
     String? token,
   }) async {
@@ -1592,10 +1592,14 @@ class ApiService {
     };
 
     try {
-      final response = await http.get(url, headers: headers);
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode({}),
+      );
 
       debugPrint('========== Get Loan Suggestions ==========');
-      debugPrint('--> GET $url');
+      debugPrint('--> POST $url');
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 

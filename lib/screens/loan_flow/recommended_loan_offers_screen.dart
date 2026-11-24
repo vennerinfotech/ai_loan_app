@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/recommended_loan_offers_controller.dart';
 import '../../models/loan_suggestions_model.dart';
 import '../../theme/app_colors.dart';
@@ -25,61 +26,40 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.navy,
+                backgroundColor: Colors.white,
                 onRefresh: controller.fetchLoanSuggestions,
                 child: Obx(() {
                   if (controller.isLoading.value) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: AppColors.navy,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Fetching bank loan suggestions...',
-                            style: TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
+                    return _buildSkeletonSuggestions();
                   }
 
                   if (controller.displayedSuggestions.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+                      child: Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 64,
+                              height: 64,
                               decoration: const BoxDecoration(
                                 color: AppColors.indigoTint,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.account_balance_outlined,
-                                size: 30,
+                                size: 32,
                                 color: AppColors.navy,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 18),
                             const Text(
                               'No Loan Suggestions Available',
                               style: TextStyle(
                                 color: AppColors.textDark,
-                                fontSize: 16,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -90,16 +70,26 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
                               style: TextStyle(
                                 color: AppColors.muted,
                                 fontSize: 13,
+                                height: 1.4,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 22),
                             ElevatedButton.icon(
-                              onPressed: () =>
-                                  controller.fetchLoanSuggestions(),
-                              icon: const Icon(Icons.refresh_rounded, size: 18),
-                              label: const Text('Refresh'),
+                              onPressed: () => controller.fetchLoanSuggestions(),
+                              icon: const Icon(Icons.refresh_rounded, size: 18, color: Colors.white),
+                              label: const Text(
+                                'Refresh',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.navy,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                elevation: 0,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -192,24 +182,8 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
             ),
           ),
 
-          // Refresh Button
-          GestureDetector(
-            onTap: () => controller.fetchLoanSuggestions(),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.line, width: 1.2),
-              ),
-              child: const Icon(
-                Icons.refresh_rounded,
-                size: 20,
-                color: AppColors.textDark,
-              ),
-            ),
-          ),
+          // Right spacer to keep title centered
+          const SizedBox(width: 40),
         ],
       ),
     );
@@ -680,5 +654,52 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
     if (lower.contains('kotak')) return const Color(0xFFED1C24);
     if (lower.contains('bajaj')) return const Color(0xFF003366);
     return AppColors.navy;
+  }
+
+  /// Skeleton shimmer placeholder while fetching suggestions
+  Widget _buildSkeletonSuggestions() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),
+        children: [
+          // User Header Skeleton
+          Container(
+            width: double.infinity,
+            height: 90,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Filters Skeleton
+          Row(
+            children: [
+              Container(width: 90, height: 36, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(width: 8),
+              Container(width: 80, height: 36, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              const SizedBox(width: 8),
+              Container(width: 100, height: 36, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // 2 Bank Offer Cards Skeleton
+          for (int i = 0; i < 2; i++)
+            Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              height: 220,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.line),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
