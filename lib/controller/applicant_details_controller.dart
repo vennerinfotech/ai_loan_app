@@ -162,6 +162,58 @@ class ApplicantDetailsController extends GetxController {
     selectedRelationship.value = item.relationship ?? '';
     selectedApplicantType.value = item.applicantType ?? 'Financial';
     selectedEmploymentType.value = item.employmentType ?? '';
+    coAppUploadedFiles.clear();
+
+    if (item.employmentType != null && item.employmentType!.isNotEmpty) {
+      _updateDocumentsForEmploymentType(item.employmentType!);
+    }
+  }
+
+  /// Fetches co-applicant full details via GET {{baseUrl}}/co-applicants/{id}
+  /// and populates existing fields & documents for edit mode
+  Future<void> fetchAndPopulateCoApplicantForEdit(dynamic coApplicantId) async {
+    if (coApplicantId == null) return;
+    final details = await fetchCoApplicantDetails(coApplicantId);
+    if (details != null) {
+      final profile = details.coApplicant;
+      if (profile != null) {
+        if (profile.name != null && profile.name!.isNotEmpty) {
+          fullNameController.text = profile.name!;
+        }
+        if (profile.phone != null && profile.phone!.isNotEmpty) {
+          mobileNumberController.text = profile.phone!;
+        }
+        if (profile.relationship != null && profile.relationship!.isNotEmpty) {
+          selectedRelationship.value = profile.relationship!;
+        }
+        if (profile.applicantType != null && profile.applicantType!.isNotEmpty) {
+          selectedApplicantType.value = profile.applicantType!;
+        }
+        if (profile.employmentType != null && profile.employmentType!.isNotEmpty) {
+          selectedEmploymentType.value = profile.employmentType!;
+        }
+      }
+
+      // Populate documents list from GET /co-applicants/{id} response
+      if (details.documents.isNotEmpty) {
+        coAppDocuments.assignAll(
+          details.documents.map((d) => CoAppDocumentItem(
+            key: d.key,
+            label: d.label,
+            allowMultiple: d.allowMultiple,
+            acceptedFormats: d.acceptedFormats,
+            maxSizeMb: d.maxSizeMb,
+            uploadField: d.uploadField,
+            ocrAutofill: d.ocrAutofill,
+            uploaded: d.uploaded,
+            status: d.status,
+            files: d.files.map((f) => f.toJson()).toList(),
+          )),
+        );
+      } else if (selectedEmploymentType.value.isNotEmpty) {
+        _updateDocumentsForEmploymentType(selectedEmploymentType.value);
+      }
+    }
   }
 
   /// Reset form fields when opening add screen fresh
@@ -215,9 +267,17 @@ class ApplicantDetailsController extends GetxController {
           margin: const EdgeInsets.all(16),
         );
 
+        // Refresh co-applicants list and applicant details
         fetchCoApplicants();
+        fetchApplicantDetails();
+        selectedTabIndex.value = 1;
+
         resetAddCoApplicantForm();
-        Get.back();
+
+        // Pop screen safely back to applicant details
+        if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+          Get.back();
+        }
         return true;
       } else {
         Get.snackbar(
@@ -613,7 +673,6 @@ class ApplicantDetailsController extends GetxController {
         if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
           Get.back();
         }
-        Get.back();
         return true;
       } else {
         final msg = ApiService.getErrorMessage(res);

@@ -36,9 +36,12 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
         ? Get.find<ApplicantDetailsController>()
         : Get.put(ApplicantDetailsController());
 
-    // Fetch form options strictly when Add Co-Applicant screen opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchCoApplicantFormOptions();
+    // Fetch form options strictly when Add/Edit Co-Applicant screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.fetchCoApplicantFormOptions();
+      if (widget.isEdit && widget.coApplicantId != null) {
+        await controller.fetchAndPopulateCoApplicantForEdit(widget.coApplicantId);
+      }
     });
   }
 
@@ -796,13 +799,17 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                   onPressed: controller.isAddingCoApplicant.value
                       ? null
                       : () async {
+                          bool success = false;
                           if (widget.isEdit && widget.coApplicantId != null) {
-                            await controller.updateCoApplicant(
+                            success = await controller.updateCoApplicant(
                               coApplicantId: widget.coApplicantId,
                               role: widget.role,
                             );
                           } else {
-                            await controller.addCoApplicant(role: widget.role);
+                            success = await controller.addCoApplicant(role: widget.role);
+                          }
+                          if (success) {
+                            Get.back();
                           }
                         },
                   style: ElevatedButton.styleFrom(
