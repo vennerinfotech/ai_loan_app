@@ -795,14 +795,14 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                 () => ElevatedButton(
                   onPressed: controller.isAddingCoApplicant.value
                       ? null
-                      : () {
+                      : () async {
                           if (widget.isEdit && widget.coApplicantId != null) {
-                            controller.updateCoApplicant(
+                            await controller.updateCoApplicant(
                               coApplicantId: widget.coApplicantId,
                               role: widget.role,
                             );
                           } else {
-                            controller.addCoApplicant(role: widget.role);
+                            await controller.addCoApplicant(role: widget.role);
                           }
                         },
                   style: ElevatedButton.styleFrom(

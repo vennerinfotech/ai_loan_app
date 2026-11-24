@@ -59,10 +59,21 @@ class ApplicantDetailsController extends GetxController {
   final isAddingCoApplicant = false.obs;
   final leadId = Rxn<dynamic>();
 
+  // Co-Applicant OTP verification state from POST /co-applicants response
+  final lastCoAppOtp = Rxn<dynamic>();
+  final lastCoAppOtpExpiresAt = Rxn<String>();
+
   dynamic get currentLeadId {
     if (leadId.value != null) return leadId.value;
     if (Get.isRegistered<ApplyLoanController>()) {
-      return Get.find<ApplyLoanController>().leadStoreData.value?.leadId;
+      final appLeadId = Get.find<ApplyLoanController>().leadStoreData.value?.leadId;
+      if (appLeadId != null) return appLeadId;
+    }
+    // Also check applicantDetailsData loanApplications for active lead
+    final apps = applicantDetailsData.value?.loanApplications;
+    if (apps != null && apps.isNotEmpty) {
+      final firstAppId = apps.first.id;
+      if (firstAppId != null) return firstAppId;
     }
     return null;
   }
@@ -547,6 +558,13 @@ class ApplicantDetailsController extends GetxController {
       if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
         final model = AddCoApplicantResponseModel.fromJson(res);
 
+        // Store OTP and expiry from add co-applicant API response
+        if (model.data?.otp != null) {
+          lastCoAppOtp.value = model.data!.otp;
+          lastCoAppOtpExpiresAt.value = model.data?.otpExpiresAt;
+          debugPrint('Co-Applicant OTP received: ${model.data!.otp}');
+        }
+
         // Directly store all document options returned in the API response
         if (model.data?.documents.isNotEmpty == true) {
           coAppDocuments.assignAll(model.data!.documents);
@@ -576,24 +594,26 @@ class ApplicantDetailsController extends GetxController {
           margin: const EdgeInsets.all(16),
         );
 
-        // Refresh co-applicants list from GET /co-applicants
+        // Refresh co-applicants list and applicant details
         fetchCoApplicants();
+        fetchApplicantDetails();
 
-        // Switch tab to the newly added co-applicant
+        // Switch tab to the Co-applicant tab so the newly added co-applicant shows
         selectedTabIndex.value = 1;
 
         // Reset controllers and uploaded files for next time
         fullNameController.clear();
         mobileNumberController.clear();
         selectedRelationship.value = '';
-        selectedApplicantType.value = formOptionsData.value?.addForm
-                .firstWhereOrNull((f) => f.name == 'applicant_type')
-                ?.defaultValue ??
-            (apiApplicantTypeOptions.isNotEmpty ? apiApplicantTypeOptions.first : '');
+        selectedApplicantType.value = '';
         selectedEmploymentType.value = '';
         coAppUploadedFiles.clear();
 
-        Get.back(); // Pop Add Co-applicant screen
+        // Pop Add Co-applicant screen if open
+        if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
+          Get.back();
+        }
+        Get.back();
         return true;
       } else {
         final msg = ApiService.getErrorMessage(res);

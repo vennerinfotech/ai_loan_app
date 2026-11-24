@@ -39,6 +39,8 @@ class AddCoApplicantData {
   final List<CoAppDocumentItem> documents;
   final Map<String, dynamic>? summary;
   final Map<String, dynamic>? upload;
+  final dynamic otp;
+  final String? otpExpiresAt;
 
   AddCoApplicantData({
     this.coApplicantId,
@@ -49,6 +51,8 @@ class AddCoApplicantData {
     this.documents = const [],
     this.summary,
     this.upload,
+    this.otp,
+    this.otpExpiresAt,
   });
 
   factory AddCoApplicantData.fromJson(Map<String, dynamic> json) {
@@ -68,6 +72,8 @@ class AddCoApplicantData {
           [],
       summary: json['summary'] as Map<String, dynamic>?,
       upload: json['upload'] as Map<String, dynamic>?,
+      otp: json['otp'],
+      otpExpiresAt: json['otp_expires_at']?.toString(),
     );
   }
 }
