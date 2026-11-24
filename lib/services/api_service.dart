@@ -1668,4 +1668,39 @@ class ApiService {
       };
     }
   }
+
+  /// Get Active Loan Applications API: GET {{baseUrl}}/loan-applications/active
+  static Future<Map<String, dynamic>> getActiveLoanApplications({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan-applications/active');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Active Loan Applications ==========');
+      debugPrint('--> GET $url');
+      debugPrint('Headers: $headers');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getActiveLoanApplications: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch active loan applications. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }
