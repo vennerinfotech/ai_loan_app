@@ -16,10 +16,11 @@ class LoginWithMpinScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(MpinLoginController());
-    if (phoneNumber != null && phoneNumber!.isNotEmpty) {
-      controller.setPhoneNumber(phoneNumber!);
+    final controller = Get.put(MpinLoginController(initialPhone: phoneNumber));
+    if (phoneNumber != null && phoneNumber!.trim().isNotEmpty) {
+      controller.setPhoneNumber(phoneNumber!.trim());
     }
+    controller.mpin.value = '';
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,

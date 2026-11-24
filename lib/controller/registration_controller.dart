@@ -603,8 +603,11 @@ class RegistrationController extends GetxController
         );
 
         // Transition to LoginWithMpinScreen
+        final phone = newModel.data?.user?.phone ??
+            existingData?.phone ??
+            mobileNumberController.text.trim();
         await Future.delayed(const Duration(milliseconds: 500));
-        Get.offAll(() => const LoginWithMpinScreen());
+        Get.offAll(() => LoginWithMpinScreen(phoneNumber: phone));
       } else {
         final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Set MPIN Error: $errorMsg');

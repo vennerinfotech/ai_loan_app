@@ -15,6 +15,10 @@ import '../models/auth_response_model.dart';
 /// Includes ticker provider for continuous cosmic orbit animation in top card.
 class MpinLoginController extends GetxController
     with GetSingleTickerProviderStateMixin {
+  final String? initialPhone;
+
+  MpinLoginController({this.initialPhone});
+
   final mpin = ''.obs;
   final userName = 'Aarav Mehta'.obs;
   final userPhone = ''.obs;
@@ -28,6 +32,9 @@ class MpinLoginController extends GetxController
   @override
   void onInit() {
     super.onInit();
+    if (initialPhone != null && initialPhone!.trim().isNotEmpty) {
+      userPhone.value = initialPhone!.trim();
+    }
     orbitController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 24),
@@ -46,7 +53,8 @@ class MpinLoginController extends GetxController
       userName.value = savedName;
       userInitials.value = _computeInitials(savedName);
     }
-    if (savedPhone.isNotEmpty) {
+    // Only load from SessionManager if userPhone was not already explicitly set
+    if (userPhone.value.isEmpty && savedPhone.isNotEmpty) {
       userPhone.value = savedPhone;
     }
   }
@@ -195,6 +203,8 @@ class MpinLoginController extends GetxController
   }
 
   void useMobileNumber() {
+    mpin.value = '';
+    userPhone.value = '';
     Get.to(() => const LoginWithMobileScreen());
   }
 

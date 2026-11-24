@@ -53,11 +53,15 @@ class SessionManager {
     return prefs.getString(keyUserName) ?? '';
   }
 
-  /// Clear login session using setString (or remove)
+  /// Clear login session completely
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(keyIsLogin, 'false');
+    await prefs.remove(keyIsLogin);
+    await prefs.remove(keyUserPhone);
+    await prefs.remove(keyUserName);
     await prefs.remove(keyAuthToken);
+    await prefs.remove(keyCurrentStep);
+    await prefs.clear();
   }
 
   /// Save current onboarding step

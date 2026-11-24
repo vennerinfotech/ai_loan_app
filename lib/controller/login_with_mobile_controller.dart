@@ -111,8 +111,30 @@ class LoginWithMobileController extends GetxController
 
   void signInWithMpin() {
     final phone = mobileNumber.value.trim();
+    if (phone.isEmpty) {
+      Get.snackbar(
+        'Required Field',
+        'Please enter your 10-digit mobile number to sign in with MPIN',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+    if (phone.length < 10) {
+      Get.snackbar(
+        'Invalid Mobile Number',
+        'Please enter a valid 10-digit mobile number',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
     Get.to(
-      () => LoginWithMpinScreen(phoneNumber: phone.isNotEmpty ? phone : null),
+      () => LoginWithMpinScreen(phoneNumber: phone),
     );
   }
 

@@ -281,6 +281,9 @@ class ProfileController extends GetxController {
       // Always clear local session
       await SessionManager.clearSession();
 
+      // Clean up all controller instances so no old session data persists
+      Get.deleteAll(force: true);
+
       final message =
           response['message']?.toString() ?? 'Logged out successfully.';
       Get.snackbar(
@@ -302,6 +305,8 @@ class ProfileController extends GetxController {
       }
       isLoggingOut.value = false;
       await SessionManager.clearSession();
+      Get.deleteAll(force: true);
+      Get.offAll(() => const LoginWithMobileScreen());
     }
   }
 }

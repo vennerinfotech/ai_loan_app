@@ -1449,4 +1449,38 @@ class ApiService {
       };
     }
   }
+
+  /// Get Bank Loan Suggestions API: GET {{baseUrl}}/loan-suggestions
+  static Future<Map<String, dynamic>> getLoanSuggestions({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan-suggestions');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Loan Suggestions ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getLoanSuggestions: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch bank loan suggestions. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }
