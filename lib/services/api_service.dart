@@ -1450,6 +1450,134 @@ class ApiService {
     }
   }
 
+  /// Get Co-Applicant Details API: GET {{baseUrl}}/co-applicants/{co_applicant_id}
+  static Future<Map<String, dynamic>> getCoApplicantDetails({
+    required dynamic coApplicantId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Co-Applicant Details ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getCoApplicantDetails: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch co-applicant details. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Delete Co-Applicant API: DELETE {{baseUrl}}/co-applicants/{id}
+  static Future<Map<String, dynamic>> deleteCoApplicant({
+    required dynamic coApplicantId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.delete(url, headers: headers);
+
+      debugPrint('========== Delete Co-Applicant ==========');
+      debugPrint('--> DELETE $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in deleteCoApplicant: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to delete co-applicant. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Update Co-Applicant API: POST {{baseUrl}}/co-applicants/{id}
+  static Future<Map<String, dynamic>> updateCoApplicant({
+    required dynamic coApplicantId,
+    required String coApplicantName,
+    required String coApplicantMobile,
+    required String coRelationship,
+    required String applicantType,
+    required String employmentType,
+    Map<String, dynamic>? additionalFields,
+    dynamic leadId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final Map<String, dynamic> bodyMap = {
+      'co_applicant_name': coApplicantName,
+      'co_applicant_mobile': coApplicantMobile,
+      'co_relationship': coRelationship,
+      'applicant_type': applicantType,
+      'employment_type': employmentType,
+    };
+    if (additionalFields != null) {
+      bodyMap.addAll(additionalFields);
+    }
+    if (leadId != null) {
+      bodyMap['lead_id'] = leadId;
+    }
+    final body = jsonEncode(bodyMap);
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('========== Update Co-Applicant ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in updateCoApplicant: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to update co-applicant. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
   /// Get Bank Loan Suggestions API: GET {{baseUrl}}/loan-suggestions
   static Future<Map<String, dynamic>> getLoanSuggestions({
     String? token,

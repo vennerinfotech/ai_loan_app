@@ -2,8 +2,10 @@ import 'dart:math' as math;
 import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/applicant_details_controller.dart';
 import '../../models/co_applicants_list_model.dart';
+import '../../models/co_applicant_detail_model.dart';
 import 'add_co_applicant_screen.dart';
 import 'recommended_loan_offers_screen.dart';
 
@@ -152,7 +154,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
           _buildEmptyCoApplicantsState(context, controller)
         else ...[
           for (int i = 0; i < list.length; i++)
-            _buildCoApplicantCard(context, list[i], i),
+            _buildCoApplicantCard(context, controller, list[i], i),
           const SizedBox(height: 4),
           _buildAddAnotherCoAppButton(context, controller),
         ],
@@ -239,6 +241,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
   /// Card widget for each co-applicant item from API
   Widget _buildCoApplicantCard(
     BuildContext context,
+    ApplicantDetailsController controller,
     CoApplicantItem item,
     int index,
   ) {
@@ -427,7 +430,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                   _buildCoAppInfoRow(
                     icon: Icons.phone_outlined,
                     label: 'Mobile',
-                    value: item.phone!,
+                    value: _maskPhone(item.phone!),
                   ),
                 if (hasEmployment) ...[
                   if (hasPhone) const SizedBox(height: 8),
@@ -450,7 +453,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                   _buildCoAppInfoRow(
                     icon: Icons.credit_card_outlined,
                     label: 'PAN Number',
-                    value: item.panCardNumber!,
+                    value: _maskPan(item.panCardNumber!),
                   ),
                 ],
                 if (hasAadhaar) ...[
@@ -458,13 +461,1192 @@ class ApplicantDetailsScreen extends StatelessWidget {
                   _buildCoAppInfoRow(
                     icon: Icons.badge_outlined,
                     label: 'Aadhaar Number',
-                    value: item.aadhaarCardNumber!,
+                    value: _maskAadhaar(item.aadhaarCardNumber!),
                   ),
                 ],
               ],
             ),
           ),
+
+          // 3 Actions Bar separated by vertical dividers (Edit | View Details | Delete)
+          const Divider(height: 1, color: AppColors.line),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                // 1. Edit Action
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _handleEditCoApplicant(context, controller, item),
+                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(18)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.edit_outlined, size: 15, color: AppColors.navy),
+                          SizedBox(width: 5),
+                          Text(
+                            'Edit',
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Vertical Divider 1
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: AppColors.line,
+                  indent: 8,
+                  endIndent: 8,
+                ),
+
+                // 2. View Details Action
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _showCoApplicantDetailsBottomSheet(
+                      context,
+                      controller,
+                      item.id,
+                      item.name ?? 'Co-Applicant #${index + 1}',
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.visibility_outlined, size: 15, color: AppColors.navy),
+                          SizedBox(width: 5),
+                          Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Vertical Divider 2
+                const VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: AppColors.line,
+                  indent: 8,
+                  endIndent: 8,
+                ),
+
+                // 3. Delete Action
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _showDeleteCoAppConfirmationDialog(context, controller, item),
+                    borderRadius: const BorderRadius.only(bottomRight: Radius.circular(18)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.delete_outline_rounded, size: 15, color: AppColors.errorRed),
+                          SizedBox(width: 5),
+                          Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: AppColors.errorRed,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  /// Mask mobile number: e.g. 9898900001 -> +91 98XXXX0001
+  String _maskPhone(String phone) {
+    final clean = phone.replaceAll(RegExp(r'\D'), '');
+    if (clean.length >= 10) {
+      final start = clean.substring(0, 2);
+      final end = clean.substring(clean.length - 4);
+      return '+91 ${start}XXXX$end';
+    }
+    return phone;
+  }
+
+  /// Mask PAN card number: e.g. PQRSX6789K -> XXXXX6789K (shows last 5)
+  String _maskPan(String pan) {
+    final trimmed = pan.trim();
+    if (trimmed.length == 10) {
+      return 'XXXXX${trimmed.substring(5)}';
+    }
+    return trimmed;
+  }
+
+  /// Mask Aadhaar card number: e.g. 555566667777 -> XXXX XXXX 7777 (shows last 4)
+  String _maskAadhaar(String aadhaar) {
+    final clean = aadhaar.replaceAll(RegExp(r'\D'), '');
+    if (clean.length == 12) {
+      return 'XXXX XXXX ${clean.substring(8)}';
+    }
+    return aadhaar;
+  }
+
+  /// Handle editing a co-applicant
+  void _handleEditCoApplicant(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    CoApplicantItem item,
+  ) {
+    controller.prepareEditCoApplicant(item);
+    final role = item.relationship?.toLowerCase() == 'guarantor' ? 'Guarantor' : 'Co-Applicant';
+    Get.to(() => AddCoApplicantScreen(
+      role: role,
+      isEdit: true,
+      coApplicantId: item.id,
+    ));
+  }
+
+  /// Show delete confirmation dialog
+  void _showDeleteCoAppConfirmationDialog(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    CoApplicantItem item,
+  ) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.errorRed.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.errorRed,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Delete Co-Applicant',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Are you sure you want to remove ${item.name ?? 'this co-applicant'}? This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.line),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: Obx(
+                        () => ElevatedButton(
+                          onPressed: controller.isDeletingCoApplicant.value
+                              ? null
+                              : () async {
+                                  final ok = await controller.deleteCoApplicant(item.id);
+                                  if (ok) Get.back();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.errorRed,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: controller.isDeletingCoApplicant.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Opens full details bottom sheet for a co-applicant: GET {{baseUrl}}/co-applicants/{id}
+  void _showCoApplicantDetailsBottomSheet(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    dynamic coApplicantId,
+    String coApplicantName,
+  ) {
+    controller.fetchCoApplicantDetails(coApplicantId);
+
+    Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
+        decoration: const BoxDecoration(
+          color: AppColors.lightBackground,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Drag indicator handle & top header
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border(bottom: BorderSide(color: AppColors.line)),
+              ),
+              child: Column(
+                children: [
+                  Center(
+                    child: Container(
+                      width: 38,
+                      height: 4.5,
+                      decoration: BoxDecoration(
+                        color: AppColors.line,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Co-Applicant Details',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.muted,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Content
+            Expanded(
+              child: Obx(() {
+                if (controller.isLoadingCoAppDetails.value) {
+                  return _buildSkeletonDetailsPlaceholder();
+                }
+
+                final details = controller.selectedCoApplicantDetails.value;
+                if (details == null || details.coApplicant == null) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 36, color: AppColors.muted),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'No details available',
+                            style: TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          ElevatedButton(
+                            onPressed: () => controller.fetchCoApplicantDetails(coApplicantId),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.navy,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final profile = details.coApplicant!;
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Profile Hero Card
+                      _buildDetailHeroCard(profile, details),
+
+                      const SizedBox(height: 10),
+
+                      // Section 1: Personal Details
+                      _buildDetailCard(
+                        title: 'PERSONAL DETAILS',
+                        icon: Icons.person_outline_rounded,
+                        children: [
+                          if (profile.name?.isNotEmpty == true)
+                            _buildDetailItem('Full Name', profile.name!),
+                          if (profile.phone?.isNotEmpty == true)
+                            _buildDetailItem('Mobile', profile.phone!),
+                          if (profile.email?.isNotEmpty == true)
+                            _buildDetailItem('Email', profile.email!),
+                          if (profile.panCardNumber?.isNotEmpty == true)
+                            _buildDetailItem('PAN Card Number', profile.panCardNumber!),
+                          if (profile.aadhaarCardNumber?.isNotEmpty == true)
+                            _buildDetailItem('Aadhaar Card Number', profile.aadhaarCardNumber!),
+                          if (profile.dateOfBirth?.isNotEmpty == true)
+                            _buildDetailItem('Date of Birth', profile.dateOfBirth!),
+                          if (profile.gender?.isNotEmpty == true)
+                            _buildDetailItem('Gender', profile.gender!),
+                          if (profile.maritalStatus?.isNotEmpty == true)
+                            _buildDetailItem('Marital Status', profile.maritalStatus!),
+                          if (profile.religion?.isNotEmpty == true)
+                            _buildDetailItem('Religion', profile.religion!),
+                          if (profile.fatherName?.isNotEmpty == true)
+                            _buildDetailItem("Father's Name", profile.fatherName!),
+                          if (profile.motherName?.isNotEmpty == true)
+                            _buildDetailItem("Mother's Name", profile.motherName!),
+                          if (profile.currentResidenceType?.isNotEmpty == true)
+                            _buildDetailItem('Residence Type', profile.currentResidenceType!),
+                          if (profile.permanentAddress?.isNotEmpty == true)
+                            _buildDetailItem('Permanent Address', profile.permanentAddress!),
+                          if (profile.communicationAddress?.isNotEmpty == true)
+                            _buildDetailItem('Communication Address', profile.communicationAddress!),
+                        ],
+                      ),
+
+                      // Section 2: Employment & Income
+                      _buildDetailCard(
+                        title: 'EMPLOYMENT & INCOME',
+                        icon: Icons.work_outline_rounded,
+                        children: [
+                          if (profile.employmentType?.isNotEmpty == true)
+                            _buildDetailItem('Employment Type', profile.employmentType!),
+                          if (profile.companyName?.isNotEmpty == true)
+                            _buildDetailItem('Company Name', profile.companyName!),
+                          if (profile.sector?.isNotEmpty == true)
+                            _buildDetailItem('Sector', profile.sector!),
+                          if (profile.companyType?.isNotEmpty == true)
+                            _buildDetailItem('Company Type', profile.companyType!),
+                          if (profile.designation?.isNotEmpty == true)
+                            _buildDetailItem('Designation', profile.designation!),
+                          if (profile.monthlySalary?.isNotEmpty == true)
+                            _buildDetailItem('Monthly Salary', '₹${profile.monthlySalary!}'),
+                          if (profile.incomeType?.isNotEmpty == true)
+                            _buildDetailItem('Income Type', profile.incomeType!),
+                          if (profile.bankSalaryAmount?.isNotEmpty == true)
+                            _buildDetailItem('Bank Salary', '₹${profile.bankSalaryAmount!}'),
+                          if (profile.cashSalaryAmount?.isNotEmpty == true)
+                            _buildDetailItem('Cash Salary', '₹${profile.cashSalaryAmount!}'),
+                          if (profile.workExperience?.isNotEmpty == true)
+                            _buildDetailItem('Total Experience', '${profile.workExperience!} yrs'),
+                          if (profile.currentExperience?.isNotEmpty == true)
+                            _buildDetailItem('Current Experience', '${profile.currentExperience!} yrs'),
+                          if (profile.companyAddress?.isNotEmpty == true)
+                            _buildDetailItem('Company Address', profile.companyAddress!),
+                          if (profile.businessName?.isNotEmpty == true)
+                            _buildDetailItem('Business Name', profile.businessName!),
+                          if (profile.businessTurnover?.isNotEmpty == true)
+                            _buildDetailItem('Business Turnover', profile.businessTurnover!),
+                        ],
+                      ),
+
+                      // Section 3: Credit & Obligations
+                      _buildDetailCard(
+                        title: 'CREDIT & OBLIGATIONS',
+                        icon: Icons.account_balance_outlined,
+                        children: [
+                          if (profile.cibilScore != null)
+                            _buildDetailItem('CIBIL Score', '${profile.cibilScore}'),
+                          if (profile.cibilIssue?.isNotEmpty == true)
+                            _buildDetailItem('CIBIL Issue', profile.cibilIssue!),
+                          if (profile.obligations.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Existing Loan Obligations',
+                              style: TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            for (final obl in profile.obligations)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.lightBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.line),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          obl.bankName ?? 'Bank',
+                                          style: const TextStyle(
+                                            color: AppColors.textDark,
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        if (obl.loanType?.isNotEmpty == true)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.indigoTint,
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(
+                                                color: AppColors.indigo.withValues(alpha: 0.25),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Text(
+                                              obl.loanType!,
+                                              style: const TextStyle(
+                                                color: AppColors.indigo,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        if (obl.emiAmount != null)
+                                          Text(
+                                            'EMI: ₹${obl.emiAmount}',
+                                            style: const TextStyle(
+                                              color: AppColors.muted,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        if (obl.outstandingAmount != null)
+                                          Text(
+                                            'Outstanding: ₹${obl.outstandingAmount}',
+                                            style: const TextStyle(
+                                              color: AppColors.muted,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    if (obl.remainingTenure?.isNotEmpty == true) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Remaining: ${obl.remainingTenure!}',
+                                        style: const TextStyle(
+                                          color: AppColors.muted,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ],
+                      ),
+
+                      // Section 4: Documents & Proofs
+                      _buildDetailCard(
+                        title: 'DOCUMENTS & PROOFS',
+                        icon: Icons.folder_open_rounded,
+                        trailing: details.summary != null
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successGreenBg,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: AppColors.successGreen.withValues(alpha: 0.25),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 11,
+                                      color: AppColors.successGreen,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${details.summary?.uploaded ?? 0}/${details.summary?.total ?? details.documents.length} Uploaded',
+                                      style: const TextStyle(
+                                        color: AppColors.successGreen,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : null,
+                        children: [
+                          if (details.summary != null) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '${details.summary?.uploaded ?? 0} of ${details.summary?.total ?? details.documents.length} Completed',
+                                  style: const TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${details.summary?.total != null && details.summary!.total! > 0 ? (((details.summary?.uploaded ?? 0) / details.summary!.total!) * 100).toInt() : 0}%',
+                                  style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: (details.summary?.total != null && details.summary!.total! > 0)
+                                    ? ((details.summary?.uploaded ?? 0) / details.summary!.total!)
+                                    : 0.0,
+                                minHeight: 3.5,
+                                backgroundColor: AppColors.canvas,
+                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.successGreen),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          if (details.documents.isNotEmpty)
+                            for (final doc in details.documents)
+                              _buildDocDetailTile(doc)
+                          else
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Center(
+                                child: Text(
+                                  'No documents found.',
+                                  style: TextStyle(color: AppColors.muted, fontSize: 12.5),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  /// Profile Hero Card inside details bottom sheet
+  Widget _buildDetailHeroCard(CoApplicantDetailProfile profile, CoApplicantDetailData details) {
+    final name = profile.name ?? 'Co-Applicant';
+    final initials = name.trim().isNotEmpty
+        ? name.trim().split(' ').take(2).map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').join()
+        : 'CA';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.indigo, AppColors.navy],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    if (profile.relationship?.isNotEmpty == true)
+                      _buildPillTag(profile.relationship!, AppColors.amber.withValues(alpha: 0.15), AppColors.textDark),
+                    if (profile.applicantType?.isNotEmpty == true)
+                      _buildPillTag(profile.applicantType!, AppColors.indigoTint, AppColors.indigo),
+                    if (profile.employmentType?.isNotEmpty == true)
+                      _buildPillTag(profile.employmentType!, AppColors.canvas, AppColors.muted),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (profile.cibilScore != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.successGreenBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.successGreen.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'CIBIL',
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    '${profile.cibilScore}',
+                    style: const TextStyle(
+                      color: AppColors.successGreen,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPillTag(String label, Color bg, Color textColor, {Color? borderColor}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: borderColor ?? textColor.withValues(alpha: 0.25),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  /// Collapsible/Structured Card widget for sections in details bottom sheet
+  Widget _buildDetailCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+    Widget? trailing,
+  }) {
+    if (children.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.indigoTint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.navy, size: 15),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Divider(height: 1, thickness: 1, color: AppColors.line),
+          const SizedBox(height: 6),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  /// Single Key-Value row inside detail bottom sheet
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                color: AppColors.textDark,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Document item tile inside details bottom sheet
+  Widget _buildDocDetailTile(CoApplicantDocumentConfig doc) {
+    final isUploaded = doc.uploaded == true || doc.status?.toLowerCase() == 'uploaded' || doc.files.isNotEmpty;
+    final fileCount = doc.files.length;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isUploaded ? AppColors.successGreen.withValues(alpha: 0.35) : AppColors.line,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Icon Container
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isUploaded ? AppColors.successGreenBg : AppColors.indigoTint,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isUploaded
+                          ? AppColors.successGreen.withValues(alpha: 0.2)
+                          : AppColors.indigo.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      isUploaded ? Icons.verified_user_outlined : Icons.description_outlined,
+                      color: isUploaded ? AppColors.successGreen : AppColors.navy,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Label and status text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        doc.label ?? doc.key ?? 'Document',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        isUploaded
+                            ? (fileCount > 0 ? '$fileCount file(s) attached' : 'Verified & Uploaded')
+                            : 'Upload pending',
+                        style: TextStyle(
+                          color: isUploaded ? AppColors.successGreen : AppColors.muted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Status badge with light border
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                  decoration: BoxDecoration(
+                    color: isUploaded ? AppColors.successGreenBg : AppColors.canvas,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: isUploaded
+                          ? AppColors.successGreen.withValues(alpha: 0.3)
+                          : AppColors.line,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isUploaded ? Icons.check_circle_rounded : Icons.schedule_rounded,
+                        size: 11,
+                        color: isUploaded ? AppColors.successGreen : AppColors.muted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isUploaded ? 'Uploaded' : 'Pending',
+                        style: TextStyle(
+                          color: isUploaded ? AppColors.successGreen : AppColors.muted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Attached files list
+            if (doc.files.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1, thickness: 1, color: AppColors.line),
+              const SizedBox(height: 8),
+              for (final f in doc.files)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.line.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.attach_file_rounded, size: 13, color: AppColors.muted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          f.name ?? 'Attached Document',
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (f.status != null)
+                        Text(
+                          f.status!.toUpperCase(),
+                          style: const TextStyle(
+                            color: AppColors.successGreen,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shimmer loading placeholder for Co-Applicant Details bottom sheet
+  Widget _buildSkeletonDetailsPlaceholder() {
+    return Skeletonizer(
+      enabled: true,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Skeleton Hero Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      color: AppColors.canvas,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: AppColors.canvas,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              width: 70,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: AppColors.canvas,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Skeleton Section 1: Personal Details
+            _buildDetailCard(
+              title: 'PERSONAL DETAILS',
+              icon: Icons.person_outline_rounded,
+              children: [
+                _buildDetailItem('Full Name', 'Sample Applicant Name'),
+                _buildDetailItem('Mobile', '+91 98765 43210'),
+                _buildDetailItem('PAN Card Number', 'ABCDE1234F'),
+                _buildDetailItem('Aadhaar Card Number', '1234 5678 9012'),
+                _buildDetailItem('Date of Birth', '1990-01-01'),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Skeleton Section 2: Employment & Income
+            _buildDetailCard(
+              title: 'EMPLOYMENT & INCOME',
+              icon: Icons.work_outline_rounded,
+              children: [
+                _buildDetailItem('Employment Type', 'Salaried Professional'),
+                _buildDetailItem('Company Name', 'Enterprise Tech Solutions'),
+                _buildDetailItem('Monthly Salary', '₹75,000.00'),
+                _buildDetailItem('Total Experience', '5 yrs'),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // Skeleton Section 3: Documents
+            _buildDetailCard(
+              title: 'DOCUMENTS & PROOFS',
+              icon: Icons.folder_open_rounded,
+              children: [
+                _buildDetailItem('Bank Statement', '6 Months Statement'),
+                _buildDetailItem('Salary Slips', 'Latest 3 Months'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

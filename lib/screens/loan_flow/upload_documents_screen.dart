@@ -36,50 +36,51 @@ class UploadDocumentsBody extends StatelessWidget {
             child: Obx(() {
               final empType = controller.selectedEmploymentType.value;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title matching flow (e.g. "Salaried Business Proof" or "Employment Proof")
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '$empType Business Proof',
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.3,
+              return Form(
+                key: controller.uploadDocsFormKey,
+                autovalidateMode: controller.autoValidateUploadDocs.value
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title matching flow (e.g. "Salaried Business Proof" or "Employment Proof")
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '$empType Business Proof',
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        onPressed: () => controller.handleBack(),
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          color: AppColors.muted,
-                          size: 22,
+                        IconButton(
+                          onPressed: () => controller.handleBack(),
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: AppColors.muted,
+                            size: 22,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
 
-                  // ==========================================
-                  // Section 1: Employment Details (Header outside container)
-                  // ==========================================
-                  _buildEmploymentDetailsSection(controller),
+                    // ==========================================
+                    // Section 1: Employment Details (Header outside container)
+                    // ==========================================
+                    _buildEmploymentDetailsSection(controller),
 
-                  // ==========================================
-                  // Section 2: Reference Details (Dynamic Form Sections)
-                  // ==========================================
-                  _buildReferenceDetailsSection(controller),
-
-                  // ==========================================
-                  // Section 3: Required Document Proofs (Header outside, cards matching demo UI)
-                  // ==========================================
-                  _buildRequiredDocumentProofsSection(controller, context),
-                  const SizedBox(height: 16),
-                ],
+                    // ==========================================
+                    // Section 2: Required Document Proofs (Header outside, cards matching demo UI)
+                    // ==========================================
+                    _buildRequiredDocumentProofsSection(controller, context),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               );
             }),
           ),
@@ -174,6 +175,14 @@ class UploadDocumentsBody extends StatelessWidget {
                         isRequired: isReq,
                         value: dropVal.value,
                         items: field.options,
+                        validator: isReq
+                            ? (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please select $label';
+                                }
+                                return null;
+                              }
+                            : null,
                         onChanged: (val) {
                           dropVal.value = val;
                         },
@@ -301,122 +310,7 @@ class UploadDocumentsBody extends StatelessWidget {
   }
 
   // ==========================================
-  // Section 2: Reference Details (Dynamic from store-amount form_sections)
-  // ==========================================
-  Widget _buildReferenceDetailsSection(ApplyLoanController controller) {
-    return Obx(() {
-      if (controller.dynamicFormSections.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: controller.dynamicFormSections.map((section) {
-          final title = section.title ?? 'Reference Details';
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header OUTSIDE container
-              Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: AppColors.indigoTint,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.contacts_rounded,
-                        color: AppColors.navy,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.2,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Fields Container
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.line, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: section.fields.map((field) {
-                    final name = field.name ?? '';
-                    final label = field.label ?? name;
-                    final isReq = field.required == true;
-                    final type = field.type?.toLowerCase() ?? 'text';
-
-                    if (type == 'select' && field.options.isNotEmpty) {
-                      final dropVal = controller.getDropdownValueForField(name, field.options.first);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Obx(
-                          () => CustomAppDropdown(
-                            label: label,
-                            isRequired: isReq,
-                            value: dropVal.value,
-                            items: field.options,
-                            onChanged: (val) {
-                              dropVal.value = val;
-                            },
-                          ),
-                        ),
-                      );
-                    }
-
-                    final textCtrl = controller.getControllerForField(name);
-                    final isPhone = type == 'phone';
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _buildTextField(
-                        label: label,
-                        isRequired: isReq,
-                        hintText: 'Enter $label',
-                        controller: textCtrl,
-                        keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 18),
-            ],
-          );
-        }).toList(),
-      );
-    });
-  }
-
-  // ==========================================
-  // Section 3: Required Document Proofs (Strictly from POST /loan/store-amount)
+  // Section 2: Required Document Proofs (Strictly from POST /loan/store-amount)
   // ==========================================
   Widget _buildRequiredDocumentProofsSection(ApplyLoanController controller, BuildContext context) {
     // Documents loaded dynamically directly from POST /loan/store-amount API without static filtering
@@ -743,6 +637,7 @@ class UploadDocumentsBody extends StatelessWidget {
     required TextEditingController controller,
     bool isRequired = false,
     TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,32 +664,69 @@ class UploadDocumentsBody extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 6),
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.line, width: 1.0),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator ??
+              (val) {
+                final text = val?.trim() ?? '';
+                if (isRequired && text.isEmpty) {
+                  return 'Please enter $label';
+                }
+                if (keyboardType == TextInputType.number && text.isNotEmpty) {
+                  final numVal = num.tryParse(text);
+                  if (numVal == null || numVal <= 0) {
+                    return 'Please enter a valid amount';
+                  }
+                }
+                if (keyboardType == TextInputType.phone && text.isNotEmpty) {
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(text)) {
+                    return '$label must be 10 digits';
+                  }
+                }
+                return null;
+              },
+          style: const TextStyle(
+            color: AppColors.textDark,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w500,
           ),
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 13.5,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.line, width: 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.line, width: 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.indigo, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.errorRed, width: 1.2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: AppColors.errorRed, width: 1.5),
+            ),
+            errorStyle: const TextStyle(
+              color: AppColors.errorRed,
+              fontSize: 11.5,
               fontWeight: FontWeight.w500,
             ),
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              border: InputBorder.none,
-              isDense: true,
-            ),
+            isDense: true,
           ),
         ),
       ],

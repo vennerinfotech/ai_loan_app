@@ -12,10 +12,14 @@ import '../../widgets/image_picker_bottom_sheet.dart';
 /// Screen for adding a new co-applicant or guarantor (Dynamic API Form with Skeletonizer Loader & Document Uploads)
 class AddCoApplicantScreen extends StatefulWidget {
   final String role;
+  final bool isEdit;
+  final dynamic coApplicantId;
 
   const AddCoApplicantScreen({
     super.key,
     this.role = 'Co-Applicant',
+    this.isEdit = false,
+    this.coApplicantId,
   });
 
   @override
@@ -163,7 +167,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
           Expanded(
             child: Center(
               child: Text(
-                'Add ${widget.role.toLowerCase()}',
+                widget.isEdit
+                    ? 'Edit ${widget.role.toLowerCase()}'
+                    : 'Add ${widget.role.toLowerCase()}',
                 style: const TextStyle(
                   color: AppColors.textDark,
                   fontSize: 17,
@@ -207,6 +213,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
             hintText: 'Select Relationship',
             value: controller.selectedRelationship.value,
             items: options,
+            validator: isReq
+                ? (v) => (v == null || v.trim().isEmpty) ? 'Please select $label' : null
+                : null,
             onChanged: (val) {
               controller.selectRelationship(val);
             },
@@ -227,6 +236,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
             hintText: 'Select Applicant Type',
             value: controller.selectedApplicantType.value,
             items: options,
+            validator: isReq
+                ? (v) => (v == null || v.trim().isEmpty) ? 'Please select $label' : null
+                : null,
             onChanged: (val) {
               controller.selectApplicantType(val);
             },
@@ -246,6 +258,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
             hintText: 'Select Employment Type',
             value: controller.selectedEmploymentType.value,
             items: options,
+            validator: isReq
+                ? (v) => (v == null || v.trim().isEmpty) ? 'Please select $label' : null
+                : null,
             onChanged: (val) {
               controller.selectEmploymentType(val);
             },
@@ -262,6 +277,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
           hintText: 'Select $label',
           value: '',
           items: field.options,
+          validator: isReq
+              ? (v) => (v == null || v.trim().isEmpty) ? 'Please select $label' : null
+              : null,
           onChanged: (_) {},
         ),
       );
@@ -777,7 +795,16 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                 () => ElevatedButton(
                   onPressed: controller.isAddingCoApplicant.value
                       ? null
-                      : () => controller.addCoApplicant(role: widget.role),
+                      : () {
+                          if (widget.isEdit && widget.coApplicantId != null) {
+                            controller.updateCoApplicant(
+                              coApplicantId: widget.coApplicantId,
+                              role: widget.role,
+                            );
+                          } else {
+                            controller.addCoApplicant(role: widget.role);
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.navy,
                     disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.6),
@@ -799,7 +826,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Add ${widget.role}',
+                              widget.isEdit
+                                  ? 'Update ${widget.role}'
+                                  : 'Add ${widget.role}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14.5,

@@ -62,6 +62,10 @@ class LoanDocItem {
 
 /// GetX controller managing the 4-step Apply Loan Flow
 class ApplyLoanController extends GetxController {
+  /// Form key and autovalidate trigger for Upload Documents / Salaried Business Proof form
+  final GlobalKey<FormState> uploadDocsFormKey = GlobalKey<FormState>();
+  final RxBool autoValidateUploadDocs = false.obs;
+
   // Step Coordination (Sticky Header Flow matching Aadhaar verification flow)
   final currentStep = 1.obs; // 1 = Type, 2 = Plan, 3 = Work, 4 = Docs
   final List<int> stepHistory = [1];
@@ -647,50 +651,35 @@ class ApplyLoanController extends GetxController {
 
   /// Form Validation before submitting to POST /leads/store
   bool validateEmploymentAndDocuments() {
-    // 1. Validate required employment detail fields
+    autoValidateUploadDocs.value = true;
+
+    // 1. Run FormState validation across all dynamic fields in UploadDocumentsScreen
+    if (uploadDocsFormKey.currentState != null) {
+      final isValid = uploadDocsFormKey.currentState!.validate();
+      if (!isValid) {
+        return false;
+      }
+    }
+
+    // 2. Fallback programmatic check for required fields without snackbars
     for (final field in activeDetailFields) {
       if (field.required == true) {
         final name = field.name ?? '';
-        final label = field.label ?? name;
         final type = field.type?.toLowerCase() ?? 'text';
 
         if (type == 'select') {
           final val = getDropdownValueForField(name, '').value.trim();
           if (val.isEmpty) {
-            Get.snackbar(
-              'Required Field',
-              'Please select $label',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppColors.navy,
-              colorText: Colors.white,
-              margin: const EdgeInsets.all(16),
-            );
             return false;
           }
         } else {
           final val = getControllerForField(name).text.trim();
           if (val.isEmpty) {
-            Get.snackbar(
-              'Required Field',
-              'Please enter $label',
-              snackPosition: SnackPosition.BOTTOM,
-              backgroundColor: AppColors.navy,
-              colorText: Colors.white,
-              margin: const EdgeInsets.all(16),
-            );
             return false;
           }
           if (type == 'number') {
             final numVal = num.tryParse(val);
             if (numVal == null || numVal <= 0) {
-              Get.snackbar(
-                'Invalid Value',
-                'Please enter a valid amount for $label',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppColors.navy,
-                colorText: Colors.white,
-                margin: const EdgeInsets.all(16),
-              );
               return false;
             }
           }
@@ -698,7 +687,7 @@ class ApplyLoanController extends GetxController {
       }
     }
 
-    // 2. Validate salary mode required fields
+    // 3. Validate salary mode required fields without snackbars
     final selectedModeKey = selectedSalaryMode.value.isNotEmpty
         ? selectedSalaryMode.value
         : (activeSalaryModes.isNotEmpty ? (activeSalaryModes.first.key ?? '') : '');
@@ -707,47 +696,9 @@ class ApplyLoanController extends GetxController {
       for (final req in currentMode.requires) {
         final val = getControllerForField(req).text.trim();
         if (val.isEmpty) {
-          final label = req == 'cash_salary_amount'
-              ? 'Cash Salary Amount'
-              : (req == 'bank_salary_amount' ? 'Bank Salary Amount' : req.replaceAll('_', ' ').capitalizeFirst ?? req);
-          Get.snackbar(
-            'Required Field',
-            'Please enter $label',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppColors.navy,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-          );
           return false;
         }
       }
-    }
-
-    // 3. Validate reference phone format if entered
-    final ref1Phone = getControllerForField('ref1_phone').text.trim();
-    if (ref1Phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(ref1Phone)) {
-      Get.snackbar(
-        'Invalid Mobile',
-        'Reference 1 Mobile must be 10 digits',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-      return false;
-    }
-
-    final ref2Phone = getControllerForField('ref2_phone').text.trim();
-    if (ref2Phone.isNotEmpty && !RegExp(r'^[0-9]{10}$').hasMatch(ref2Phone)) {
-      Get.snackbar(
-        'Invalid Mobile',
-        'Reference 2 Mobile must be 10 digits',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-      return false;
     }
 
     return true;

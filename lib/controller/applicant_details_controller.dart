@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/co_applicant_form_options_model.dart';
 import '../models/add_co_applicant_model.dart';
 import '../models/co_applicants_list_model.dart';
+import '../models/co_applicant_detail_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'apply_loan_controller.dart';
@@ -78,6 +79,162 @@ class ApplicantDetailsController extends GetxController {
   final isLoadingCoApplicants = false.obs;
   final coApplicantsList = <CoApplicantItem>[].obs;
   final coApplicants = <CoApplicantModel>[].obs;
+
+  // Co-Applicant Details API state (GET /co-applicants/{id})
+  final isLoadingCoAppDetails = false.obs;
+  final selectedCoApplicantDetails = Rxn<CoApplicantDetailData>();
+  final isDeletingCoApplicant = false.obs;
+  final editingCoApplicantId = Rxn<dynamic>();
+
+  /// Delete Co-Applicant API: DELETE {{baseUrl}}/co-applicants/{id}
+  Future<bool> deleteCoApplicant(dynamic coApplicantId) async {
+    if (coApplicantId == null) return false;
+    isDeletingCoApplicant.value = true;
+    try {
+      final res = await ApiService.deleteCoApplicant(coApplicantId: coApplicantId);
+      if (res['success'] == true || res['status_code'] == 200) {
+        coApplicantsList.removeWhere((item) => item.id == coApplicantId);
+        Get.snackbar(
+          'Success',
+          res['message']?.toString() ?? 'Co-applicant deleted successfully.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return true;
+      } else {
+        Get.snackbar(
+          'Notice',
+          res['message']?.toString() ?? 'Failed to delete co-applicant.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.errorRed,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error in deleteCoApplicant: $e');
+      return false;
+    } finally {
+      isDeletingCoApplicant.value = false;
+    }
+  }
+
+  /// Prepare form fields for editing an existing co-applicant
+  void prepareEditCoApplicant(CoApplicantItem item) {
+    editingCoApplicantId.value = item.id;
+    fullNameController.text = item.name ?? '';
+    mobileNumberController.text = item.phone ?? '';
+    selectedRelationship.value = item.relationship ?? '';
+    selectedApplicantType.value = item.applicantType ?? 'Financial';
+    selectedEmploymentType.value = item.employmentType ?? '';
+  }
+
+  /// Reset form fields when opening add screen fresh
+  void resetAddCoApplicantForm() {
+    editingCoApplicantId.value = null;
+    fullNameController.clear();
+    mobileNumberController.clear();
+    selectedRelationship.value = '';
+    selectedApplicantType.value = apiApplicantTypeOptions.isNotEmpty ? apiApplicantTypeOptions.first : 'Financial';
+    selectedEmploymentType.value = '';
+    coAppDocuments.clear();
+    coAppUploadedFiles.clear();
+  }
+
+  /// Update Co-Applicant API: PUT {{baseUrl}}/co-applicants/{id}
+  Future<bool> updateCoApplicant({required dynamic coApplicantId, String? role}) async {
+    if (addCoAppFormKey.currentState?.validate() != true) {
+      return false;
+    }
+
+    final name = fullNameController.text.trim();
+    final rawMobile = mobileNumberController.text.trim();
+    final mobile = rawMobile.replaceAll(RegExp(r'[^0-9]'), '');
+    final relationship = selectedRelationship.value.trim();
+    final appType = selectedApplicantType.value.trim();
+    final empType = selectedEmploymentType.value.trim();
+
+    if (relationship.isEmpty || empType.isEmpty) {
+      return false;
+    }
+
+    isAddingCoApplicant.value = true;
+    try {
+      final res = await ApiService.updateCoApplicant(
+        coApplicantId: coApplicantId,
+        coApplicantName: name,
+        coApplicantMobile: mobile,
+        coRelationship: relationship,
+        applicantType: appType,
+        employmentType: empType,
+        leadId: currentLeadId,
+      );
+
+      if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
+        Get.snackbar(
+          'Success',
+          res['message']?.toString() ?? 'Co-Applicant updated successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+
+        fetchCoApplicants();
+        resetAddCoApplicantForm();
+        Get.back();
+        return true;
+      } else {
+        Get.snackbar(
+          'Notice',
+          res['message']?.toString() ?? 'Failed to update co-applicant.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error in updateCoApplicant: $e');
+      return false;
+    } finally {
+      isAddingCoApplicant.value = false;
+    }
+  }
+
+  /// Fetch Co-Applicant Details API: GET {{baseUrl}}/co-applicants/{id}
+  Future<CoApplicantDetailData?> fetchCoApplicantDetails(dynamic coApplicantId) async {
+    if (coApplicantId == null) return null;
+    isLoadingCoAppDetails.value = true;
+    selectedCoApplicantDetails.value = null;
+    try {
+      final res = await ApiService.getCoApplicantDetails(coApplicantId: coApplicantId);
+      if (res['success'] == true || res['status_code'] == 200) {
+        if (res['data'] != null && res['data'] is Map<String, dynamic>) {
+          final data = CoApplicantDetailData.fromJson(res['data'] as Map<String, dynamic>);
+          selectedCoApplicantDetails.value = data;
+          return data;
+        }
+      } else {
+        Get.snackbar(
+          'Notice',
+          res['message']?.toString() ?? 'Failed to fetch co-applicant details.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error in fetchCoApplicantDetails: $e');
+    } finally {
+      isLoadingCoAppDetails.value = false;
+    }
+    return null;
+  }
 
   @override
   void onInit() {
@@ -261,27 +418,7 @@ class ApplicantDetailsController extends GetxController {
     final empType = selectedEmploymentType.value.trim();
     final assignedRole = role ?? selectedRole.value;
 
-    if (relationship.isEmpty) {
-      Get.snackbar(
-        'Required Field',
-        'Please select relationship to applicant',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-      return false;
-    }
-
-    if (empType.isEmpty) {
-      Get.snackbar(
-        'Required Field',
-        'Please select employment type',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
+    if (relationship.isEmpty || empType.isEmpty) {
       return false;
     }
 
