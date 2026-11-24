@@ -1703,4 +1703,110 @@ class ApiService {
       };
     }
   }
+
+  /// Get Loan Status API: POST {{baseUrl}}/loan/status
+  static Future<Map<String, dynamic>> getLoanStatus({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/loan/status');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.post(url, headers: headers, body: jsonEncode({}));
+
+      debugPrint('========== Get Loan Status ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Headers: $headers');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getLoanStatus: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch loan status. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Get My Documents API: GET {{baseUrl}}/my-documents
+  static Future<Map<String, dynamic>> getMyDocuments({
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/my-documents');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get My Documents ==========');
+      debugPrint('--> GET $url');
+      debugPrint('Headers: $headers');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getMyDocuments: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch my documents. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Get Document Details API: GET {{baseUrl}}/my-documents/{document_type} (e.g. aadhaar, pan)
+  static Future<Map<String, dynamic>> getDocumentDetails({
+    required String documentType,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/my-documents/$documentType');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Document Details ==========');
+      debugPrint('--> GET $url');
+      debugPrint('Headers: $headers');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getDocumentDetails: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to fetch document details. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
 }

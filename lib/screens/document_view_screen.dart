@@ -1,14 +1,17 @@
 import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../theme/app_colors.dart';
 import '../controller/document_wallet_controller.dart';
 import '../controller/profile_controller.dart';
+import '../models/document_detail_model.dart';
+import '../services/api_service.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
 
 /// Screen displaying a single document in light mode.
 /// Built to directly render document images fetched from an API or device memory,
-/// with interactive zoom, front/back toggle, and template fallbacks.
+/// with interactive zoom, front/back toggle, and dynamic detail integration from GET /my-documents/{document_type}.
 class DocumentViewScreen extends StatefulWidget {
   final WalletDocumentModel? document;
 
@@ -27,6 +30,8 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
 
   late WalletDocumentModel doc;
   late final ProfileController profileController;
+  DocumentDetailModel? documentDetail;
+  bool isLoadingDetail = false;
 
   @override
   void initState() {
@@ -45,6 +50,63 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     profileController = Get.isRegistered<ProfileController>()
         ? Get.find<ProfileController>()
         : Get.put(ProfileController());
+
+    _fetchDocumentDetails();
+  }
+
+  /// Fetches single document details from GET {{baseUrl}}/my-documents/{type}
+  Future<void> _fetchDocumentDetails() async {
+    final docId = doc.id.toLowerCase();
+    String docType = docId;
+    if (docId.contains('aadhaar')) {
+      docType = 'aadhaar';
+    } else if (docId.contains('pan')) {
+      docType = 'pan';
+    }
+
+    if (docType != 'aadhaar' && docType != 'pan') return;
+
+    setState(() => isLoadingDetail = true);
+    try {
+      final res = await ApiService.getDocumentDetails(documentType: docType);
+      if (res['success'] == true || res['status_code'] == 200) {
+        final model = DocumentDetailModel.fromJson(res);
+        if (mounted) {
+          setState(() {
+            documentDetail = model;
+            // Update doc model with fetched image & status
+            if (model.image != null && model.image!.isNotEmpty) {
+              final fullUrl = model.image!.startsWith('http')
+                  ? model.image!
+                  : '${ApiService.baseUrl}/storage/${model.image}';
+
+              doc = doc.copyWith(
+                title: model.title ?? doc.title,
+                badgeText: model.status != null ? model.status!.capitalizeFirst! : doc.badgeText,
+                frontImageUrl: fullUrl,
+                uploadedDate: _formatDate(model.createdAt ?? model.updatedAt),
+              );
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching document detail: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isLoadingDetail = false);
+      }
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return doc.uploadedDate;
+    try {
+      final dt = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy').format(dt.toLocal());
+    } catch (_) {
+      return dateStr;
+    }
   }
 
   @override
@@ -575,9 +637,11 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: AppColors.line),
             ),
-            child: const Text(
-              'XXXX  XXXX  1234',
-              style: TextStyle(
+            child: Text(
+              documentDetail?.number != null && documentDetail!.number!.length >= 4
+                  ? 'XXXX  XXXX  ${documentDetail!.number!.substring(documentDetail!.number!.length - 4)}'
+                  : 'XXXX  XXXX  1234',
+              style: const TextStyle(
                 color: AppColors.textDark,
                 fontSize: 19,
                 fontWeight: FontWeight.w900,

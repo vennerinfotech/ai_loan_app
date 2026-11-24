@@ -42,25 +42,84 @@ class DocumentWalletScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // 2-Column Grid of Document Cards
+            // 2-Column Grid of Document Cards with Pull-to-Refresh
             Expanded(
-              child: Obx(() {
-                final docs = controller.filteredDocuments;
-                return GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 14,
-                    mainAxisSpacing: 14,
-                    childAspectRatio: 0.96,
-                  ),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    return _buildDocumentCard(context, doc);
-                  },
-                );
-              }),
+              child: RefreshIndicator(
+                onRefresh: controller.fetchMyDocuments,
+                color: AppColors.primaryPurple,
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryPurple,
+                      ),
+                    );
+                  }
+
+                  final docs = controller.filteredDocuments;
+                  if (docs.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.18),
+                        Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: AppColors.indigoTint,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: const Icon(
+                                  Icons.folder_open_rounded,
+                                  color: AppColors.navy,
+                                  size: 28,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'No documents found',
+                                style: TextStyle(
+                                  color: AppColors.textDark,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Your uploaded and verified documents will appear here.',
+                                style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  return GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: 0.96,
+                    ),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      return _buildDocumentCard(context, doc);
+                    },
+                  );
+                }),
+              ),
             ),
           ],
         ),
@@ -202,35 +261,38 @@ class DocumentWalletScreen extends StatelessWidget {
   /// Category filter pills: All, KYC, Income, Loan
   Widget _buildCategoryPills(DocumentWalletController controller) {
     return Obx(() {
-      return Row(
-        children: controller.categories.map((cat) {
-          final isSelected = controller.selectedCategory.value == cat;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () => controller.selectCategory(cat),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.navy : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: isSelected ? AppColors.navy : AppColors.line,
-                    width: 1.2,
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: controller.categories.map((cat) {
+            final isSelected = controller.selectedCategory.value == cat;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () => controller.selectCategory(cat),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.navy : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? AppColors.navy : AppColors.line,
+                      width: 1.2,
+                    ),
                   ),
-                ),
-                child: Text(
-                  cat,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : AppColors.textDark,
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  child: Text(
+                    cat,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textDark,
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       );
     });
   }

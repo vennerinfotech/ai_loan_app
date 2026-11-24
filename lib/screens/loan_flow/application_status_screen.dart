@@ -3,70 +3,27 @@ import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
+import '../../controller/application_status_controller.dart';
 import '../main_nav_screen.dart';
-
-enum ApplicationStepStatus { done, inProgress, pending }
-
-class ProgressStepItem {
-  final String title;
-  final String subtitle;
-  final ApplicationStepStatus status;
-
-  const ProgressStepItem({
-    required this.title,
-    required this.subtitle,
-    required this.status,
-  });
-}
 
 /// Screen: "Application status" (Matching attached reference design)
 /// Features:
-/// - Deep royal blue hero card with application ID pill (#FS-2611-0042)
-/// - Amount, loan type, and 6-segment progress bar (2 of 6 complete, "Now: credit report")
+/// - Deep royal blue hero card with application ID pill
+/// - Dynamic user loan amount, verification status segments, and active status step
 /// - Intersecting cosmic orbit curves in the top right corner of the card
-/// - "Your progress" vertical stepper with custom status indicators, lines, and pill tags
+/// - "Your progress" vertical stepper dynamically driven by GET /loan/status
 /// - Bottom support chat button and "Continue application →" CTA
 class ApplicationStatusScreen extends StatelessWidget {
   const ApplicationStatusScreen({super.key});
 
-  final List<ProgressStepItem> steps = const [
-    ProgressStepItem(
-      title: 'Aadhaar verified',
-      subtitle: 'Identity confirmed',
-      status: ApplicationStepStatus.done,
-    ),
-    ProgressStepItem(
-      title: 'PAN verified',
-      subtitle: 'Tax ID matched',
-      status: ApplicationStepStatus.done,
-    ),
-    ProgressStepItem(
-      title: 'Credit report',
-      subtitle: 'Fetching your CIBIL report',
-      status: ApplicationStepStatus.inProgress,
-    ),
-    ProgressStepItem(
-      title: 'Loan plan',
-      subtitle: 'Amount, tenure & EMI',
-      status: ApplicationStepStatus.pending,
-    ),
-    ProgressStepItem(
-      title: 'Income documents',
-      subtitle: 'Salary slips, statements',
-      status: ApplicationStepStatus.pending,
-    ),
-    ProgressStepItem(
-      title: 'Final processing',
-      subtitle: 'Lender review & sanction',
-      status: ApplicationStepStatus.pending,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final controller = Get.isRegistered<ApplyLoanController>()
+    final applyController = Get.isRegistered<ApplyLoanController>()
         ? Get.find<ApplyLoanController>()
         : Get.put(ApplyLoanController());
+    final statusController = Get.isRegistered<ApplicationStatusController>()
+        ? Get.find<ApplicationStatusController>()
+        : Get.put(ApplicationStatusController());
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -75,30 +32,35 @@ class ApplicationStatusScreen extends StatelessWidget {
           children: [
             // Scrollable Content (Top Hero Card + Stepper)
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Hero Card (Loan Amount, Details, Segments, Cosmic Orbits)
-                    _buildTopHeroCard(controller),
-                    const SizedBox(height: 22),
+              child: RefreshIndicator(
+                onRefresh: statusController.fetchLoanStatus,
+                color: AppColors.primaryPurple,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Hero Card (Loan Amount, Details, Segments, Cosmic Orbits)
+                      _buildTopHeroCard(applyController, statusController),
+                      const SizedBox(height: 22),
 
-                    // "Your progress" Header
-                    const Text(
-                      'Your progress',
-                      style: TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.3,
+                      // "Your progress" Header
+                      const Text(
+                        'Your progress',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.3,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Vertical Progress Stepper List
-                    _buildVerticalStepper(),
-                  ],
+                      // Vertical Progress Stepper List
+                      Obx(() => _buildVerticalStepper(statusController)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -112,7 +74,10 @@ class ApplicationStatusScreen extends StatelessWidget {
   }
 
   /// Top Deep Royal Blue Hero Card with cosmic orbits in the top-right corner
-  Widget _buildTopHeroCard(ApplyLoanController controller) {
+  Widget _buildTopHeroCard(
+    ApplyLoanController applyController,
+    ApplicationStatusController statusController,
+  ) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -141,7 +106,7 @@ class ApplicationStatusScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row: Back button & Application ID badge (#FS-2611-0042)
+                // Top Row: Back button & Application ID badge
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -163,86 +128,115 @@ class ApplicationStatusScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          width: 1.0,
+                    Obx(() {
+                      final userId = statusController.loanStatus.value?.user?.id;
+                      final idText = userId != null ? '#FS-2611-00$userId' : '#FS-2611-0042';
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
                         ),
-                      ),
-                      child: const Text(
-                        '#FS-2611-0042',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            width: 1.0,
+                          ),
                         ),
-                      ),
-                    ),
+                        child: Text(
+                          idText,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 18),
 
-                // Loan Type · Tenure Subtitle
-                Obx(
-                  () => Text(
-                    '${controller.selectedLoanType.value} · ${controller.selectedTenureYears.value} years',
+                // Loan Type · Name Subtitle
+                Obx(() {
+                  final name = statusController.userName;
+                  final loanType = applyController.selectedLoanType.value.isNotEmpty
+                      ? applyController.selectedLoanType.value
+                      : 'Home Loan';
+                  final subtitle = name.isNotEmpty
+                      ? '$loanType · $name'
+                      : '$loanType · ${applyController.selectedTenureYears.value} years';
+
+                  return Text(
+                    subtitle,
                     style: const TextStyle(
                       color: AppColors.muted,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 4),
 
                 // Large Amount Display
-                Obx(
-                  () => Text(
-                    controller.formatIndianCurrency(controller.loanAmount.value),
+                Obx(() {
+                  final amount = statusController.loanStatus.value?.user?.loanAmount != null
+                      ? statusController.formattedLoanAmount
+                      : applyController.formatIndianCurrency(applyController.loanAmount.value);
+
+                  return Text(
+                    amount,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 30,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.6,
                     ),
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 18),
 
                 // 6-Segment Horizontal Progress Bar
-                _buildSegmentedProgressBar(activeSegments: 2, totalSegments: 6),
+                Obx(() {
+                  final completed = statusController.completedStepsCount;
+                  final total = statusController.dynamicSteps.length;
+                  return _buildSegmentedProgressBar(
+                    activeSegments: completed,
+                    totalSegments: total,
+                  );
+                }),
                 const SizedBox(height: 8),
 
-                // Sub-row: "2 of 6 complete" & "Now: credit report"
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '2 of 6 complete',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
+                // Sub-row: "X of Y complete" & "Now: ..."
+                Obx(() {
+                  final completed = statusController.completedStepsCount;
+                  final total = statusController.dynamicSteps.length;
+                  final label = statusController.activeStepLabel;
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$completed of $total complete',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Now: credit report',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
               ],
             ),
           ),
@@ -251,7 +245,7 @@ class ApplicationStatusScreen extends StatelessWidget {
     );
   }
 
-  /// 6-Segment Progress Bar (2 active amber, 4 inactive deep navy)
+  /// 6-Segment Progress Bar
   Widget _buildSegmentedProgressBar({
     required int activeSegments,
     required int totalSegments,
@@ -279,7 +273,8 @@ class ApplicationStatusScreen extends StatelessWidget {
   }
 
   /// Vertical Progress Stepper
-  Widget _buildVerticalStepper() {
+  Widget _buildVerticalStepper(ApplicationStatusController controller) {
+    final steps = controller.dynamicSteps;
     return Column(
       children: List.generate(steps.length, (index) {
         final step = steps[index];
