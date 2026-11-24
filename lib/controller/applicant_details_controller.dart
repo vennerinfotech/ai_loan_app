@@ -159,7 +159,7 @@ class ApplicantDetailsController extends GetxController {
     fullNameController.clear();
     mobileNumberController.clear();
     selectedRelationship.value = '';
-    selectedApplicantType.value = apiApplicantTypeOptions.isNotEmpty ? apiApplicantTypeOptions.first : 'Financial';
+    selectedApplicantType.value = '';
     selectedEmploymentType.value = '';
     coAppDocuments.clear();
     coAppUploadedFiles.clear();
@@ -376,6 +376,45 @@ class ApplicantDetailsController extends GetxController {
         !currentEmploymentOptions.contains(selectedEmploymentType.value)) {
       selectedEmploymentType.value = '';
     }
+
+    // Update dynamic documents based on current employment type (no static fallback)
+    _updateDocumentsForEmploymentType(selectedEmploymentType.value);
+  }
+
+  /// Updates coAppDocuments strictly based on selected employment_type from API
+  void _updateDocumentsForEmploymentType(String empType) {
+    if (empType.trim().isEmpty) {
+      coAppDocuments.clear();
+      return;
+    }
+
+    final docsConfig = formOptionsData.value?.documents;
+    if (docsConfig == null) {
+      coAppDocuments.clear();
+      return;
+    }
+
+    List<CoAppDocumentItem> matchedDocs = [];
+
+    // Check directly in by_employment_type mapping from API
+    if (docsConfig.byEmploymentType.containsKey(empType)) {
+      matchedDocs = docsConfig.byEmploymentType[empType] ?? [];
+    } else {
+      // Case-insensitive / trimmed match against API keys
+      final normalizedEmp = empType.trim().toLowerCase();
+      for (final entry in docsConfig.byEmploymentType.entries) {
+        if (entry.key.trim().toLowerCase() == normalizedEmp) {
+          matchedDocs = entry.value;
+          break;
+        }
+      }
+    }
+
+    if (matchedDocs.isNotEmpty) {
+      coAppDocuments.assignAll(matchedDocs);
+    } else {
+      coAppDocuments.clear();
+    }
   }
 
   /// Get active fields for Add Co-Applicant form strictly from API
@@ -453,11 +492,13 @@ class ApplicantDetailsController extends GetxController {
       if (!currentEmploymentOptions.contains(selectedEmploymentType.value)) {
         selectedEmploymentType.value = '';
       }
+      _updateDocumentsForEmploymentType(selectedEmploymentType.value);
     }
   }
 
   void selectEmploymentType(String type) {
     selectedEmploymentType.value = type;
+    _updateDocumentsForEmploymentType(type);
   }
 
   /// Submit Co-Applicant API: POST {{baseUrl}}/co-applicants

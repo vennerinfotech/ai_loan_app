@@ -1344,9 +1344,15 @@ class ApiService {
 
   /// Get Co-Applicant Form Options API: GET {{baseUrl}}/co-applicants/form-options
   static Future<Map<String, dynamic>> getCoApplicantFormOptions({
+    String? employmentType,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/co-applicants/form-options');
+    final queryParams = <String, String>{};
+    if (employmentType != null && employmentType.trim().isNotEmpty) {
+      queryParams['employment_type'] = employmentType.trim();
+    }
+    final uri = Uri.parse('$baseUrl/co-applicants/form-options');
+    final url = queryParams.isNotEmpty ? uri.replace(queryParameters: queryParams) : uri;
     final authToken = token ?? await SessionManager.getAuthToken();
 
     final headers = {

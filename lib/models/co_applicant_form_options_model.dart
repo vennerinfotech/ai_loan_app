@@ -1,6 +1,8 @@
 // Co-Applicant Form Options API Response Model
 // Endpoint: GET {{baseUrl}}/co-applicants/form-options
 
+import 'add_co_applicant_model.dart';
+
 class CoApplicantFormOptionsResponseModel {
   final bool? success;
   final int? statusCode;
@@ -194,6 +196,9 @@ class CoApplicantDocumentsConfig {
   final int? maxSizeMb;
   final List<String> multiFileKeys;
   final String? note;
+  final String? employmentType;
+  final List<CoAppDocumentItem> list;
+  final Map<String, List<CoAppDocumentItem>> byEmploymentType;
 
   CoApplicantDocumentsConfig({
     this.acceptedFormats = const [],
@@ -202,9 +207,30 @@ class CoApplicantDocumentsConfig {
     this.maxSizeMb,
     this.multiFileKeys = const [],
     this.note,
+    this.employmentType,
+    this.list = const [],
+    this.byEmploymentType = const {},
   });
 
   factory CoApplicantDocumentsConfig.fromJson(Map<String, dynamic> json) {
+    // Parse list of documents for default / requested employment type
+    final List<CoAppDocumentItem> docList = (json['list'] as List<dynamic>?)
+            ?.map((e) => CoAppDocumentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList() ??
+        [];
+
+    // Parse by_employment_type mapping (Salaried, Self-Employed, Freelancer, Pensioner, Housewife, Retired, Others, etc.)
+    final Map<String, List<CoAppDocumentItem>> byEmp = {};
+    if (json['by_employment_type'] != null && json['by_employment_type'] is Map) {
+      (json['by_employment_type'] as Map).forEach((key, val) {
+        if (val is List) {
+          byEmp[key.toString()] = val
+              .map((e) => CoAppDocumentItem.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+        }
+      });
+    }
+
     return CoApplicantDocumentsConfig(
       acceptedFormats: (json['accepted_formats'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       profileImageFormats: (json['profile_image_formats'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
@@ -212,6 +238,9 @@ class CoApplicantDocumentsConfig {
       maxSizeMb: json['max_size_mb'] is int ? json['max_size_mb'] as int : int.tryParse(json['max_size_mb']?.toString() ?? ''),
       multiFileKeys: (json['multi_file_keys'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       note: json['note']?.toString(),
+      employmentType: json['employment_type']?.toString(),
+      list: docList,
+      byEmploymentType: byEmp,
     );
   }
 }
