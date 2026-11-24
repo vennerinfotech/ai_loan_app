@@ -4,7 +4,6 @@ import '../theme/app_colors.dart';
 import '../controller/dashboard_controller.dart';
 import '../widgets/bottom_nav_bar.dart';
 import 'dashboard_screen.dart';
-import 'loan_flow/choose_loan_type_screen.dart';
 import 'emi_calculator_screen.dart';
 import 'document_wallet_screen.dart';
 import 'profile_screen.dart';
@@ -50,7 +49,7 @@ class MainNavScreen extends StatelessWidget {
                 currentIndex: controller.currentNavIndex.value,
                 onTap: (index) {
                   if (index == 2) {
-                    Get.to(() => const ChooseLoanTypeScreen());
+                    controller.handleApplyLoan(featureName: 'Apply for loan');
                   } else {
                     controller.currentNavIndex.value = index;
                   }
