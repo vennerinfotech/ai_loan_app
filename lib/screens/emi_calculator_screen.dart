@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../controller/emi_calculator_controller.dart';
 import '../controller/dashboard_controller.dart';
-import 'loan_flow/apply_loan_flow_screen.dart';
 
 /// Screen for interactive Loan EMI calculation (Reference Image)
 class EmiCalculatorScreen extends StatelessWidget {
@@ -12,7 +11,7 @@ class EmiCalculatorScreen extends StatelessWidget {
 
   const EmiCalculatorScreen({
     super.key,
-    this.showBackButton = true,
+    this.showBackButton = false,
   });
 
   @override
@@ -47,11 +46,6 @@ class EmiCalculatorScreen extends StatelessWidget {
 
                     // Total Payable Strip
                     _buildTotalPayableStrip(controller),
-
-                    const SizedBox(height: 24),
-
-                    // Bottom "Apply with these numbers →" Button
-                    _buildApplyButton(context, controller),
                   ],
                 ),
               ),
@@ -95,9 +89,7 @@ class EmiCalculatorScreen extends StatelessWidget {
                   color: AppColors.textDark,
                 ),
               ),
-            )
-          else
-            const SizedBox(width: 40),
+            ),
 
           // Title
           const Expanded(
@@ -115,7 +107,7 @@ class EmiCalculatorScreen extends StatelessWidget {
           ),
 
           // Symmetrical spacer
-          const SizedBox(width: 40),
+          if (showBackButton) const SizedBox(width: 40),
         ],
       ),
     );
@@ -437,48 +429,6 @@ class EmiCalculatorScreen extends StatelessWidget {
             );
           }),
         ],
-      ),
-    );
-  }
-
-  /// Bottom "Apply with these numbers →" Button
-  Widget _buildApplyButton(
-    BuildContext context,
-    EmiCalculatorController controller,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: () {
-          Get.to(() => const ApplyLoanFlowScreen(initialStep: 1));
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.navy,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text(
-              'Apply with these numbers',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward_rounded,
-              color: AppColors.amber,
-              size: 16,
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -27,7 +27,7 @@ class MainNavScreen extends StatelessWidget {
               case 0:
                 return const DashboardScreen();
               case 1:
-                return const EmiCalculatorScreen(showBackButton: true);
+                return const EmiCalculatorScreen(showBackButton: false);
               case 2:
                 // Center action handled by controller, fallback to dashboard
                 return const DashboardScreen();

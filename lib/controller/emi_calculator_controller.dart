@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../models/dashboard_response_model.dart';
@@ -7,33 +8,33 @@ import '../services/api_service.dart';
 import 'dashboard_controller.dart';
 
 /// Controller for EMI Calculator with dynamic reactive calculation from API.
-/// Strictly dynamic: initializes from GET /dashboard and calculates via POST /emi-calculate.
-/// Zero static fallback amounts or dummy data.
+/// Synchronizes slider configurations from GET /dashboard and calculates via POST /emi-calculate.
+/// Provides immediate mathematical local responsiveness during slider drag and syncs with the API response.
 class EmiCalculatorController extends GetxController {
-  // Loan Amount in INR (Dynamic from dashboard API)
-  final loanAmount = 0.0.obs;
-  final minLoanAmount = 0.0.obs;
-  final maxLoanAmount = 0.0.obs;
-  final stepLoanAmount = 0.0.obs;
+  // Loan Amount in INR (Dynamic from dashboard API with standard fallback boundaries)
+  final loanAmount = 500000.0.obs;
+  final minLoanAmount = 50000.0.obs;
+  final maxLoanAmount = 5000000.0.obs;
+  final stepLoanAmount = 10000.0.obs;
 
   // Annual Interest Rate in % (Dynamic from dashboard API)
-  final interestRate = 0.0.obs;
-  final minInterestRate = 0.0.obs;
-  final maxInterestRate = 0.0.obs;
-  final stepInterestRate = 0.0.obs;
+  final interestRate = 9.5.obs;
+  final minInterestRate = 8.5.obs;
+  final maxInterestRate = 24.0.obs;
+  final stepInterestRate = 0.1.obs;
 
   // Tenure in Years (Dynamic from dashboard API)
-  final tenureYears = 0.0.obs;
-  final minTenure = 0.0.obs;
-  final maxTenure = 0.0.obs;
-  final stepTenure = 0.0.obs;
+  final tenureYears = 3.0.obs; // 36 months
+  final minTenure = 0.5.obs;   // 6 months
+  final maxTenure = 5.0.obs;   // 60 months
+  final stepTenure = 0.5.obs;
 
-  // Result metrics (Strictly from API, zero static dummy fallback math)
-  final monthlyEmi = 0.obs;
-  final totalPayable = 0.obs;
-  final totalInterest = 0.obs;
-  final principalPercent = 0.0.obs;
-  final interestPercent = 0.0.obs;
+  // Result metrics (Synchronized from API)
+  final monthlyEmi = 16016.obs;
+  final totalPayable = 576593.obs;
+  final totalInterest = 76593.obs;
+  final principalPercent = 86.7.obs;
+  final interestPercent = 13.3.obs;
   final isCalculating = false.obs;
   final isLoaded = false.obs;
 
@@ -74,43 +75,46 @@ class EmiCalculatorController extends GetxController {
       // 1. Loan Amount Sliders
       if (emiCalc.sliders?.loanAmount != null) {
         final s = emiCalc.sliders!.loanAmount!;
-        if (s.min != null) minLoanAmount.value = s.min!.toDouble();
-        if (s.max != null) maxLoanAmount.value = s.max!.toDouble();
-        if (s.step != null) stepLoanAmount.value = s.step!.toDouble();
-        if (s.defaultValue != null) loanAmount.value = s.defaultValue!.toDouble();
+        if (s.min != null && s.min! > 0) minLoanAmount.value = s.min!.toDouble();
+        if (s.max != null && s.max! > 0) maxLoanAmount.value = s.max!.toDouble();
+        if (s.step != null && s.step! > 0) stepLoanAmount.value = s.step!.toDouble();
+        if (s.defaultValue != null && s.defaultValue! > 0) loanAmount.value = s.defaultValue!.toDouble();
       }
 
       // 2. Interest Rate Sliders
       if (emiCalc.sliders?.interestRate != null) {
         final s = emiCalc.sliders!.interestRate!;
-        if (s.min != null) minInterestRate.value = s.min!.toDouble();
-        if (s.max != null) maxInterestRate.value = s.max!.toDouble();
-        if (s.step != null) stepInterestRate.value = s.step!.toDouble();
-        if (s.defaultValue != null) interestRate.value = s.defaultValue!.toDouble();
+        if (s.min != null && s.min! > 0) minInterestRate.value = s.min!.toDouble();
+        if (s.max != null && s.max! > 0) maxInterestRate.value = s.max!.toDouble();
+        if (s.step != null && s.step! > 0) stepInterestRate.value = s.step!.toDouble();
+        if (s.defaultValue != null && s.defaultValue! > 0) interestRate.value = s.defaultValue!.toDouble();
       }
 
       // 3. Tenure Sliders (months -> years)
       if (emiCalc.sliders?.tenureMonths != null) {
         final s = emiCalc.sliders!.tenureMonths!;
-        if (s.min != null) minTenure.value = s.min!.toDouble() / 12.0;
-        if (s.max != null) maxTenure.value = s.max!.toDouble() / 12.0;
-        if (s.step != null) stepTenure.value = s.step!.toDouble() / 12.0;
-        if (s.defaultValue != null) tenureYears.value = s.defaultValue!.toDouble() / 12.0;
+        if (s.min != null && s.min! > 0) minTenure.value = s.min!.toDouble() / 12.0;
+        if (s.max != null && s.max! > 0) maxTenure.value = s.max!.toDouble() / 12.0;
+        if (s.step != null && s.step! > 0) stepTenure.value = s.step!.toDouble() / 12.0;
+        if (s.defaultValue != null && s.defaultValue! > 0) tenureYears.value = s.defaultValue!.toDouble() / 12.0;
       }
 
       // 4. Default API Results
       if (emiCalc.result != null) {
         final r = emiCalc.result!;
-        if (r.loanAmount != null) loanAmount.value = r.loanAmount!.toDouble();
-        if (r.interestRate != null) interestRate.value = r.interestRate!.toDouble();
-        if (r.tenureMonths != null) tenureYears.value = r.tenureMonths!.toDouble() / 12.0;
-        if (r.monthlyEmi != null) monthlyEmi.value = r.monthlyEmi!.toInt();
-        if (r.totalInterest != null) totalInterest.value = r.totalInterest!.toInt();
-        if (r.totalPayable != null) totalPayable.value = r.totalPayable!.toInt();
-        if (r.principalPercent != null) principalPercent.value = r.principalPercent!.toDouble();
-        if (r.interestPercent != null) interestPercent.value = r.interestPercent!.toDouble();
+        if (r.loanAmount != null && r.loanAmount! > 0) loanAmount.value = r.loanAmount!.toDouble();
+        if (r.interestRate != null && r.interestRate! > 0) interestRate.value = r.interestRate!.toDouble();
+        if (r.tenureMonths != null && r.tenureMonths! > 0) tenureYears.value = r.tenureMonths!.toDouble() / 12.0;
+        if (r.monthlyEmi != null && r.monthlyEmi! > 0) monthlyEmi.value = r.monthlyEmi!.toInt();
+        if (r.totalInterest != null && r.totalInterest! > 0) totalInterest.value = r.totalInterest!.toInt();
+        if (r.totalPayable != null && r.totalPayable! > 0) totalPayable.value = r.totalPayable!.toInt();
+        if (r.principalPercent != null && r.principalPercent! > 0) principalPercent.value = r.principalPercent!.toDouble();
+        if (r.interestPercent != null && r.interestPercent! > 0) interestPercent.value = r.interestPercent!.toDouble();
       }
       isLoaded.value = true;
+    } else {
+      // Calculate initial values via API if dashboard config is unavailable
+      calculateEmiApi();
     }
   }
 
@@ -143,7 +147,42 @@ class EmiCalculatorController extends GetxController {
     }
   }
 
+  /// Instant local mathematical estimation for smooth 60fps slider dragging
+  void _calculateLocalEmi() {
+    final p = loanAmount.value;
+    final annualRate = interestRate.value;
+    final months = (tenureYears.value * 12).round();
+
+    if (p <= 0 || months <= 0) return;
+
+    if (annualRate <= 0) {
+      final emi = (p / months).round();
+      monthlyEmi.value = emi;
+      totalPayable.value = p.round();
+      totalInterest.value = 0;
+      principalPercent.value = 100.0;
+      interestPercent.value = 0.0;
+      return;
+    }
+
+    final r = annualRate / (12 * 100);
+    final powFactor = math.pow(1 + r, months);
+    final emi = (p * r * powFactor / (powFactor - 1)).round();
+
+    final total = emi * months;
+    final interest = total - p.round();
+
+    monthlyEmi.value = emi;
+    totalInterest.value = interest > 0 ? interest : 0;
+    totalPayable.value = total;
+    if (total > 0) {
+      principalPercent.value = double.parse((p / total * 100).toStringAsFixed(1));
+      interestPercent.value = double.parse((interest / total * 100).toStringAsFixed(1));
+    }
+  }
+
   void _scheduleCalculation() {
+    _calculateLocalEmi();
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       calculateEmiApi();

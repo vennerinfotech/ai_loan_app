@@ -55,17 +55,23 @@ class EmiCalculationData {
   });
 
   factory EmiCalculationData.fromJson(Map<String, dynamic> json) {
+    num? parseNum(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val;
+      return num.tryParse(val.toString());
+    }
+
     return EmiCalculationData(
-      loanAmount: json['loan_amount'] as num?,
-      interestRate: json['interest_rate'] as num?,
+      loanAmount: parseNum(json['loan_amount']),
+      interestRate: parseNum(json['interest_rate']),
       tenureMonths: json['tenure_months'] is int
           ? json['tenure_months'] as int
           : int.tryParse(json['tenure_months']?.toString() ?? ''),
-      monthlyEmi: json['monthly_emi'] as num?,
-      totalInterest: json['total_interest'] as num?,
-      totalPayable: json['total_payable'] as num?,
-      principalPercent: json['principal_percent'] as num?,
-      interestPercent: json['interest_percent'] as num?,
+      monthlyEmi: parseNum(json['monthly_emi']),
+      totalInterest: parseNum(json['total_interest']),
+      totalPayable: parseNum(json['total_payable']),
+      principalPercent: parseNum(json['principal_percent']),
+      interestPercent: parseNum(json['interest_percent']),
     );
   }
 

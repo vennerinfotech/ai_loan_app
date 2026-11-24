@@ -1128,7 +1128,7 @@ class ApiService {
   }
 
   /// Calculate EMI API: POST {{baseUrl}}/emi-calculate
-  /// Uses form-data matching Postman collection (loan_amount, interest_rate, tenure_months)
+  /// Sends JSON body matching Postman collection (loan_amount, interest_rate, tenure_months)
   static Future<Map<String, dynamic>> calculateEmi({
     required dynamic loanAmount,
     dynamic interestRate,
@@ -1138,28 +1138,39 @@ class ApiService {
     final url = Uri.parse('$baseUrl/emi-calculate');
     final authToken = token ?? await SessionManager.getAuthToken();
 
-    try {
-      final request = http.MultipartRequest('POST', url);
-      request.headers['Accept'] = 'application/json';
-      if (authToken.isNotEmpty) {
-        request.headers['Authorization'] = 'Bearer $authToken';
-      }
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
 
-      request.fields['loan_amount'] = loanAmount.toString();
-      if (interestRate != null) {
-        request.fields['interest_rate'] = interestRate.toString();
-      }
-      if (tenureMonths != null) {
-        request.fields['tenure_months'] = tenureMonths.toString();
-      }
+    final Map<String, dynamic> bodyMap = {
+      'loan_amount': loanAmount is num
+          ? loanAmount
+          : (num.tryParse(loanAmount.toString()) ?? loanAmount),
+      if (interestRate != null)
+        'interest_rate': interestRate is num
+            ? interestRate
+            : (num.tryParse(interestRate.toString()) ?? interestRate),
+      if (tenureMonths != null)
+        'tenure_months': tenureMonths is int
+            ? tenureMonths
+            : (int.tryParse(tenureMonths.toString()) ?? tenureMonths),
+    };
+
+    final body = jsonEncode(bodyMap);
+
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
 
       debugPrint('========== Calculate EMI ==========');
-      debugPrint('--> POST (form-data) $url');
-      debugPrint('Fields: ${request.fields}');
-
-      final streamed = await request.send();
-      final response = await http.Response.fromStream(streamed);
-
+      debugPrint('--> POST (JSON) $url');
+      debugPrint('Headers: $headers');
+      debugPrint('Request Body: $body');
       debugPrint('<--------- Status:---------- ${response.statusCode}');
       debugPrint('Response Body: ${response.body}');
 
