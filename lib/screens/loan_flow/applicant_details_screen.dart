@@ -667,10 +667,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                         () => ElevatedButton(
                           onPressed: controller.isDeletingCoApplicant.value
                               ? null
-                              : () async {
-                                  final ok = await controller.deleteCoApplicant(item.id);
-                                  if (ok) Get.back();
-                                },
+                              : () => controller.deleteCoApplicant(item.id),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.errorRed,
                             elevation: 0,

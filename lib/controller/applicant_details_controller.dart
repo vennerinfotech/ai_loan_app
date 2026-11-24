@@ -94,20 +94,31 @@ class ApplicantDetailsController extends GetxController {
       final res = await ApiService.deleteCoApplicant(coApplicantId: coApplicantId);
       if (res['success'] == true || res['status_code'] == 200) {
         coApplicantsList.removeWhere((item) => item.id == coApplicantId);
+
+        // Close delete confirmation dialog first before showing snackbar
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
         Get.snackbar(
           'Success',
           res['message']?.toString() ?? 'Co-applicant deleted successfully.',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: AppColors.successGreen,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
         );
         return true;
       } else {
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
         Get.snackbar(
           'Notice',
           res['message']?.toString() ?? 'Failed to delete co-applicant.',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: AppColors.errorRed,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
@@ -116,6 +127,9 @@ class ApplicantDetailsController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error in deleteCoApplicant: $e');
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
       return false;
     } finally {
       isDeletingCoApplicant.value = false;
