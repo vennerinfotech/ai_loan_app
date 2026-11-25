@@ -26,6 +26,17 @@ class CibilScoreController extends GetxController {
     // Default report date from current DateTime.now()
     reportDate.value = formatReportDate(DateTime.now());
 
+    // Pre-populate score & rating from DashboardController so UI doesn't flash 0
+    if (Get.isRegistered<DashboardController>()) {
+      final dash = Get.find<DashboardController>();
+      if (dash.cibilScore.value > 0) {
+        cibilScore.value = dash.cibilScore.value;
+        scoreRating.value = dash.cibilStatus.value.isNotEmpty
+            ? dash.cibilStatus.value
+            : getRatingForScore(dash.cibilScore.value);
+      }
+    }
+
     // Pre-populate PAN from PanKycController if registered
     if (Get.isRegistered<PanKycController>()) {
       final pan = Get.find<PanKycController>().panNumber.value.trim();
@@ -33,6 +44,9 @@ class CibilScoreController extends GetxController {
         panNumber.value = pan;
       }
     }
+
+    // Fetch live CIBIL score from POST /loan/cibil-score
+    fetchCibilScore();
   }
 
   /// Formats a DateTime using intl DateFormat into 'MMM dd, yyyy' (e.g. 'Dec 09, 2024')
@@ -98,9 +112,23 @@ class CibilScoreController extends GetxController {
               dashController.cibilStatus.value = scoreRating.value;
             }
           }
-          // Report date generated from current DateTime.now()
-          reportDate.value = formatReportDate(DateTime.now());
-          provider.value = 'CIBIL TransUnion';
+          // Parse report date from API if available
+          if (separateCibilData.reportDate != null &&
+              separateCibilData.reportDate!.isNotEmpty) {
+            final parsedDate = DateTime.tryParse(separateCibilData.reportDate!);
+            reportDate.value = parsedDate != null
+                ? formatReportDate(parsedDate)
+                : separateCibilData.reportDate!;
+          } else {
+            reportDate.value = formatReportDate(DateTime.now());
+          }
+          // Parse provider from API if available
+          if (separateCibilData.provider != null &&
+              separateCibilData.provider!.isNotEmpty) {
+            provider.value = separateCibilData.provider!;
+          } else {
+            provider.value = 'CIBIL TransUnion';
+          }
         } else {
           reportDate.value = formatReportDate(DateTime.now());
           provider.value = 'CIBIL TransUnion';
