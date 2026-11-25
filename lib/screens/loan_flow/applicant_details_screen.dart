@@ -52,7 +52,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       // Switch between Primary Applicant and Co-applicants card list
                       Obx(() {
                         if (controller.selectedTabIndex.value == 0) {
-                          return _buildPrimaryApplicantContent(controller);
+                          return _buildPrimaryApplicantContent(context, controller);
                         } else {
                           return _buildCoApplicantsCardList(context, controller);
                         }
@@ -74,7 +74,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
   }
 
   /// Primary applicant details tab content
-  Widget _buildPrimaryApplicantContent(ApplicantDetailsController controller) {
+  Widget _buildPrimaryApplicantContent(
+    BuildContext context,
+    ApplicantDetailsController controller,
+  ) {
     if (controller.isLoadingApplicantDetails.value &&
         controller.applicantDetailsData.value == null) {
       return _buildSkeletonApplicantContent();
@@ -101,6 +104,11 @@ class ApplicantDetailsScreen extends StatelessWidget {
         _buildSectionHeader('PERSONAL & CONTACT'),
         const SizedBox(height: 8),
         _buildPersonalContactCard(controller, data),
+
+        const SizedBox(height: 20),
+
+        // Documents & Proofs Section
+        _buildPrimaryApplicantDocumentsSection(context, controller, data),
       ],
     );
   }
@@ -2803,8 +2811,495 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
+  /// Primary applicant Documents & Proofs section
+  Widget _buildPrimaryApplicantDocumentsSection(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    ApplicantDetailModel? data,
+  ) {
+    final docs = controller.primaryApplicantDocuments;
+    final uploadedCount = docs.where((d) => d.uploaded == true || d.files.isNotEmpty).length;
+    final totalCount = docs.length;
 
-  /// Opens bottom sheet to select Co-Applicant or Guarantor
+    if (docs.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Obx(() {
+      final filter = controller.applicantDocFilter.value;
+      final displayDocs = filter == 'uploaded'
+          ? docs.where((d) => d.uploaded == true || d.files.isNotEmpty).toList()
+          : docs;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Header
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8, top: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.indigoTint,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.folder_open_rounded,
+                    color: AppColors.navy,
+                    size: 15,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'DOCUMENTS & PROOFS',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                if (totalCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: uploadedCount == totalCount && totalCount > 0
+                          ? AppColors.successGreenBg
+                          : AppColors.canvas,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: Text(
+                      '$uploadedCount/$totalCount',
+                      style: TextStyle(
+                        color: uploadedCount == totalCount && totalCount > 0
+                            ? AppColors.successGreen
+                            : AppColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Filter chips if there are both uploaded and pending documents
+          if (uploadedCount > 0 && uploadedCount < totalCount) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                _buildApplicantDocFilterChip(
+                  label: 'All ($totalCount)',
+                  isSelected: filter == 'all',
+                  onTap: () => controller.applicantDocFilter.value = 'all',
+                ),
+                const SizedBox(width: 8),
+                _buildApplicantDocFilterChip(
+                  label: 'Uploaded ($uploadedCount)',
+                  isSelected: filter == 'uploaded',
+                  onTap: () => controller.applicantDocFilter.value = 'uploaded',
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ] else ...[
+            const SizedBox(height: 6),
+          ],
+
+          // Document Cards
+          if (displayDocs.isNotEmpty)
+            for (final doc in displayDocs)
+              _buildApplicantDocCard(context, doc)
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.indigoTint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.folder_open_rounded,
+                        color: AppColors.navy,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'No Documents Uploaded',
+                    style: TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'No documents or proofs have been uploaded yet.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  /// Filter pill chip for primary applicant documents
+  Widget _buildApplicantDocFilterChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.navy : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.navy : AppColors.line,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppColors.muted,
+            fontSize: 11.5,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Individual card for primary applicant document
+  Widget _buildApplicantDocCard(BuildContext context, ApplicantDocumentItem doc) {
+    final isUploaded = doc.uploaded == true ||
+        doc.status?.toLowerCase() == 'uploaded' ||
+        doc.status?.toLowerCase() == 'accepted' ||
+        doc.files.isNotEmpty;
+    final fileCount = doc.files.length;
+    final hasRejected = doc.files.any((f) => f.status?.toLowerCase() == 'rejected') ||
+        doc.status?.toLowerCase() == 'rejected';
+    final String label = doc.label ?? _formatDocKey(doc.key ?? 'Document');
+    final docKey = doc.key ?? '';
+
+    // Collect all valid URLs for viewing in photo gallery
+    final allUrls = doc.files
+        .map((f) => (f.url?.isNotEmpty == true) ? f.url! : (f.viewEndpoint ?? f.name ?? ''))
+        .where((u) => u.isNotEmpty)
+        .toList();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasRejected
+              ? AppColors.errorRed
+              : isUploaded
+                  ? AppColors.indigo.withValues(alpha: 0.35)
+                  : AppColors.line,
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Leading Icon Container (42x42 squircle)
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: hasRejected
+                        ? AppColors.errorRedBg
+                        : isUploaded
+                            ? AppColors.successGreenBg
+                            : AppColors.indigoTint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      hasRejected
+                          ? Icons.error_outline_rounded
+                          : isUploaded
+                              ? Icons.check_circle_rounded
+                              : _getDocIcon(docKey),
+                      color: hasRejected
+                          ? AppColors.errorRed
+                          : isUploaded
+                              ? AppColors.successGreen
+                              : AppColors.navy,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Title + Subtitle / File count
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              label,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (fileCount > 1) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.canvas,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.line),
+                              ),
+                              child: Text(
+                                '$fileCount',
+                                style: const TextStyle(
+                                  color: AppColors.navy,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        isUploaded
+                            ? (fileCount == 1
+                                ? (doc.files.first.name ?? 'Uploaded ✓')
+                                : '$fileCount files attached')
+                            : 'Upload pending',
+                        style: TextStyle(
+                          color: hasRejected
+                              ? AppColors.errorRed
+                              : isUploaded
+                                  ? AppColors.successGreen
+                                  : AppColors.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Trailing Action: View Document Button (if uploaded) or Pending Tag
+                if (isUploaded && allUrls.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => _showVerifyToViewDocDialog(
+                      context,
+                      docTitle: label,
+                      imagePaths: allUrls,
+                      initialIndex: 0,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.indigoTint,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.indigo.withValues(alpha: 0.25),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.visibility_outlined,
+                            size: 14,
+                            color: AppColors.navy,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'View',
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (isUploaded)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.successGreenBg,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Uploaded',
+                      style: TextStyle(
+                        color: AppColors.successGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.canvas,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: const Text(
+                      'Pending',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+
+            // If multiple files, display file pills list below (like Front & Back for Aadhaar)
+            if (fileCount > 1) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1, thickness: 1, color: AppColors.line),
+              const SizedBox(height: 8),
+              ...doc.files.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final file = entry.value;
+                final fileSide = file.side != null ? ' (${file.side!.capitalizeFirst})' : '';
+                final fileName = (file.name?.trim().isNotEmpty == true)
+                    ? '${file.name!}$fileSide'
+                    : 'Attached Document #${idx + 1}$fileSide';
+                final fileUrl = (file.url?.isNotEmpty == true) ? file.url! : '';
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.insert_drive_file_outlined,
+                        size: 13,
+                        color: AppColors.muted,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (fileUrl.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => _showVerifyToViewDocDialog(
+                            context,
+                            docTitle: label,
+                            fileName: fileName,
+                            imagePaths: allUrls,
+                            initialIndex: idx,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.canvas,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.line),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.visibility_outlined,
+                                  size: 11,
+                                  color: AppColors.navy,
+                                ),
+                                SizedBox(width: 3),
+                                Text(
+                                  'View',
+                                  style: TextStyle(
+                                    color: AppColors.navy,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
   void _showSelectMemberRoleBottomSheet(
     BuildContext context,
     ApplicantDetailsController controller,
@@ -2979,6 +3474,129 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
+  /// Handler for submitting application with animated loader dialog for bank suggestions
+  void _handleSubmitApplication(BuildContext context) async {
+    // Show loader dialog
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated progress container with bank icon
+                Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 72,
+                      height: 72,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3.5,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.navy),
+                        backgroundColor: AppColors.indigo.withValues(alpha: 0.12),
+                      ),
+                    ),
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: const BoxDecoration(
+                        color: AppColors.indigoTint,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.account_balance_rounded,
+                          color: AppColors.navy,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+
+                // Title
+                const Text(
+                  'Fetching Suggested Banks',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Subtitle
+                const Text(
+                  'Analyzing your eligibility and matching the best partner banks for your loan...',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // AI Processing Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.canvas,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 15,
+                        color: AppColors.amber,
+                      ),
+                      SizedBox(width: 7),
+                      Text(
+                        'Finding Best Interest Rates',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    // Delay for 5 seconds to simulate matching and let suggestions prepare
+    await Future.delayed(const Duration(seconds: 5));
+
+    // Close the loader dialog
+    if (Get.isDialogOpen == true) {
+      Get.back();
+    }
+
+    // Navigate to Recommended Loan Offers Screen
+    Get.to(() => const RecommendedLoanOffersScreen());
+  }
+
   /// Bottom Section: "Submit application →" button
   Widget _buildBottomSection(BuildContext context) {
     return Container(
@@ -2988,10 +3606,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         width: double.infinity,
         height: 52,
         child: ElevatedButton(
-          onPressed: () {
-            // Navigate to Recommended Loan Offers Screen
-            Get.to(() => const RecommendedLoanOffersScreen());
-          },
+          onPressed: () => _handleSubmitApplication(context),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.navy,
             shape: RoundedRectangleBorder(

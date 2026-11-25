@@ -268,6 +268,8 @@ class ApplicantKycDocument {
   final String? status;
   final String? rejectReason;
   final String? viewEndpoint;
+  final String? viewUrl;
+  final List<ApplicantDocFile> files;
 
   ApplicantKycDocument({
     this.number,
@@ -276,6 +278,8 @@ class ApplicantKycDocument {
     this.status,
     this.rejectReason,
     this.viewEndpoint,
+    this.viewUrl,
+    this.files = const [],
   });
 
   factory ApplicantKycDocument.fromJson(Map<String, dynamic> json) {
@@ -288,6 +292,13 @@ class ApplicantKycDocument {
       status: json['status']?.toString(),
       rejectReason: json['reject_reason']?.toString(),
       viewEndpoint: json['view_endpoint']?.toString(),
+      viewUrl: json['view_url']?.toString(),
+      files: json['files'] != null && json['files'] is List
+          ? (json['files'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map((e) => ApplicantDocFile.fromJson(e))
+              .toList()
+          : const [],
     );
   }
 
@@ -299,6 +310,8 @@ class ApplicantKycDocument {
       if (status != null) 'status': status,
       if (rejectReason != null) 'reject_reason': rejectReason,
       if (viewEndpoint != null) 'view_endpoint': viewEndpoint,
+      if (viewUrl != null) 'view_url': viewUrl,
+      'files': files.map((e) => e.toJson()).toList(),
     };
   }
 }
@@ -1363,6 +1376,9 @@ class ApplicantDocumentItem {
   final String? label;
   final String? category;
   final bool? allowMultiple;
+  final List<String> acceptedFormats;
+  final num? maxSizeMb;
+  final bool? ocrAutofill;
   final bool? uploaded;
   final String? status;
   final List<ApplicantDocFile> files;
@@ -1372,6 +1388,9 @@ class ApplicantDocumentItem {
     this.label,
     this.category,
     this.allowMultiple,
+    this.acceptedFormats = const [],
+    this.maxSizeMb,
+    this.ocrAutofill,
     this.uploaded,
     this.status,
     this.files = const [],
@@ -1385,6 +1404,15 @@ class ApplicantDocumentItem {
       allowMultiple: json['allow_multiple'] is bool
           ? json['allow_multiple']
           : json['allow_multiple']?.toString() == 'true',
+      acceptedFormats: json['accepted_formats'] != null && json['accepted_formats'] is List
+          ? (json['accepted_formats'] as List).map((e) => e.toString()).toList()
+          : const [],
+      maxSizeMb: json['max_size_mb'] is num
+          ? json['max_size_mb']
+          : num.tryParse(json['max_size_mb']?.toString() ?? ''),
+      ocrAutofill: json['ocr_autofill'] is bool
+          ? json['ocr_autofill']
+          : json['ocr_autofill']?.toString() == 'true',
       uploaded: json['uploaded'] is bool
           ? json['uploaded']
           : json['uploaded']?.toString() == 'true',
@@ -1404,6 +1432,9 @@ class ApplicantDocumentItem {
       if (label != null) 'label': label,
       if (category != null) 'category': category,
       if (allowMultiple != null) 'allow_multiple': allowMultiple,
+      if (acceptedFormats.isNotEmpty) 'accepted_formats': acceptedFormats,
+      if (maxSizeMb != null) 'max_size_mb': maxSizeMb,
+      if (ocrAutofill != null) 'ocr_autofill': ocrAutofill,
       if (uploaded != null) 'uploaded': uploaded,
       if (status != null) 'status': status,
       'files': files.map((e) => e.toJson()).toList(),
@@ -1417,6 +1448,10 @@ class ApplicantDocFile {
   final String? status;
   final String? docKey;
   final String? viewEndpoint;
+  final String? url;
+  final String? extension;
+  final bool? isImage;
+  final String? side;
 
   ApplicantDocFile({
     this.index,
@@ -1424,6 +1459,10 @@ class ApplicantDocFile {
     this.status,
     this.docKey,
     this.viewEndpoint,
+    this.url,
+    this.extension,
+    this.isImage,
+    this.side,
   });
 
   factory ApplicantDocFile.fromJson(Map<String, dynamic> json) {
@@ -1435,6 +1474,12 @@ class ApplicantDocFile {
       status: json['status']?.toString(),
       docKey: json['doc_key']?.toString(),
       viewEndpoint: json['view_endpoint']?.toString(),
+      url: json['url']?.toString(),
+      extension: json['extension']?.toString(),
+      isImage: json['is_image'] is bool
+          ? json['is_image']
+          : json['is_image']?.toString() == 'true',
+      side: json['side']?.toString(),
     );
   }
 
@@ -1445,6 +1490,10 @@ class ApplicantDocFile {
       if (status != null) 'status': status,
       if (docKey != null) 'doc_key': docKey,
       if (viewEndpoint != null) 'view_endpoint': viewEndpoint,
+      if (url != null) 'url': url,
+      if (extension != null) 'extension': extension,
+      if (isImage != null) 'is_image': isImage,
+      if (side != null) 'side': side,
     };
   }
 }

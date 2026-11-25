@@ -114,6 +114,19 @@ class ApplicantDetailsController extends GetxController {
   final isLoadingApplicantDetails = false.obs;
   final applicantDetailsData = Rxn<ApplicantDetailModel>();
 
+  // Filter for primary applicant documents: 'all' or 'uploaded'
+  final applicantDocFilter = 'all'.obs;
+
+  /// Dynamic list of primary applicant documents strictly from the API response
+  List<ApplicantDocumentItem> get primaryApplicantDocuments {
+    final apps = applicantDetailsData.value?.loanApplications;
+    if (apps != null && apps.isNotEmpty) {
+      final activeApp = apps.firstWhereOrNull((a) => a.isActive == true) ?? apps.first;
+      return activeApp.documents;
+    }
+    return const [];
+  }
+
   // Co-Applicant Details API state (GET /co-applicants/{id})
   final isLoadingCoAppDetails = false.obs;
   final selectedCoApplicantDetails = Rxn<CoApplicantDetailData>();
