@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import '../models/employment_type_model.dart';
+import '../models/applicant_detail_model.dart';
+import '../models/user_model.dart';
 import 'session_manager.dart';
 
 /// Central API Service for handling network requests across Finsphere AI Loan App.
@@ -1667,6 +1669,27 @@ class ApiService {
         'errors': e.toString(),
       };
     }
+  }
+
+  /// Direct typed response returning [ApplicantDetailModel] from GET {{baseUrl}}/applicants/{user_id}
+  static Future<ApplicantDetailModel?> getApplicantDetailModel({
+    required dynamic userId,
+    String? token,
+  }) async {
+    final res = await getApplicantDetails(userId: userId, token: token);
+    if (res['success'] == true || res['status_code'] == 200) {
+      return ApplicantDetailModel.fromJson(res);
+    }
+    return null;
+  }
+
+  /// Direct typed response returning [UserModel] from GET {{baseUrl}}/applicants/{user_id}
+  static Future<UserModel?> getUserProfile({
+    required dynamic userId,
+    String? token,
+  }) async {
+    final detail = await getApplicantDetailModel(userId: userId, token: token);
+    return detail?.toUserModel();
   }
 
   /// Get Active Loan Applications API: GET {{baseUrl}}/loan-applications/active

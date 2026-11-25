@@ -689,8 +689,8 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                   const SizedBox(height: 4),
                   Obx(
                     () => Text(
-                      profileController.address.value.isNotEmpty
-                          ? profileController.address.value
+                      profileController.address.isNotEmpty
+                          ? profileController.address
                           : '123, MG Road, Bengaluru, Karnataka 560001',
                       style: const TextStyle(
                         color: AppColors.muted,

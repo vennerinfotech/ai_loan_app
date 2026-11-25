@@ -24,49 +24,59 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>()
+        : Get.put(ProfileController());
+
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Bar: Heading "Profile" + Edit Squircle
-              _buildTopBar(context),
+        child: RefreshIndicator(
+          color: AppColors.indigo,
+          backgroundColor: Colors.white,
+          onRefresh: () => profileController.fetchApplicantProfile(isRefresh: true),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Bar: Heading "Profile" + Edit Squircle
+                _buildTopBar(context),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // User Banner Bar (Capsule)
-              _buildUserBanner(),
+                // User Banner Bar (Capsule)
+                _buildUserBanner(),
 
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
 
-              // ACCOUNT Section
-              _buildSectionHeader('ACCOUNT'),
-              const SizedBox(height: 8),
-              _buildAccountCard(context),
+                // ACCOUNT Section
+                _buildSectionHeader('ACCOUNT'),
+                const SizedBox(height: 8),
+                _buildAccountCard(context),
 
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
 
-              // SECURITY Section
-              _buildSectionHeader('SECURITY'),
-              const SizedBox(height: 8),
-              _buildSecurityCard(context),
+                // SECURITY Section
+                _buildSectionHeader('SECURITY'),
+                const SizedBox(height: 8),
+                _buildSecurityCard(context),
 
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
 
-              // HELP & SUPPORT Section
-              _buildSectionHeader('HELP & SUPPORT'),
-              const SizedBox(height: 8),
-              _buildSupportCard(context),
+                // HELP & SUPPORT Section
+                _buildSectionHeader('HELP & SUPPORT'),
+                const SizedBox(height: 8),
+                _buildSupportCard(context),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Log out Button
-              _buildLogoutButton(context),
-            ],
+                // Log out Button
+                _buildLogoutButton(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -88,8 +98,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () {
-            Get.to(() => const PersonalDetailsScreen(initiallyEditing: true));
+          onTap: () async {
+            await Get.to(() => const PersonalDetailsScreen(initiallyEditing: true));
+            if (Get.isRegistered<ProfileController>()) {
+              Get.find<ProfileController>().fetchApplicantProfile(isRefresh: true);
+            }
           },
           child: Container(
             width: 40,
@@ -143,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // AM Golden Avatar Circle with subtle shadow (or picked image)
                 Obx(() {
                   final imageBytes = profileController.profileImageBytes.value;
-                  final networkPhoto = profileController.photoUrl.value;
+                  final networkPhoto = profileController.photoUrl;
 
                   Widget avatarContent;
                   if (imageBytes != null) {
@@ -223,69 +236,97 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          // KYC Done badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                            decoration: BoxDecoration(
-                              color: AppColors.successGreenBg,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  size: 11,
-                                  color: AppColors.successGreen,
-                                ),
-                                SizedBox(width: 3),
-                                Text(
-                                  'KYC Done',
-                                  style: TextStyle(
-                                    color: AppColors.successGreen,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
+                          // Dynamic KYC Status Badge
+                          Obx(() {
+                            final isDone = profileController.isKycDone.value;
+                            final badgeBg = isDone
+                                ? AppColors.successGreenBg
+                                : AppColors.warningAmberBg;
+                            final badgeColor = isDone
+                                ? AppColors.successGreen
+                                : AppColors.warningAmber;
+                            final badgeIcon = isDone
+                                ? Icons.check_circle_rounded
+                                : Icons.pending_actions_rounded;
+                            final badgeText =
+                                isDone ? 'KYC Done' : 'KYC Pending';
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    badgeIcon,
+                                    size: 11,
+                                    color: badgeColor,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    badgeText,
+                                    style: TextStyle(
+                                      color: badgeColor,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Text(
-                            '+91 98765 •••10',
-                            style: TextStyle(
-                              color: AppColors.line,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 6),
-                            width: 3,
-                            height: 3,
-                            decoration: const BoxDecoration(
-                              color: AppColors.indigoTint,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const Text(
-                            'Salaried',
-                            style: TextStyle(
-                              color: AppColors.line,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                      // Dynamic masked phone and employment role
+                      Obx(() {
+                        final phone = profileController.maskedPhone;
+                        final role = profileController.employmentType;
+                        return Row(
+                          children: [
+                            if (phone.isNotEmpty) ...[
+                              Text(
+                                phone,
+                                style: const TextStyle(
+                                  color: AppColors.line,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            if (phone.isNotEmpty && role.isNotEmpty) ...[
+                              Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 6),
+                                width: 3,
+                                height: 3,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.indigoTint,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                            if (role.isNotEmpty) ...[
+                              Text(
+                                role,
+                                style: const TextStyle(
+                                  color: AppColors.line,
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      }),
                       const SizedBox(height: 3),
                       Obx(
                         () => Text(
-                          profileController.email.value,
+                          profileController.email,
                           style: const TextStyle(
                             color: AppColors.indigoTint,
                             fontSize: 12,
@@ -319,6 +360,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// ACCOUNT Section Card
   Widget _buildAccountCard(BuildContext context) {
+    final profileController = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>()
+        : Get.put(ProfileController());
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -332,31 +377,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconBg: AppColors.indigoTint,
             iconColor: AppColors.indigo,
             title: 'Personal details',
-            onTap: () => Get.to(() => const PersonalDetailsScreen()),
-          ),
-          const Divider(height: 1, color: AppColors.canvas, indent: 56),
-          _buildActionRow(
-            icon: Icons.people_outline_rounded,
-            iconBg: AppColors.indigoTint,
-            iconColor: AppColors.indigo,
-            title: 'Co-applicants',
-            trailingText: '1 added',
-            onTap: () => Get.to(() => const ApplicantDetailsScreen()),
-          ),
-          const Divider(height: 1, color: AppColors.canvas, indent: 56),
-          _buildActionRow(
-            icon: Icons.description_outlined,
-            iconBg: AppColors.indigoTint,
-            iconColor: AppColors.indigo,
-            title: 'Document wallet',
-            trailingText: '4 files',
-            onTap: () {
-              if (Get.isRegistered<DashboardController>()) {
-                Get.find<DashboardController>().currentNavIndex.value = 3;
-              } else {
-                Get.to(() => const DocumentWalletScreen());
-              }
+            onTap: () async {
+              await Get.to(() => const PersonalDetailsScreen());
+              profileController.fetchApplicantProfile(isRefresh: true);
             },
+          ),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
+          Obx(
+            () => _buildActionRow(
+              icon: Icons.people_outline_rounded,
+              iconBg: AppColors.indigoTint,
+              iconColor: AppColors.indigo,
+              title: 'Co-applicants',
+              trailingText: '${profileController.coApplicantsCount.value} added',
+              onTap: () async {
+                await Get.to(() => const ApplicantDetailsScreen());
+                profileController.fetchApplicantProfile(isRefresh: true);
+              },
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.canvas, indent: 56),
+          Obx(
+            () => _buildActionRow(
+              icon: Icons.description_outlined,
+              iconBg: AppColors.indigoTint,
+              iconColor: AppColors.indigo,
+              title: 'Document wallet',
+              trailingText: '${profileController.documentsCount.value} files',
+              onTap: () {
+                if (Get.isRegistered<DashboardController>()) {
+                  Get.find<DashboardController>().currentNavIndex.value = 3;
+                } else {
+                  Get.to(() => const DocumentWalletScreen());
+                }
+              },
+            ),
           ),
         ],
       ),

@@ -1,3 +1,5 @@
+import 'user_model.dart';
+
 /// Model representing the Applicant Details response data.
 /// Styled like [UserModel], directly mapping the applicant data entity
 /// without storing status_code, success, message, or errors.
@@ -66,6 +68,34 @@ class ApplicantDetailModel {
       'co_applicants': coApplicants.map((e) => e.toJson()).toList(),
       if (summary != null) 'summary': summary!.toJson(),
     };
+  }
+
+  /// Converts [ApplicantProfile] + active employment role directly into a unified [UserModel]
+  UserModel? toUserModel() {
+    if (applicant == null) return null;
+    final p = applicant!;
+    final empType = loanApplications.isNotEmpty
+        ? loanApplications.first.employmentDetails?.employmentType
+        : null;
+
+    return UserModel(
+      id: p.id,
+      name: p.name,
+      email: p.email,
+      phone: p.phone,
+      dob: p.dateOfBirth,
+      gender: p.gender,
+      maritalStatus: p.maritalStatus,
+      address: (p.address != null && p.address!.isNotEmpty)
+          ? p.address
+          : (p.communicationAddress != null && p.communicationAddress!.isNotEmpty)
+              ? p.communicationAddress
+              : p.permanentAddress,
+      addressType: p.addressType,
+      photoUrl: p.profilePhotoUrl,
+      role: empType,
+      currentStep: p.currentStep,
+    );
   }
 }
 

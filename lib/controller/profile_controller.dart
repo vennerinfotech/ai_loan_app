@@ -2,31 +2,42 @@ import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../models/user_model.dart';
+import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../theme/app_colors.dart';
+import 'dashboard_controller.dart';
 
-/// Controller managing user profile data, avatar image, and updates
+/// Controller managing user profile data, avatar image, and updates.
+/// Exposes [user] ([UserModel]) as the single source of truth across screens.
 class ProfileController extends GetxController {
-  // UserModel instance holding the loaded user profile
+  // Single UserModel instance holding the loaded user profile
   final user = Rxn<UserModel>();
 
-  // Profile fields matching update profile API body:
-  // { name, email, dob, gender, marital_status, address, address_type }
-  final name = 'Rahul Sharma'.obs;
-  final firstName = 'Rahul'.obs;
-  final lastName = 'Sharma'.obs;
-  final email = 'rahul.sharma@example.com'.obs;
-  final phone = '+91 98765 43210'.obs;
-  final dob = '1992-03-20'.obs;
-  final gender = 'Male'.obs;
-  final maritalStatus = 'Married'.obs;
-  final address = 'Flat 402, Sunshine Heights, Surat'.obs;
-  final addressType = 'Owned'.obs;
-  final photoUrl = ''.obs;
+  // Full applicant details strictly from GET /applicants/{user_id} API
+  final applicantDetail = Rxn<ApplicantDetailModel>();
+  final isLoading = false.obs;
+
+  final isKycDone = false.obs;
+  final coApplicantsCount = 0.obs;
+  final documentsCount = 0.obs;
+
   final isSaving = false.obs;
   final isLoggingOut = false.obs;
+
+  // Dynamic field-level validation errors returned by backend API (422 errors map)
+  final fieldErrors = <String, String>{}.obs;
+
+  void clearFieldError(String field) {
+    if (fieldErrors.containsKey(field)) {
+      fieldErrors.remove(field);
+    }
+  }
+
+  void clearAllFieldErrors() {
+    fieldErrors.clear();
+  }
 
   // Saved profile image (local memory bytes)
   final profileImageBytes = Rxn<Uint8List>();
@@ -39,20 +50,105 @@ class ProfileController extends GetxController {
   // Selected language preference
   final selectedLanguage = 'English'.obs;
 
-  void setLanguage(String lang) {
-    selectedLanguage.value = lang;
+  // Direct convenience getters backed by [user.value]
+  String get name => user.value?.name ?? '';
+  String get fullName => user.value?.name ?? '';
+  String get firstName => user.value?.firstName ?? '';
+  String get lastName => user.value?.lastName ?? '';
+  String get email => user.value?.email ?? '';
+  String get phone => user.value?.phone ?? '';
+  String get dob => user.value?.dob ?? '';
+  String get gender => user.value?.gender ?? '';
+  String get maritalStatus => user.value?.maritalStatus ?? '';
+  String get address => user.value?.address ?? '';
+  String get addressType => user.value?.addressType ?? '';
+  String get photoUrl => user.value?.photoUrl ?? '';
+  String get employmentType => user.value?.role ?? '';
+  String get initials => user.value?.initials ?? '';
+  String get maskedPhone => user.value?.maskedPhone ?? '';
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadCachedSession();
+    fetchApplicantProfile();
   }
 
-  String get fullName => name.value.isNotEmpty ? name.value : '${firstName.value} ${lastName.value}'.trim();
-
-  String get initials {
-    final parts = fullName.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    } else if (parts.isNotEmpty && parts.first.isNotEmpty) {
-      return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+  Future<void> _loadCachedSession() async {
+    final savedName = await SessionManager.getUserName();
+    final savedPhone = await SessionManager.getUserPhone();
+    if (savedName.isNotEmpty || savedPhone.isNotEmpty) {
+      user.value = (user.value ?? UserModel()).copyWith(
+        name: savedName.isNotEmpty ? savedName : null,
+        phone: savedPhone.isNotEmpty ? savedPhone : null,
+      );
     }
-    return 'RS';
+  }
+
+  /// Fetch full applicant details directly as a typed model via GET /applicants/{user_id}
+  Future<void> fetchApplicantProfile({bool isRefresh = false}) async {
+    if (!isRefresh) isLoading.value = true;
+    try {
+      dynamic effectiveUserId;
+      final savedId = await SessionManager.getUserId();
+      if (savedId.isNotEmpty) {
+        effectiveUserId = savedId;
+      }
+      if ((effectiveUserId == null || effectiveUserId.toString().trim().isEmpty) &&
+          Get.isRegistered<DashboardController>()) {
+        final dashId = Get.find<DashboardController>().dashboardData.value?.user?.id;
+        if (dashId != null) effectiveUserId = dashId;
+      }
+      effectiveUserId ??= 1;
+
+      final model = await ApiService.getApplicantDetailModel(userId: effectiveUserId);
+      if (model != null) {
+        applicantDetail.value = model;
+        final mappedUser = model.toUserModel();
+        if (mappedUser != null) {
+          user.value = mappedUser;
+          if (mappedUser.id != null) {
+            SessionManager.saveUserId(mappedUser.id);
+          }
+        }
+
+        // Dynamic KYC status
+        if (model.summary?.kycCompleted != null) {
+          isKycDone.value = model.summary!.kycCompleted!;
+        } else if (model.kyc != null) {
+          final aadhaarDone = model.kyc!.aadhaar?.status?.toLowerCase() == 'accepted' ||
+              model.kyc!.aadhaar?.uploaded == true;
+          final panDone = model.kyc!.pan?.status?.toLowerCase() == 'accepted' ||
+              model.kyc!.pan?.uploaded == true;
+          isKycDone.value = aadhaarDone && panDone;
+        }
+
+        // Dynamic co-applicants count
+        if (model.summary?.totalCoApplicants != null) {
+          coApplicantsCount.value = model.summary!.totalCoApplicants!;
+        } else {
+          coApplicantsCount.value = model.coApplicants.length;
+        }
+
+        // Dynamic documents count
+        if (model.summary?.documentsUploaded != null) {
+          documentsCount.value = model.summary!.documentsUploaded!;
+        } else {
+          int count = 0;
+          if (model.kyc?.aadhaar?.uploaded == true) count++;
+          if (model.kyc?.pan?.uploaded == true) count++;
+          documentsCount.value = count;
+        }
+      }
+    } catch (e) {
+      debugPrint('Exception in fetchApplicantProfile: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  void setLanguage(String lang) {
+    selectedLanguage.value = lang;
   }
 
   /// Sets staged image when picked from camera/gallery.
@@ -68,7 +164,7 @@ class ProfileController extends GetxController {
     tempImagePath.value = '';
   }
 
-  /// Updates profile in memory
+  /// Updates profile in memory directly on [user]
   void saveProfile({
     String? fullName,
     String? first,
@@ -80,23 +176,21 @@ class ProfileController extends GetxController {
     String? addr,
     String? addrType,
   }) {
-    if (fullName != null && fullName.isNotEmpty) {
-      name.value = fullName;
-      final parts = fullName.split(' ');
-      firstName.value = parts.first;
-      lastName.value = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-    } else {
-      if (first != null && first.isNotEmpty) firstName.value = first;
-      if (last != null && last.isNotEmpty) lastName.value = last;
-      name.value = '$firstName $lastName'.trim();
-    }
+    final resolvedName = (fullName != null && fullName.isNotEmpty)
+        ? fullName
+        : '${first ?? firstName} ${last ?? lastName}'.trim();
 
-    if (emailAddress != null && emailAddress.isNotEmpty) email.value = emailAddress;
-    if (dateOfBirth != null && dateOfBirth.isNotEmpty) dob.value = dateOfBirth;
-    if (userGender != null && userGender.isNotEmpty) gender.value = userGender;
-    if (userMaritalStatus != null && userMaritalStatus.isNotEmpty) maritalStatus.value = userMaritalStatus;
-    if (addr != null && addr.isNotEmpty) address.value = addr;
-    if (addrType != null && addrType.isNotEmpty) addressType.value = addrType;
+    user.value = (user.value ?? UserModel()).copyWith(
+      name: resolvedName.isNotEmpty ? resolvedName : null,
+      email: (emailAddress != null && emailAddress.isNotEmpty) ? emailAddress : null,
+      dob: (dateOfBirth != null && dateOfBirth.isNotEmpty) ? dateOfBirth : null,
+      gender: (userGender != null && userGender.isNotEmpty) ? userGender : null,
+      maritalStatus: (userMaritalStatus != null && userMaritalStatus.isNotEmpty)
+          ? userMaritalStatus
+          : null,
+      address: (addr != null && addr.isNotEmpty) ? addr : null,
+      addressType: (addrType != null && addrType.isNotEmpty) ? addrType : null,
+    );
 
     if (tempImageBytes.value != null) {
       profileImageBytes.value = tempImageBytes.value;
@@ -117,6 +211,7 @@ class ProfileController extends GetxController {
     required String addrType,
   }) async {
     isSaving.value = true;
+    fieldErrors.clear();
     try {
       // 1. Upload photo if user staged a new photo during editing
       if (tempImageBytes.value != null || tempImagePath.value.isNotEmpty) {
@@ -131,7 +226,9 @@ class ProfileController extends GetxController {
         if (photoModel.success &&
             photoModel.photoUrl != null &&
             photoModel.photoUrl!.isNotEmpty) {
-          photoUrl.value = photoModel.photoUrl!;
+          user.value = (user.value ?? UserModel()).copyWith(
+            photoUrl: photoModel.photoUrl,
+          );
           profileImageBytes.value = tempImageBytes.value;
           profileImagePath.value = tempImagePath.value;
           clearTempImage();
@@ -166,30 +263,12 @@ class ProfileController extends GetxController {
 
       if (personalModel.success) {
         if (personalModel.user != null) {
-          user.value = personalModel.user;
-          if (personalModel.user!.name != null &&
-              personalModel.user!.name!.isNotEmpty) {
-            name.value = personalModel.user!.name!;
-            final parts = name.value.split(' ');
-            firstName.value = parts.first;
-            lastName.value = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-          }
-          if (personalModel.user!.email != null &&
-              personalModel.user!.email!.isNotEmpty) {
-            email.value = personalModel.user!.email!;
-          }
-          if (personalModel.user!.dob != null &&
-              personalModel.user!.dob!.isNotEmpty) {
-            dob.value = personalModel.user!.dob!;
-          }
-          if (personalModel.user!.address != null &&
-              personalModel.user!.address!.isNotEmpty) {
-            address.value = personalModel.user!.address!;
-          }
-          if (personalModel.user!.phone != null &&
-              personalModel.user!.phone!.isNotEmpty) {
-            phone.value = personalModel.user!.phone!;
-          }
+          user.value = personalModel.user!.copyWith(
+            gender: userGender,
+            maritalStatus: userMaritalStatus,
+            addressType: addrType,
+            role: user.value?.role,
+          );
         } else {
           saveProfile(
             fullName: fullName,
@@ -202,12 +281,11 @@ class ProfileController extends GetxController {
           );
         }
 
-        gender.value = userGender;
-        maritalStatus.value = userMaritalStatus;
-        addressType.value = addrType;
-
         // Persist updated user name to session
-        await SessionManager.saveLoginSession(name: name.value);
+        await SessionManager.saveLoginSession(name: name);
+
+        // Keep applicant profile data in sync
+        fetchApplicantProfile(isRefresh: true);
 
         Get.snackbar(
           'Success',
@@ -224,19 +302,36 @@ class ProfileController extends GetxController {
         isSaving.value = false;
         return true;
       } else {
-        final errorMsg = ApiService.getErrorMessage(personalResponse);
-        Get.snackbar(
-          'Update Failed',
-          errorMsg.isNotEmpty
-              ? errorMsg
-              : (personalModel.message.isNotEmpty
-                  ? personalModel.message
-                  : 'Failed to update personal details.'),
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.errorRed,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-        );
+        // Map backend 422 field errors directly so UI renders them inline without snackbars
+        if (personalResponse['errors'] is Map) {
+          final errMap = personalResponse['errors'] as Map;
+          for (final entry in errMap.entries) {
+            final key = entry.key.toString();
+            final val = entry.value;
+            if (val is List && val.isNotEmpty) {
+              fieldErrors[key] = val.first.toString().trim();
+            } else if (val != null && val.toString().trim().isNotEmpty) {
+              fieldErrors[key] = val.toString().trim();
+            }
+          }
+        }
+
+        // Only show snackbar if there are no field-level validation errors
+        if (fieldErrors.isEmpty) {
+          final errorMsg = ApiService.getErrorMessage(personalResponse);
+          Get.snackbar(
+            'Update Failed',
+            errorMsg.isNotEmpty
+                ? errorMsg
+                : (personalModel.message.isNotEmpty
+                    ? personalModel.message
+                    : 'Failed to update personal details.'),
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.errorRed,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+        }
         isSaving.value = false;
         return false;
       }

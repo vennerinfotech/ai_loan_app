@@ -25,15 +25,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     profileController = Get.put(ProfileController());
     firstNameController =
-        TextEditingController(text: profileController.firstName.value);
+        TextEditingController(text: profileController.firstName);
     lastNameController =
-        TextEditingController(text: profileController.lastName.value);
+        TextEditingController(text: profileController.lastName);
     emailController =
-        TextEditingController(text: profileController.email.value);
+        TextEditingController(text: profileController.email);
     mobileController =
-        TextEditingController(text: '+91 98765 43210');
+        TextEditingController(text: profileController.phone);
     addressController =
-        TextEditingController(text: profileController.address.value);
+        TextEditingController(text: profileController.address);
     profileController.clearTempImage();
   }
 

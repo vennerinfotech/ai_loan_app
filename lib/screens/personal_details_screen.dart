@@ -32,10 +32,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   late String selectedAddressType;
 
   late bool _isEditing;
+  final _formKey = GlobalKey<FormState>();
+  bool _submitted = false;
 
   final genderOptions = const ['Male', 'Female', 'Other'];
   final maritalStatusOptions = const ['Married', 'Single', 'Divorced', 'Widowed'];
   final addressTypeOptions = const ['Owned', 'Rented', 'Parental', 'Company Provided', 'Other'];
+
+  Worker? _applicantWorker;
 
   @override
   void initState() {
@@ -45,20 +49,42 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         ? Get.find<ProfileController>()
         : Get.put(ProfileController());
 
-    nameController = TextEditingController(text: profileController.name.value);
-    emailController = TextEditingController(text: profileController.email.value);
-    dobController = TextEditingController(text: profileController.dob.value);
-    addressController = TextEditingController(text: profileController.address.value);
+    nameController = TextEditingController(text: profileController.name);
+    emailController = TextEditingController(text: profileController.email);
+    dobController = TextEditingController(text: profileController.dob);
+    addressController = TextEditingController(text: profileController.address);
 
-    selectedGender = profileController.gender.value.isNotEmpty ? profileController.gender.value : 'Male';
-    selectedMaritalStatus = profileController.maritalStatus.value.isNotEmpty ? profileController.maritalStatus.value : 'Married';
-    selectedAddressType = profileController.addressType.value.isNotEmpty ? profileController.addressType.value : 'Owned';
+    selectedGender = profileController.gender;
+    selectedMaritalStatus = profileController.maritalStatus;
+    selectedAddressType = profileController.addressType;
 
     profileController.clearTempImage();
+    profileController.clearAllFieldErrors();
+
+    // Sync fields if user model updates while screen is open
+    _applicantWorker = ever(profileController.user, (_) {
+      if (mounted && !_isEditing) {
+        setState(() {
+          nameController.text = profileController.name;
+          emailController.text = profileController.email;
+          dobController.text = profileController.dob;
+          addressController.text = profileController.address;
+          selectedGender = profileController.gender;
+          selectedMaritalStatus = profileController.maritalStatus;
+          selectedAddressType = profileController.addressType;
+        });
+      }
+    });
+
+    if (profileController.user.value == null &&
+        !profileController.isLoading.value) {
+      profileController.fetchApplicantProfile();
+    }
   }
 
   @override
   void dispose() {
+    _applicantWorker?.dispose();
     nameController.dispose();
     emailController.dispose();
     dobController.dispose();
@@ -74,30 +100,6 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     final trimmedDob = dobController.text.trim();
     final trimmedAddress = addressController.text.trim();
 
-    if (trimmedName.isEmpty) {
-      Get.snackbar(
-        'Validation Error',
-        'Please enter your full name',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-      return;
-    }
-
-    if (trimmedEmail.isEmpty) {
-      Get.snackbar(
-        'Validation Error',
-        'Please enter your email address',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-      return;
-    }
-
     final success = await profileController.updateProfileAndPhoto(
       fullName: trimmedName,
       emailAddress: trimmedEmail,
@@ -108,23 +110,33 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       addrType: selectedAddressType,
     );
 
-    if (success && mounted) {
+    if (!mounted) return;
+    if (success) {
       setState(() {
         _isEditing = false;
+        _submitted = false;
       });
+    } else {
+      setState(() {
+        _submitted = true;
+      });
+      _formKey.currentState?.validate();
     }
   }
 
   void _cancelEditing() {
     setState(() {
-      nameController.text = profileController.name.value;
-      emailController.text = profileController.email.value;
-      dobController.text = profileController.dob.value;
-      selectedGender = profileController.gender.value;
-      selectedMaritalStatus = profileController.maritalStatus.value;
-      addressController.text = profileController.address.value;
-      selectedAddressType = profileController.addressType.value;
+      nameController.text = profileController.name;
+      emailController.text = profileController.email;
+      dobController.text = profileController.dob;
+      selectedGender = profileController.gender;
+      selectedMaritalStatus = profileController.maritalStatus;
+      addressController.text = profileController.address;
+      selectedAddressType = profileController.addressType;
       profileController.clearTempImage();
+    profileController.clearAllFieldErrors();
+      _submitted = false;
+      _formKey.currentState?.reset();
       _isEditing = false;
     });
   }
@@ -136,7 +148,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     try {
       initialDate = DateTime.parse(dobController.text.trim());
     } catch (_) {
-      initialDate = DateTime(1992, 3, 20);
+      initialDate = DateTime.now();
     }
 
     final picked = await showDatePicker(
@@ -165,6 +177,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       setState(() {
         dobController.text = '$y-$m-$d';
       });
+      profileController.clearFieldError('dob');
+      _formKey.currentState?.validate();
     }
   }
 
@@ -180,57 +194,63 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
 
             // Scrollable Cards Content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Top Avatar (with Camera Edit Badge when editing)
-                    _buildAvatarSection(context),
+              child: Form(
+                key: _formKey,
+                autovalidateMode: _submitted
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Top Avatar (with Camera Edit Badge when editing)
+                      _buildAvatarSection(context),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    // Card 1: Personal Information (Name, DOB, Gender, Marital Status)
-                    _buildPersonalInfoCard(context),
+                      // Card 1: Personal Information (Name, DOB, Gender, Marital Status)
+                      _buildPersonalInfoCard(context),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Card 2: Contact Information (Mobile Number & Email)
-                    _buildContactInfoCard(),
+                      // Card 2: Contact Information (Mobile Number & Email)
+                      _buildContactInfoCard(),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // Card 3: Address Details (Address, Address Type)
-                    _buildAddressDetailsCard(),
+                      // Card 3: Address Details (Address, Address Type)
+                      _buildAddressDetailsCard(),
 
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
 
-                    // KYC Notice Note
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 15,
-                          color: AppColors.muted,
-                        ),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Personal details are synced with your loan application profile and KYC records.',
-                            style: TextStyle(
-                              color: AppColors.muted,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
+                      // KYC Notice Note
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            size: 15,
+                            color: AppColors.muted,
+                          ),
+                          SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Personal details are synced with your loan application profile and KYC records.',
+                              style: TextStyle(
+                                color: AppColors.muted,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
 
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -254,6 +274,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           GestureDetector(
             onTap: () {
               profileController.clearTempImage();
+    profileController.clearAllFieldErrors();
               Get.back();
             },
             child: Container(
@@ -341,7 +362,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             child: Obx(() {
               final tempBytes = profileController.tempImageBytes.value;
               final savedBytes = profileController.profileImageBytes.value;
-              final networkPhoto = profileController.photoUrl.value;
+              final networkPhoto = profileController.photoUrl;
               final bytesToUse = tempBytes ?? savedBytes;
 
               Widget avatarContent;
@@ -444,39 +465,38 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       iconColor: AppColors.primaryPurple,
       title: 'Personal Information',
       children: [
-        // Single Full Name Field (Instead of separate First Name & Last Name)
+        // Single Full Name Field (API-driven validation)
         _buildFieldLabel('Full Name'),
         const SizedBox(height: 6),
         _PersonalInputField(
           controller: nameController,
           hintText: 'Enter Full Name',
           readOnly: !_isEditing,
+          onChanged: (_) => profileController.clearFieldError('name'),
+          validator: (_) => profileController.fieldErrors['name'],
         ),
         const SizedBox(height: 14),
 
-        // Date of Birth Field (with DatePicker tap)
+        // Date of Birth Field (API-driven validation)
         _buildFieldLabel('Date of Birth'),
         const SizedBox(height: 6),
-        GestureDetector(
-          onTap: () => _pickDateOfBirth(context),
-          child: AbsorbPointer(
-            absorbing: _isEditing,
-            child: _PersonalInputField(
-              controller: dobController,
-              hintText: 'YYYY-MM-DD',
-              readOnly: !_isEditing,
-              suffixIcon: const Icon(
-                Icons.calendar_today_rounded,
-                size: 18,
-                color: AppColors.muted,
-              ),
-            ),
+        _PersonalInputField(
+          controller: dobController,
+          hintText: 'YYYY-MM-DD',
+          readOnly: !_isEditing,
+          onTap: _isEditing ? () => _pickDateOfBirth(context) : null,
+          suffixIcon: const Icon(
+            Icons.calendar_today_rounded,
+            size: 18,
+            color: AppColors.muted,
           ),
+          validator: (_) => profileController.fieldErrors['dob'],
         ),
         const SizedBox(height: 14),
 
-        // Gender & Marital Status Fields
+        // Gender & Marital Status Fields (API-driven validation)
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Gender Dropdown / Readonly Box
             Expanded(
@@ -492,8 +512,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       items: genderOptions,
                       onChanged: (val) {
                         setState(() => selectedGender = val);
+                        profileController.clearFieldError('gender');
                       },
                       hintText: 'Select Gender',
+                      validator: (_) => profileController.fieldErrors['gender'],
                     )
                   else
                     _buildReadOnlyDisplayBox(selectedGender),
@@ -516,8 +538,11 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       items: maritalStatusOptions,
                       onChanged: (val) {
                         setState(() => selectedMaritalStatus = val);
+                        profileController.clearFieldError('marital_status');
                       },
                       hintText: 'Select Status',
+                      validator: (_) =>
+                          profileController.fieldErrors['marital_status'],
                     )
                   else
                     _buildReadOnlyDisplayBox(selectedMaritalStatus),
@@ -551,12 +576,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                profileController.phone.value,
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Obx(
+                () => Text(
+                  profileController.phone,
+                  style: const TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Row(
@@ -582,14 +609,16 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
         ),
         const SizedBox(height: 14),
 
-        // Email Address
+        // Email Address (API-driven validation)
         _buildFieldLabel('Email Address'),
         const SizedBox(height: 6),
         _PersonalInputField(
           controller: emailController,
-          hintText: 'rahul.sharma@example.com',
+          hintText: 'Enter email address',
           keyboardType: TextInputType.emailAddress,
           readOnly: !_isEditing,
+          onChanged: (_) => profileController.clearFieldError('email'),
+          validator: (_) => profileController.fieldErrors['email'],
         ),
       ],
     );
@@ -602,7 +631,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
       iconColor: AppColors.primaryPurple,
       title: 'Address Details',
       children: [
-        // Address Text
+        // Address Text (API-driven validation)
         _buildFieldLabel('Address'),
         const SizedBox(height: 6),
         _PersonalInputField(
@@ -610,10 +639,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
           hintText: 'Enter complete address',
           maxLines: 2,
           readOnly: !_isEditing,
+          onChanged: (_) => profileController.clearFieldError('address'),
+          validator: (_) => profileController.fieldErrors['address'],
         ),
         const SizedBox(height: 14),
 
-        // Address Type Dropdown (Owned, Rented, Parental, etc.)
+        // Address Type Dropdown (API-driven validation)
         _buildFieldLabel('Address Type'),
         const SizedBox(height: 6),
         if (_isEditing)
@@ -623,8 +654,10 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             items: addressTypeOptions,
             onChanged: (val) {
               setState(() => selectedAddressType = val);
+              profileController.clearFieldError('address_type');
             },
             hintText: 'Select Address Type',
+            validator: (_) => profileController.fieldErrors['address_type'],
           )
         else
           _buildReadOnlyDisplayBox(selectedAddressType),
@@ -810,6 +843,9 @@ class _PersonalInputField extends StatefulWidget {
   final TextInputType keyboardType;
   final int maxLines;
   final Widget? suffixIcon;
+  final FormFieldValidator<String>? validator;
+  final VoidCallback? onTap;
+  final ValueChanged<String>? onChanged;
 
   const _PersonalInputField({
     required this.controller,
@@ -818,6 +854,9 @@ class _PersonalInputField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.maxLines = 1,
     this.suffixIcon,
+    this.validator,
+    this.onTap,
+    this.onChanged,
   });
 
   @override
@@ -850,48 +889,92 @@ class _PersonalInputFieldState extends State<_PersonalInputField> {
   Widget build(BuildContext context) {
     final bool isFieldFocused = !widget.readOnly && _isFocused;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      decoration: BoxDecoration(
-        color: widget.readOnly ? AppColors.canvas : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isFieldFocused
-              ? AppColors.indigo
-              : AppColors.line,
-          width: isFieldFocused ? 1.5 : 1.0,
-        ),
-      ),
-      padding: EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: widget.maxLines > 1 ? 10 : 0,
-      ),
-      child: TextField(
-        controller: widget.controller,
-        focusNode: widget.readOnly ? null : _focusNode,
-        readOnly: widget.readOnly,
-        keyboardType: widget.keyboardType,
-        maxLines: widget.maxLines,
-        style: TextStyle(
-          color: AppColors.textDark,
-          fontSize: 14,
-          fontWeight: widget.readOnly ? FontWeight.w600 : FontWeight.w700,
-        ),
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: const TextStyle(
-            color: AppColors.muted,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-          suffixIcon: widget.suffixIcon,
-          contentPadding: EdgeInsets.symmetric(
-            vertical: widget.maxLines > 1 ? 0 : 13,
-          ),
-          border: InputBorder.none,
-          isDense: true,
-        ),
-      ),
+    return FormField<String>(
+      initialValue: widget.controller.text,
+      validator: widget.readOnly ? null : widget.validator,
+      builder: (FormFieldState<String> fieldState) {
+        if (fieldState.value != widget.controller.text) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (fieldState.mounted &&
+                fieldState.value != widget.controller.text) {
+              fieldState.didChange(widget.controller.text);
+            }
+          });
+        }
+
+        final hasError = fieldState.hasError;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              decoration: BoxDecoration(
+                color: widget.readOnly ? AppColors.canvas : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasError
+                      ? AppColors.errorRed
+                      : isFieldFocused
+                          ? AppColors.indigo
+                          : AppColors.line,
+                  width: (hasError || isFieldFocused) ? 1.5 : 1.0,
+                ),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: widget.maxLines > 1 ? 10 : 0,
+              ),
+              child: TextField(
+                controller: widget.controller,
+                focusNode:
+                    (widget.readOnly && widget.onTap == null) ? null : _focusNode,
+                readOnly: widget.readOnly || widget.onTap != null,
+                onTap: widget.onTap,
+                onChanged: (val) {
+                  widget.onChanged?.call(val);
+                  fieldState.didChange(val);
+                },
+                keyboardType: widget.keyboardType,
+                maxLines: widget.maxLines,
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 14,
+                  fontWeight:
+                      widget.readOnly ? FontWeight.w600 : FontWeight.w700,
+                ),
+                decoration: InputDecoration(
+                  hintText: widget.hintText,
+                  hintStyle: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  suffixIcon: widget.suffixIcon,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: widget.maxLines > 1 ? 0 : 13,
+                  ),
+                  border: InputBorder.none,
+                  isDense: true,
+                ),
+              ),
+            ),
+            if (hasError && fieldState.errorText != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, left: 4),
+                child: Text(
+                  fieldState.errorText!,
+                  style: const TextStyle(
+                    color: AppColors.errorRed,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

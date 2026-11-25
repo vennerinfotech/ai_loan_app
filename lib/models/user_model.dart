@@ -36,23 +36,63 @@ class UserModel {
       name: json['name']?.toString(),
       email: json['email']?.toString(),
       phone: json['phone']?.toString(),
-      dob: json['dob']?.toString(),
+      dob: (json['dob'] ?? json['date_of_birth'])?.toString(),
       gender: json['gender']?.toString(),
       maritalStatus:
           (json['marital_status'] ?? json['maritalStatus'])?.toString(),
-      address: json['address']?.toString(),
+      address: (json['address'] ??
+              json['communication_address'] ??
+              json['permanent_address'])
+          ?.toString(),
       addressType:
           (json['address_type'] ?? json['addressType'])?.toString(),
       photoUrl: (json['photo_url'] ??
+              json['profile_photo_url'] ??
               json['profile_photo'] ??
               json['photoUrl'] ??
               json['avatar'])
           ?.toString(),
-      role: json['role']?.toString(),
+      role: (json['role'] ?? json['employment_type'])?.toString(),
       currentStep: json['current_step'] is int
           ? json['current_step']
           : int.tryParse(json['current_step']?.toString() ?? ''),
     );
+  }
+
+  /// First name extracted from [name]
+  String get firstName {
+    final parts = (name ?? '').trim().split(' ').where((p) => p.isNotEmpty).toList();
+    return parts.isNotEmpty ? parts.first : '';
+  }
+
+  /// Last name extracted from [name]
+  String get lastName {
+    final parts = (name ?? '').trim().split(' ').where((p) => p.isNotEmpty).toList();
+    return parts.length > 1 ? parts.sublist(1).join(' ') : '';
+  }
+
+  /// Initials computed from [name]
+  String get initials {
+    final parts = (name ?? '').trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    } else if (parts.isNotEmpty) {
+      return parts.first.substring(0, parts.first.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return '';
+  }
+
+  /// Formatted masked phone e.g. "+91 98765 •••10"
+  String get maskedPhone {
+    final raw = (phone ?? '').trim();
+    if (raw.isEmpty) return '';
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 10) {
+      final last2 = digits.substring(digits.length - 2);
+      final first5 = digits.substring(digits.length - 10, digits.length - 5);
+      return '+91 $first5 •••$last2';
+    }
+    return raw;
   }
 
   Map<String, dynamic> toJson() {
