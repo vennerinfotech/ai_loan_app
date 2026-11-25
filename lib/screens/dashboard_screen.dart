@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../theme/app_colors.dart';
 import '../controller/dashboard_controller.dart';
 
@@ -16,49 +17,256 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            // 1. Sticky Header (Fixed at top, not scrollable, search icon removed)
-            _buildStickyTopHeader(controller),
+        child: Obx(() {
+          final isLoading = controller.isLoading.value &&
+              controller.dashboardData.value == null;
 
-            // 2. Scrollable Dashboard Body (Compressive / compact layout with pull-to-refresh)
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: controller.fetchDashboardData,
-                color: AppColors.primaryPurple,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // CIBIL Score Card (Compact)
-                      _buildCibilScoreCard(controller),
-                      const SizedBox(height: 12),
+          if (isLoading) {
+            return _buildGreySkeletonLoader();
+          }
 
-                      // Complete your KYC Card (Compact)
-                      Obx(() => _buildKycStatusCard(controller)),
-                      const SizedBox(height: 12),
+          return Column(
+            children: [
+              // 1. Sticky Header (Fixed at top, not scrollable, search icon removed)
+              _buildStickyTopHeader(controller),
 
-                      // 2x2 Feature Grid (Compact)
-                      _buildFeatureGrid(controller),
-                      const SizedBox(height: 14),
+              // 2. Scrollable Dashboard Body (Compressive / compact layout with pull-to-refresh)
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: controller.fetchDashboardData,
+                  color: AppColors.primaryPurple,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // CIBIL Score Card (Compact)
+                        _buildCibilScoreCard(controller),
+                        const SizedBox(height: 12),
 
-                      // Active Application Section (Compact)
-                      _buildActiveApplicationSection(controller),
-                    ],
+                        // Complete your KYC Card (Compact)
+                        _buildKycStatusCard(controller),
+                        const SizedBox(height: 12),
+
+                        // 2x2 Feature Grid (Compact)
+                        _buildFeatureGrid(controller),
+                        const SizedBox(height: 14),
+
+                        // Active Application Section (Compact)
+                        _buildActiveApplicationSection(controller),
+                      ],
+                    ),
                   ),
                 ),
               ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  /// Pure neutral grey Skeletonizer loader matching dashboard layout (no colorful cards)
+  Widget _buildGreySkeletonLoader() {
+    const greyBone = Color(0xFFE5E7EB);
+    return Skeletonizer(
+      enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
+      child: Column(
+        children: [
+          // Header skeleton
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+            child: Row(
+              children: [
+                const Bone.circle(size: 38),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Bone.text(words: 2, fontSize: 11),
+                      SizedBox(height: 5),
+                      Bone.text(words: 2, fontSize: 16),
+                    ],
+                  ),
+                ),
+                const Bone.circle(size: 38),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 95),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // CIBIL Card grey skeleton
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: greyBone),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Bone.text(words: 2, fontSize: 12),
+                                  SizedBox(height: 8),
+                                  Bone.text(words: 1, fontSize: 28),
+                                  SizedBox(height: 8),
+                                  Bone.text(words: 3, fontSize: 11),
+                                ],
+                              ),
+                            ),
+                            Bone.circle(size: 54),
+                          ],
+                        ),
+                        SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 6,
+                              child: Bone.button(
+                                height: 38,
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              flex: 4,
+                              child: Bone.button(
+                                height: 38,
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // KYC Status Card grey skeleton
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: greyBone),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Bone.circle(size: 36),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Bone.text(words: 2, fontSize: 14),
+                                  SizedBox(height: 6),
+                                  Bone.text(words: 3, fontSize: 11),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        Bone.text(words: 4, fontSize: 11),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 2x2 Feature Grid grey skeleton
+                  for (int row = 0; row < 2; row++) ...[
+                    Row(
+                      children: [
+                        for (int col = 0; col < 2; col++) ...[
+                          if (col > 0) const SizedBox(width: 10),
+                          Expanded(
+                            child: Container(
+                              height: 114,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: greyBone),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Bone.circle(size: 32),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Bone.text(words: 2, fontSize: 13),
+                                      SizedBox(height: 5),
+                                      Bone.text(words: 3, fontSize: 10),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (row == 0) const SizedBox(height: 10),
+                  ],
+                  const SizedBox(height: 14),
+
+                  // Active Application grey skeleton
+                  const Bone.text(words: 2, fontSize: 14),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: greyBone),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Bone.text(words: 3, fontSize: 14),
+                        SizedBox(height: 8),
+                        Bone.text(words: 4, fontSize: 12),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   /// Sticky top user bar: Avatar, Greeting, User Name, Notification icon
-  Widget _buildStickyTopHeader(DashboardController controller) {
+  Widget _buildStickyTopHeader(DashboardController controller,
+      {bool isLoading = false}) {
     return Container(
       color: AppColors.lightBackground,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -119,9 +327,9 @@ class DashboardScreen extends StatelessWidget {
               children: [
                 Obx(() {
                   final g = controller.greeting.value;
-                  if (g.isEmpty) return const SizedBox.shrink();
+                  if (g.isEmpty && !isLoading) return const SizedBox.shrink();
                   return Text(
-                    g.toLowerCase(),
+                    g.isNotEmpty ? g.toLowerCase() : 'good morning',
                     style: const TextStyle(
                       color: AppColors.textDarkSecondary,
                       fontSize: 11,
@@ -131,7 +339,9 @@ class DashboardScreen extends StatelessWidget {
                 }),
                 Obx(
                   () => Text(
-                    controller.userName.value,
+                    controller.userName.value.isNotEmpty
+                        ? controller.userName.value
+                        : (isLoading ? 'Loading User' : ''),
                     style: const TextStyle(
                       color: AppColors.textDark,
                       fontSize: 16,
@@ -725,8 +935,52 @@ class DashboardScreen extends StatelessWidget {
   }
 
   /// Active Application Section: Strictly dynamic, zero static fallback data.
-  /// Hidden when there is no active loan application.
-  Widget _buildActiveApplicationSection(DashboardController controller) {
+  /// Hidden when there is no active loan application (shows skeleton bone while loading).
+  Widget _buildActiveApplicationSection(DashboardController controller,
+      {bool isLoading = false}) {
+    if (isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Active application',
+            style: TextStyle(
+              color: AppColors.textDark,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.dashboardCardBorder),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Loan application status',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Loading application progress details...',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Obx(() {
       final appStatus = controller.dashboardData.value?.applicationStatus;
       final latestLead = appStatus?.latestLead;
