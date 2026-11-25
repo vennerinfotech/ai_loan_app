@@ -622,7 +622,10 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                     ),
                   ),
                 ),
-                if (isMulti) ...[
+                if (isMulti ||
+                    ((docKey == 'aadhar_card' || docKey == 'aadhaar_card') &&
+                        files.length < 2 &&
+                        !files.first.name.toLowerCase().endsWith('.pdf'))) ...[
                   const SizedBox(width: 6),
                   GestureDetector(
                     onTap: () async {
@@ -808,8 +811,8 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                           } else {
                             success = await controller.addCoApplicant(role: widget.role);
                           }
-                          if (success) {
-                            Get.back();
+                          if (success && context.mounted) {
+                            Navigator.of(context).pop(true);
                           }
                         },
                   style: ElevatedButton.styleFrom(

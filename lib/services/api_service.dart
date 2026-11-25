@@ -1435,6 +1435,90 @@ class ApiService {
     }
   }
 
+  /// Upload Co-Applicant Documents API:
+  /// POST {{baseUrl}}/co-applicants/{co_applicant_id}/documents/upload
+  /// Single-file: documents[key]
+  /// Multi-file (allow_multiple = true): co_multi_files[key][]
+  /// Aadhaar: documents[aadhar_card_front] + documents[aadhar_card_back], or documents[aadhar_card_combined_pdf]
+  static Future<Map<String, dynamic>> uploadCoApplicantDocuments({
+    required dynamic coApplicantId,
+    required Map<String, List<XFile>> uploadedFiles,
+    required Map<String, String> fieldMapping,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/upload');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Accept'] = 'application/json';
+    if (authToken.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $authToken';
+    }
+
+    try {
+      for (final entry in uploadedFiles.entries) {
+        final docKey = entry.key;
+        final files = entry.value;
+        if (files.isEmpty) continue;
+
+        if (docKey == 'aadhar_card' || docKey == 'aadhaar_card') {
+          if (files.length == 1 &&
+              files.first.name.toLowerCase().endsWith('.pdf')) {
+            request.files.add(
+              await http.MultipartFile.fromPath(
+                'documents[aadhar_card_combined_pdf]',
+                files.first.path,
+              ),
+            );
+          } else {
+            request.files.add(
+              await http.MultipartFile.fromPath(
+                'documents[aadhar_card_front]',
+                files.first.path,
+              ),
+            );
+            if (files.length > 1) {
+              request.files.add(
+                await http.MultipartFile.fromPath(
+                  'documents[aadhar_card_back]',
+                  files[1].path,
+                ),
+              );
+            }
+          }
+        } else {
+          final uploadField = fieldMapping[docKey] ?? 'documents[$docKey]';
+          for (final file in files) {
+            request.files.add(
+              await http.MultipartFile.fromPath(uploadField, file.path),
+            );
+          }
+        }
+      }
+
+      debugPrint('========== Upload Co-Applicant Documents ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Files: ${request.files.map((f) => '${f.field}: ${f.filename}').toList()}');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in uploadCoApplicantDocuments: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to upload co-applicant documents. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
   /// Get Co-Applicants List API: GET {{baseUrl}}/co-applicants
   static Future<Map<String, dynamic>> getCoApplicants({
     String? token,

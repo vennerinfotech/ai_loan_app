@@ -258,14 +258,22 @@ class ApplicantDetailsController extends GetxController {
       );
 
       if (res['status_code'] == 200 || res['status_code'] == 201 || res['success'] == true) {
-        Get.snackbar(
-          'Success',
-          res['message']?.toString() ?? 'Co-Applicant updated successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.successGreen,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-        );
+        String successMsg =
+            res['message']?.toString() ?? 'Co-Applicant updated successfully!';
+
+        // Upload any newly selected documents via dedicated upload endpoint
+        if (coAppUploadedFiles.isNotEmpty) {
+          final uploadRes = await _uploadSelectedCoAppDocs(coApplicantId);
+          if (uploadRes != null &&
+              (uploadRes['success'] == true ||
+                  uploadRes['status_code'] == 200 ||
+                  uploadRes['status_code'] == 201)) {
+            if (uploadRes['message'] != null &&
+                uploadRes['message'].toString().isNotEmpty) {
+              successMsg = uploadRes['message'].toString();
+            }
+          }
+        }
 
         // Refresh co-applicants list and applicant details
         fetchCoApplicants();
@@ -274,10 +282,16 @@ class ApplicantDetailsController extends GetxController {
 
         resetAddCoApplicantForm();
 
-        // Pop screen safely back to applicant details
-        if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
-          Get.back();
-        }
+        Future.delayed(const Duration(milliseconds: 150), () {
+          Get.snackbar(
+            'Success',
+            successMsg,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.successGreen,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+        });
         return true;
       } else {
         Get.snackbar(
@@ -497,14 +511,45 @@ class ApplicantDetailsController extends GetxController {
     final currentList = List<XFile>.from(coAppUploadedFiles[docKey] ?? []);
     final docItem = coAppDocuments.firstWhereOrNull((d) => d.key == docKey);
     final isMulti = docItem?.allowMultiple == true;
+    final isAadhaar = docKey == 'aadhar_card' || docKey == 'aadhaar_card';
 
     if (isMulti) {
+      currentList.add(file);
+    } else if (isAadhaar &&
+        !file.name.toLowerCase().endsWith('.pdf') &&
+        currentList.length < 2) {
+      // Allow Front + Back images for Aadhaar
       currentList.add(file);
     } else {
       currentList.clear();
       currentList.add(file);
     }
     coAppUploadedFiles[docKey] = currentList;
+  }
+
+  /// Helper to upload all files in [coAppUploadedFiles] using each document's API upload_field
+  Future<Map<String, dynamic>?> _uploadSelectedCoAppDocs(
+      dynamic coApplicantId) async {
+    if (coApplicantId == null || coAppUploadedFiles.isEmpty) return null;
+
+    final Map<String, String> fieldMapping = {};
+    for (final doc in coAppDocuments) {
+      final k = doc.key;
+      if (k == null || k.isEmpty) continue;
+      if (doc.uploadField != null && doc.uploadField!.isNotEmpty) {
+        fieldMapping[k] = doc.uploadField!;
+      } else if (doc.allowMultiple == true) {
+        fieldMapping[k] = 'co_multi_files[$k][]';
+      } else {
+        fieldMapping[k] = 'documents[$k]';
+      }
+    }
+
+    return ApiService.uploadCoApplicantDocuments(
+      coApplicantId: coApplicantId,
+      uploadedFiles: Map<String, List<XFile>>.from(coAppUploadedFiles),
+      fieldMapping: fieldMapping,
+    );
   }
 
   void removeCoAppFile(String docKey, [int? index]) {
@@ -645,14 +690,23 @@ class ApplicantDetailsController extends GetxController {
           ),
         );
 
-        Get.snackbar(
-          'Success',
-          res['message']?.toString() ?? 'Co-Applicant added successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.successGreen,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-        );
+        // Upload selected documents via dedicated /co-applicants/{id}/documents/upload API
+        String successMsg =
+            res['message']?.toString() ?? 'Co-Applicant added successfully!';
+        final createdCoAppId =
+            model.data?.coApplicantId ?? model.data?.coApplicant?.id;
+        if (createdCoAppId != null && coAppUploadedFiles.isNotEmpty) {
+          final uploadRes = await _uploadSelectedCoAppDocs(createdCoAppId);
+          if (uploadRes != null &&
+              (uploadRes['success'] == true ||
+                  uploadRes['status_code'] == 200 ||
+                  uploadRes['status_code'] == 201)) {
+            if (uploadRes['message'] != null &&
+                uploadRes['message'].toString().isNotEmpty) {
+              successMsg = uploadRes['message'].toString();
+            }
+          }
+        }
 
         // Refresh co-applicants list and applicant details
         fetchCoApplicants();
@@ -669,10 +723,16 @@ class ApplicantDetailsController extends GetxController {
         selectedEmploymentType.value = '';
         coAppUploadedFiles.clear();
 
-        // Pop Add Co-applicant screen if open
-        if (Get.isDialogOpen == true || Get.isBottomSheetOpen == true) {
-          Get.back();
-        }
+        Future.delayed(const Duration(milliseconds: 150), () {
+          Get.snackbar(
+            'Success',
+            successMsg,
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.successGreen,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+        });
         return true;
       } else {
         final msg = ApiService.getErrorMessage(res);
