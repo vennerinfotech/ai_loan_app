@@ -4,6 +4,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../controller/recommended_loan_offers_controller.dart';
 import '../../models/loan_suggestions_model.dart';
 import '../../theme/app_colors.dart';
+import '../main_nav_screen.dart';
 
 /// Screen displaying Bank Loan Suggestions directly from API response
 class RecommendedLoanOffersScreen extends StatelessWidget {
@@ -74,26 +75,51 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 22),
-                            ElevatedButton.icon(
-                              onPressed: () => controller.fetchLoanSuggestions(),
-                              icon: const Icon(Icons.refresh_rounded, size: 18, color: Colors.white),
-                              label: const Text(
-                                'Refresh',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => Get.offAll(() => const MainNavScreen()),
+                                  icon: const Icon(Icons.dashboard_rounded, size: 16, color: AppColors.navy),
+                                  label: const Text(
+                                    'Dashboard',
+                                    style: TextStyle(
+                                      color: AppColors.navy,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.navy, width: 1.2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.navy,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                const SizedBox(width: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () => controller.fetchLoanSuggestions(),
+                                  icon: const Icon(Icons.refresh_rounded, size: 16, color: Colors.white),
+                                  label: const Text(
+                                    'Refresh',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.navy,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ],
                         ),
@@ -134,6 +160,47 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: const Border(top: BorderSide(color: AppColors.line)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => Get.offAll(() => const MainNavScreen()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: const Icon(Icons.dashboard_rounded, size: 18, color: Colors.white),
+              label: const Text(
+                'Go to Dashboard',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -182,8 +249,24 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
             ),
           ),
 
-          // Right spacer to keep title centered
-          const SizedBox(width: 40),
+          // Home / Dashboard Squircle Button
+          GestureDetector(
+            onTap: () => Get.offAll(() => const MainNavScreen()),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.line, width: 1.2),
+              ),
+              child: const Icon(
+                Icons.home_rounded,
+                size: 20,
+                color: AppColors.navy,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -512,7 +512,9 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
     CoAppDocumentItem docItem,
   ) {
     final docKey = docItem.key ?? '';
-    final docLabel = docItem.label ?? docKey;
+    final docLabel = docItem.label?.isNotEmpty == true
+        ? docItem.label!
+        : _formatDocKey(docKey);
     final isMulti = docItem.allowMultiple == true;
     final acceptedFormats = docItem.acceptedFormats.isNotEmpty
         ? docItem.acceptedFormats
@@ -520,8 +522,34 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
     final maxSize = docItem.maxSizeMb ?? 5;
 
     return Obx(() {
-      final files = controller.coAppUploadedFiles[docKey] ?? [];
-      final isUploaded = files.isNotEmpty;
+      final localFiles = controller.coAppUploadedFiles[docKey] ?? [];
+      final existingFiles = controller.coAppExistingFiles[docKey] ?? [];
+      final hasLocal = localFiles.isNotEmpty;
+      final hasExisting = existingFiles.isNotEmpty;
+      final isUploaded = hasLocal || hasExisting;
+      final docError = controller.coAppDocumentErrors[docKey];
+      final hasError = docError != null && docError.isNotEmpty;
+
+      // Subtitle text
+      final String subtitleText;
+      final Color subtitleColor;
+      if (hasError) {
+        subtitleText = docError;
+        subtitleColor = AppColors.errorRed;
+      } else if (hasLocal) {
+        subtitleText = localFiles.length == 1
+            ? '${localFiles.first.name} (New)'
+            : '${localFiles.length} new files selected';
+        subtitleColor = AppColors.indigo;
+      } else if (hasExisting) {
+        subtitleText = existingFiles.length == 1
+            ? (existingFiles.first['name']?.toString() ?? 'Uploaded ✓')
+            : '${existingFiles.length} files attached';
+        subtitleColor = AppColors.successGreen;
+      } else {
+        subtitleText = 'Formats: ${acceptedFormats.join(', ').toUpperCase()} (Max ${maxSize}MB)';
+        subtitleColor = AppColors.muted;
+      }
 
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
@@ -529,8 +557,12 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isUploaded ? AppColors.indigo.withValues(alpha: 0.35) : AppColors.line,
-            width: 1.2,
+            color: hasError
+                ? AppColors.errorRed
+                : isUploaded
+                    ? AppColors.indigo.withValues(alpha: 0.35)
+                    : AppColors.line,
+            width: hasError ? 1.5 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
@@ -542,152 +574,216 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Leading Icon
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isUploaded ? AppColors.successGreenBg : AppColors.indigoTint,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Icon(
-                    isUploaded ? Icons.check_circle_rounded : _getDocIcon(docKey),
-                    color: isUploaded ? AppColors.successGreen : AppColors.navy,
-                    size: 22,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Title & Subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      docLabel,
-                      style: const TextStyle(
-                        color: AppColors.textDark,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    if (isUploaded)
-                      Text(
-                        files.length == 1
-                            ? files.first.name
-                            : '${files.length} files attached',
-                        style: const TextStyle(
-                          color: AppColors.successGreen,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    else
-                      Text(
-                        'Formats: ${acceptedFormats.join(', ').toUpperCase()} (Max ${maxSize}MB)',
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              // Action Buttons
-              if (isUploaded) ...[
-                // Remove File Button
-                GestureDetector(
-                  onTap: () => controller.removeCoAppFile(docKey),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
+              Row(
+                children: [
+                  // Leading Icon
+                  Container(
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
-                      color: AppColors.canvas,
-                      borderRadius: BorderRadius.circular(8),
+                      color: hasError
+                          ? AppColors.errorRedBg
+                          : isUploaded
+                              ? AppColors.successGreenBg
+                              : AppColors.indigoTint,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
-                      Icons.delete_outline_rounded,
-                      color: AppColors.errorRed,
-                      size: 18,
-                    ),
-                  ),
-                ),
-                if (isMulti ||
-                    ((docKey == 'aadhar_card' || docKey == 'aadhaar_card') &&
-                        files.length < 2 &&
-                        !files.first.name.toLowerCase().endsWith('.pdf'))) ...[
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await ImagePickerBottomSheet.show(
-                        context: context,
-                        title: 'Upload $docLabel',
-                      );
-                      if (picked != null) {
-                        controller.addCoAppFile(docKey, picked);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: AppColors.canvas,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.add_rounded,
-                        color: AppColors.navy,
-                        size: 18,
+                    child: Center(
+                      child: Icon(
+                        hasError
+                            ? Icons.error_outline_rounded
+                            : isUploaded
+                                ? Icons.check_circle_rounded
+                                : _getDocIcon(docKey),
+                        color: hasError
+                            ? AppColors.errorRed
+                            : isUploaded
+                                ? AppColors.successGreen
+                                : AppColors.navy,
+                        size: 22,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+
+                  // Title & Subtitle
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          docLabel,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          subtitleText,
+                          style: TextStyle(
+                            color: subtitleColor,
+                            fontSize: 11.5,
+                            fontWeight: isUploaded ? FontWeight.w600 : FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  // Action Buttons
+                  if (controller.uploadingDocKeys.contains(docKey)) ...[
+                    // Loading indicator while uploading single doc
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.navy,
+                        ),
+                      ),
+                    ),
+                  ] else if (isUploaded) ...[
+                    // Remove File Button
+                    GestureDetector(
+                      onTap: () {
+                        _showDeleteDocConfirmationDialog(
+                          context: context,
+                          controller: controller,
+                          docLabel: docLabel,
+                          docKey: docKey,
+                          file: existingFiles.length == 1 ? existingFiles.first : null,
+                          coApplicantId: widget.coApplicantId,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.canvas,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: AppColors.errorRed,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Re-upload / Replace / Add Button
+                    GestureDetector(
+                      onTap: () => _handleUploadOrReupload(context, controller, docKey, docLabel),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.canvas,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          isMulti ? Icons.add_rounded : Icons.replay_rounded,
+                          color: AppColors.navy,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ] else
+                    // Upload Button
+                    SizedBox(
+                      height: 34,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleUploadOrReupload(context, controller, docKey, docLabel),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: const Icon(
+                          Icons.upload_file_rounded,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                        label: const Text(
+                          'Upload',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
-              ] else
-                // Upload Button
-                SizedBox(
-                  height: 34,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final picked = await ImagePickerBottomSheet.show(
-                        context: context,
-                        title: 'Upload $docLabel',
-                      );
-                      if (picked != null) {
-                        controller.addCoAppFile(docKey, picked);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(
-                      Icons.upload_file_rounded,
-                      color: Colors.white,
-                      size: 15,
-                    ),
-                    label: const Text(
-                      'Upload',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
+              ),
+              if (hasError) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AppColors.errorRedBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.errorRed.withValues(alpha: 0.3),
                     ),
                   ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        size: 14,
+                        color: AppColors.errorRed,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          docError,
+                          style: const TextStyle(
+                            color: AppColors.errorRed,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+              // List attached individual files if multi-file or multiple files attached
+              if (existingFiles.length > 1 || localFiles.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                ...existingFiles.map((f) => _buildAttachedFileItem(
+                      context,
+                      controller,
+                      docKey: docKey,
+                      docLabel: docLabel,
+                      fileName: f['name']?.toString() ?? 'Document File',
+                      isServerFile: true,
+                      fileData: f,
+                    )),
+                ...localFiles.asMap().entries.map((entry) => _buildAttachedFileItem(
+                      context,
+                      controller,
+                      docKey: docKey,
+                      docLabel: docLabel,
+                      fileName: entry.value.name,
+                      isServerFile: false,
+                      localIndex: entry.key,
+                    )),
+              ],
             ],
           ),
         ),
@@ -695,14 +791,303 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
     });
   }
 
+  /// Individual attached file item row with file name and delete button
+  Widget _buildAttachedFileItem(
+    BuildContext context,
+    ApplicantDetailsController controller, {
+    required String docKey,
+    required String docLabel,
+    required String fileName,
+    required bool isServerFile,
+    Map<String, dynamic>? fileData,
+    int? localIndex,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.canvas,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.line.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.insert_drive_file_outlined,
+            size: 16,
+            color: AppColors.navy,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              fileName,
+              style: const TextStyle(
+                color: AppColors.textDark,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Re-upload / Replace icon button for single attached file
+          GestureDetector(
+            onTap: () => _handleUploadOrReupload(context, controller, docKey, docLabel),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.navy.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.replay_rounded,
+                color: AppColors.navy,
+                size: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Delete icon button
+          GestureDetector(
+            onTap: () {
+              _showDeleteDocConfirmationDialog(
+                context: context,
+                controller: controller,
+                docLabel: docLabel,
+                docKey: docKey,
+                file: fileData,
+                localIndex: localIndex,
+                coApplicantId: widget.coApplicantId,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.errorRed.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.errorRed,
+                size: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Handle document pick and immediate server upload (in edit mode) or local staging
+  Future<void> _handleUploadOrReupload(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    String docKey,
+    String docLabel,
+  ) async {
+    final picked = await ImagePickerBottomSheet.show(
+      context: context,
+      title: 'Upload $docLabel',
+    );
+    if (picked != null) {
+      if (widget.isEdit && widget.coApplicantId != null) {
+        await controller.uploadSingleDocOnServer(
+          coApplicantId: widget.coApplicantId,
+          docKey: docKey,
+          file: picked,
+        );
+      } else {
+        controller.addCoAppFile(docKey, picked);
+      }
+    }
+  }
+
+  /// Show delete confirmation dialog before deleting document from API or draft
+  void _showDeleteDocConfirmationDialog({
+    required BuildContext context,
+    required ApplicantDetailsController controller,
+    required String docLabel,
+    required String docKey,
+    Map<String, dynamic>? file,
+    int? localIndex,
+    dynamic coApplicantId,
+  }) {
+    final fileName = file?['name']?.toString() ?? docLabel;
+    final isServerDoc = coApplicantId != null &&
+        (controller.coAppExistingFiles[docKey]?.isNotEmpty == true ||
+            (file != null && file['doc_key'] != null));
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Red warning icon in circle
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: AppColors.errorRed.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.errorRed,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Title
+              const Text(
+                'Delete Document',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Subtitle
+              Text(
+                'Are you sure you want to delete "$fileName"? This action cannot be undone.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 22),
+
+              // Action buttons (Cancel & Delete)
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.line),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: Obx(
+                        () => ElevatedButton(
+                          onPressed: controller.isDeletingCoAppDoc.value
+                              ? null
+                              : () async {
+                                  if (isServerDoc) {
+                                    final targetDocKey = file?['doc_key']?.toString() ?? docKey;
+                                    final targetIndex = file?['index'];
+                                    final success = await controller.deleteCoAppDocumentOnServer(
+                                      coApplicantId: coApplicantId,
+                                      docKey: targetDocKey,
+                                      index: targetIndex,
+                                    );
+                                    if (success) {
+                                      if (Get.isDialogOpen == true) {
+                                        Get.back();
+                                      }
+                                    }
+                                  } else {
+                                    // Local file removal
+                                    controller.removeCoAppFile(docKey, localIndex);
+                                    if (Get.isDialogOpen == true) {
+                                      Get.back();
+                                    }
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.errorRed,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: controller.isDeletingCoAppDoc.value
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: true,
+    );
+  }
+
   IconData _getDocIcon(String key) {
     if (key == 'profile_image') return Icons.account_circle_outlined;
-    if (key == 'aadhar_card') return Icons.badge_outlined;
-    if (key == 'pan_card') return Icons.credit_card_outlined;
+    if (key.contains('aadhar') || key.contains('aadhaar')) return Icons.badge_outlined;
+    if (key.contains('pan')) return Icons.credit_card_outlined;
     if (key == 'bank_statement') return Icons.account_balance_outlined;
     if (key == 'latest_salary_slips') return Icons.receipt_long_outlined;
     if (key == 'form_16_itr' || key == 'gst_3b') return Icons.assignment_outlined;
     return Icons.description_outlined;
+  }
+
+  String _formatDocKey(String key) {
+    if (key == 'aadhar_card_front') return 'Aadhaar Card (Front)';
+    if (key == 'aadhar_card_back') return 'Aadhaar Card (Back)';
+    if (key == 'aadhar_card_combined_pdf') return 'Aadhaar Card (Single PDF)';
+    if (key == 'aadhar_card' || key == 'aadhaar_card') return 'Aadhaar Card';
+    if (key == 'pan_card_image' || key == 'pan_card') return 'PAN Card';
+    if (key == 'profile_image') return 'Co-Applicant Photo';
+    if (key == 'latest_salary_slips') return 'Salary Slip';
+    if (key == 'bank_statement') return 'Bank Statement';
+    if (key == 'form_16_itr') return 'Form 16 / ITR';
+    if (key == 'salary_letterpad') return 'Company Letterpad';
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 
   /// Label with red asterisk if required
@@ -803,9 +1188,10 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
                       ? null
                       : () async {
                           bool success = false;
-                          if (widget.isEdit && widget.coApplicantId != null) {
+                          final editId = widget.coApplicantId ?? controller.currentDraftCoAppId.value;
+                          if (editId != null) {
                             success = await controller.updateCoApplicant(
-                              coApplicantId: widget.coApplicantId,
+                              coApplicantId: editId,
                               role: widget.role,
                             );
                           } else {

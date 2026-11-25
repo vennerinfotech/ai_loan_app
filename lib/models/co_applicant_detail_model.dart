@@ -24,20 +24,35 @@ class CoApplicantDetailData {
   });
 
   factory CoApplicantDetailData.fromJson(Map<String, dynamic> json) {
+    final profile = json['co_applicant'] != null && json['co_applicant'] is Map<String, dynamic>
+        ? CoApplicantDetailProfile.fromJson(json['co_applicant'] as Map<String, dynamic>)
+        : null;
+
+    final docUrlsMap = profile?.documentUrls ??
+        (json['co_applicant'] is Map<String, dynamic>
+            ? json['co_applicant']['document_urls'] as Map<String, dynamic>?
+            : null);
+
+    List<CoApplicantDocumentConfig> parsedDocs = (json['documents'] as List<dynamic>?)
+            ?.whereType<Map<String, dynamic>>()
+            .map((e) => CoApplicantDocumentConfig.fromJson(e))
+            .toList() ??
+        [];
+
+    // In GET /co-applicants/{id}, the backend provides uploaded documents in co_applicant.documents
+    if (parsedDocs.isEmpty && profile?.documents != null && profile!.documents!.isNotEmpty) {
+      parsedDocs = _parseDocumentsFromProfileMap(profile.documents!, docUrlsMap: docUrlsMap);
+    }
+
     return CoApplicantDetailData(
       coApplicantId: json['co_applicant_id'] is int
           ? json['co_applicant_id']
           : int.tryParse(json['co_applicant_id']?.toString() ?? ''),
-      coApplicant: json['co_applicant'] != null && json['co_applicant'] is Map<String, dynamic>
-          ? CoApplicantDetailProfile.fromJson(json['co_applicant'] as Map<String, dynamic>)
-          : null,
+      coApplicant: profile,
       title: json['title']?.toString(),
       employmentType: json['employment_type']?.toString(),
       applicantType: json['applicant_type']?.toString(),
-      documents: (json['documents'] as List<dynamic>?)
-              ?.map((e) => CoApplicantDocumentConfig.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      documents: parsedDocs,
       summary: json['summary'] != null && json['summary'] is Map<String, dynamic>
           ? CoApplicantSummary.fromJson(json['summary'] as Map<String, dynamic>)
           : null,
@@ -45,6 +60,104 @@ class CoApplicantDetailData {
           ? CoApplicantUploadConfig.fromJson(json['upload'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  static List<CoApplicantDocumentConfig> _parseDocumentsFromProfileMap(
+    Map<String, dynamic> docsMap, {
+    Map<String, dynamic>? docUrlsMap,
+  }) {
+    final List<CoApplicantDocumentConfig> result = [];
+    for (final entry in docsMap.entries) {
+      final key = entry.key;
+      final val = entry.value;
+      if (val == null) continue;
+
+      final urlVal = docUrlsMap != null ? docUrlsMap[key] : null;
+
+      final List<CoApplicantDocFileItem> files = [];
+      if (val is String && val.trim().isNotEmpty) {
+        String? itemUrl;
+        if (urlVal is String && urlVal.isNotEmpty) {
+          itemUrl = urlVal;
+        } else if (urlVal is List && urlVal.isNotEmpty) {
+          itemUrl = urlVal.first?.toString();
+        }
+        files.add(
+          CoApplicantDocFileItem(
+            docKey: key,
+            index: 0,
+            name: val.split('/').last,
+            url: itemUrl,
+          ),
+        );
+      } else if (val is List) {
+        for (int i = 0; i < val.length; i++) {
+          final item = val[i];
+          String? itemUrl;
+          if (urlVal is List && i < urlVal.length) {
+            itemUrl = urlVal[i]?.toString();
+          } else if (urlVal is String && i == 0) {
+            itemUrl = urlVal;
+          }
+          if (item is Map) {
+            final filePath = item['file']?.toString() ?? '';
+            final itemName = item['name']?.toString();
+            files.add(
+              CoApplicantDocFileItem(
+                docKey: key,
+                index: i,
+                name: (itemName != null && itemName.isNotEmpty)
+                    ? itemName
+                    : filePath.split('/').last,
+                status: item['status']?.toString(),
+                url: itemUrl ?? item['url']?.toString(),
+              ),
+            );
+          } else if (item is String && item.trim().isNotEmpty) {
+            files.add(
+              CoApplicantDocFileItem(
+                docKey: key,
+                index: i,
+                name: item.split('/').last,
+                url: itemUrl,
+              ),
+            );
+          }
+        }
+      }
+
+      if (files.isNotEmpty) {
+        result.add(
+          CoApplicantDocumentConfig(
+            key: key,
+            label: _formatDocKey(key),
+            allowMultiple: val is List,
+            uploaded: true,
+            status: files.first.status ?? 'uploaded',
+            files: files,
+          ),
+        );
+      }
+    }
+    return result;
+  }
+
+  static String _formatDocKey(String key) {
+    if (key == 'aadhar_card_front') return 'Aadhaar Card (Front)';
+    if (key == 'aadhar_card_back') return 'Aadhaar Card (Back)';
+    if (key == 'aadhar_card_combined_pdf') return 'Aadhaar Card (Single PDF)';
+    if (key == 'aadhar_card' || key == 'aadhaar_card') return 'Aadhaar Card';
+    if (key == 'pan_card_image' || key == 'pan_card') return 'PAN Card';
+    if (key == 'profile_image') return 'Co-Applicant Photo';
+    if (key == 'latest_salary_slips') return 'Salary Slip';
+    if (key == 'bank_statement') return 'Bank Statement';
+    if (key == 'form_16_itr') return 'Form 16 / ITR';
+    if (key == 'salary_letterpad') return 'Company Letterpad';
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 
   Map<String, dynamic> toJson() {
@@ -129,6 +242,9 @@ class CoApplicantDetailProfile {
   final String? bankAccountType;
   final String? salaryMode;
   final dynamic avgBankBalance;
+  final Map<String, dynamic>? documentUrls;
+  final String? panCardImageUrl;
+  final List<dynamic>? aadhaarCardImageUrls;
 
   CoApplicantDetailProfile({
     this.id,
@@ -198,6 +314,9 @@ class CoApplicantDetailProfile {
     this.bankAccountType,
     this.salaryMode,
     this.avgBankBalance,
+    this.documentUrls,
+    this.panCardImageUrl,
+    this.aadhaarCardImageUrls,
   });
 
   factory CoApplicantDetailProfile.fromJson(Map<String, dynamic> json) {
@@ -274,6 +393,9 @@ class CoApplicantDetailProfile {
       bankAccountType: json['bank_account_type']?.toString(),
       salaryMode: json['salary_mode']?.toString(),
       avgBankBalance: json['avg_bank_balance'],
+      documentUrls: json['document_urls'] as Map<String, dynamic>?,
+      panCardImageUrl: json['pan_card_image_url']?.toString(),
+      aadhaarCardImageUrls: json['aadhaar_card_image_urls'] as List<dynamic>?,
     );
   }
 
@@ -429,12 +551,14 @@ class CoApplicantDocFileItem {
   final int? index;
   final String? name;
   final String? status;
+  final String? url;
 
   CoApplicantDocFileItem({
     this.docKey,
     this.index,
     this.name,
     this.status,
+    this.url,
   });
 
   factory CoApplicantDocFileItem.fromJson(Map<String, dynamic> json) {
@@ -443,6 +567,7 @@ class CoApplicantDocFileItem {
       index: json['index'] is int ? json['index'] : int.tryParse(json['index']?.toString() ?? ''),
       name: json['name']?.toString(),
       status: json['status']?.toString(),
+      url: json['url']?.toString() ?? json['file']?.toString(),
     );
   }
 
@@ -452,6 +577,7 @@ class CoApplicantDocFileItem {
       if (index != null) 'index': index,
       if (name != null) 'name': name,
       if (status != null) 'status': status,
+      if (url != null) 'url': url,
     };
   }
 }

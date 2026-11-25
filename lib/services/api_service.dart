@@ -1519,6 +1519,96 @@ class ApiService {
     }
   }
 
+  /// Upload a single co-applicant document API: POST {{baseUrl}}/co-applicants/{id}/documents/upload
+  static Future<Map<String, dynamic>> uploadSingleCoApplicantDocument({
+    required dynamic coApplicantId,
+    required XFile file,
+    required String uploadField,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/upload');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Accept'] = 'application/json';
+    if (authToken.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $authToken';
+    }
+
+    try {
+      request.files.add(await http.MultipartFile.fromPath(uploadField, file.path));
+
+      debugPrint('========== Upload Single Co-Applicant Document ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Field: $uploadField, File: ${file.name}');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in uploadSingleCoApplicantDocument: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to upload document. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Delete Co-Applicant Document API: POST {{baseUrl}}/co-applicants/{id}/documents/delete
+  /// Form-data fields:
+  /// - doc_key: Document key (required, e.g. bank_statement, aadhar_card_front, pan_card_image)
+  /// - index: position from files[] for multi-file documents (optional)
+  static Future<Map<String, dynamic>> deleteCoApplicantDocument({
+    required dynamic coApplicantId,
+    required String docKey,
+    dynamic index,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/delete');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Accept'] = 'application/json';
+    if (authToken.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $authToken';
+    }
+
+    request.fields['doc_key'] = docKey;
+    if (index != null) {
+      request.fields['index'] = index.toString();
+    }
+
+    try {
+      debugPrint('========== Delete Co-Applicant Document ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Fields: ${request.fields}');
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in deleteCoApplicantDocument: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to delete document. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
   /// Get Co-Applicants List API: GET {{baseUrl}}/co-applicants
   static Future<Map<String, dynamic>> getCoApplicants({
     String? token,

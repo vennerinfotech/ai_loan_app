@@ -89,6 +89,22 @@ class ApplicantDetailsController extends GetxController {
   // Uploaded files for the co-applicant: Map<docKey, List<XFile>>
   final coAppUploadedFiles = <String, List<XFile>>{}.obs;
 
+  // Existing server files for edit mode: Map<docKey, List<Map<String, dynamic>>>
+  final coAppExistingFiles = <String, List<Map<String, dynamic>>>{}.obs;
+
+  // Validation errors for co-applicant documents from upload API
+  final coAppDocumentErrors = <String, String>{}.obs;
+
+  // Loading state for document deletion
+  final isDeletingCoAppDoc = false.obs;
+
+  // Set of document keys currently uploading individually
+  final uploadingDocKeys = <String>{}.obs;
+
+  // Temporary holder for newly created co-applicant if document upload fails,
+  // preventing duplicate creations on retry
+  final currentDraftCoAppId = Rxn<dynamic>();
+
   // List of co-applicants from API (GET /co-applicants)
   final isLoadingCoApplicants = false.obs;
   final coApplicantsList = <CoApplicantItem>[].obs;
@@ -173,6 +189,10 @@ class ApplicantDetailsController extends GetxController {
   /// and populates existing fields & documents for edit mode
   Future<void> fetchAndPopulateCoApplicantForEdit(dynamic coApplicantId) async {
     if (coApplicantId == null) return;
+    coAppExistingFiles.clear();
+    coAppUploadedFiles.clear();
+    coAppDocumentErrors.clear();
+
     final details = await fetchCoApplicantDetails(coApplicantId);
     if (details != null) {
       final profile = details.coApplicant;
@@ -194,31 +214,137 @@ class ApplicantDetailsController extends GetxController {
         }
       }
 
-      // Populate documents list from GET /co-applicants/{id} response
-      if (details.documents.isNotEmpty) {
-        coAppDocuments.assignAll(
-          details.documents.map((d) => CoAppDocumentItem(
-            key: d.key,
-            label: d.label,
-            allowMultiple: d.allowMultiple,
-            acceptedFormats: d.acceptedFormats,
-            maxSizeMb: d.maxSizeMb,
-            uploadField: d.uploadField,
-            ocrAutofill: d.ocrAutofill,
-            uploaded: d.uploaded,
-            status: d.status,
-            files: d.files.map((f) => f.toJson()).toList(),
-          )),
-        );
-      } else if (selectedEmploymentType.value.isNotEmpty) {
+      // First, ensure coAppDocuments has the employment type document schema from formOptionsData
+      if (selectedEmploymentType.value.isNotEmpty) {
         _updateDocumentsForEmploymentType(selectedEmploymentType.value);
       }
+
+      // Map existing uploaded documents from API response
+      if (details.documents.isNotEmpty) {
+        for (final d in details.documents) {
+          final docKey = d.key ?? '';
+          if (docKey.isEmpty) continue;
+
+          // If aadhar_card with multiple files or separate
+          if (docKey == 'aadhar_card' || docKey == 'aadhaar_card') {
+            if (d.files.isNotEmpty) {
+              for (int i = 0; i < d.files.length; i++) {
+                final f = d.files[i];
+                final isFront = f.docKey == 'aadhar_card_front' ||
+                    (f.name?.toLowerCase().contains('front') == true) ||
+                    i == 0;
+                final targetKey = isFront ? 'aadhar_card_front' : 'aadhar_card_back';
+                coAppExistingFiles[targetKey] = [
+                  {
+                    'doc_key': targetKey,
+                    'index': f.index ?? i,
+                    'name': f.name,
+                    'url': f.url,
+                    'status': f.status,
+                  }
+                ];
+              }
+            }
+            continue;
+          }
+
+          final targetKey = (docKey == 'pan_card' || docKey == 'pan_card_image')
+              ? 'pan_card_image'
+              : docKey;
+
+          final List<Map<String, dynamic>> fileList = [];
+          if (d.files.isNotEmpty) {
+            for (int i = 0; i < d.files.length; i++) {
+              final f = d.files[i];
+              fileList.add({
+                'doc_key': f.docKey ?? targetKey,
+                'index': f.index ?? i,
+                'name': f.name,
+                'url': f.url,
+                'status': f.status,
+              });
+            }
+          } else if (d.uploaded == true) {
+            fileList.add({
+              'doc_key': targetKey,
+              'index': 0,
+              'name': 'Uploaded Document',
+              'url': null,
+              'status': d.status,
+            });
+          }
+
+          if (fileList.isNotEmpty) {
+            coAppExistingFiles[targetKey] = fileList;
+          } else {
+            coAppExistingFiles.remove(targetKey);
+          }
+
+          // If this document wasn't in coAppDocuments, add it dynamically
+          final existingDoc = coAppDocuments.firstWhereOrNull((item) => item.key == targetKey);
+          if (existingDoc == null) {
+            coAppDocuments.add(
+              CoAppDocumentItem(
+                key: targetKey,
+                label: d.label?.isNotEmpty == true ? d.label : _formatDocKey(targetKey),
+                allowMultiple: d.allowMultiple,
+                acceptedFormats: d.acceptedFormats,
+                maxSizeMb: d.maxSizeMb,
+                uploadField: d.uploadField ?? getUploadFieldForDocKey(targetKey),
+                ocrAutofill: d.ocrAutofill,
+                uploaded: d.uploaded ?? fileList.isNotEmpty,
+                status: d.status,
+                files: d.files.map((f) => f.toJson()).toList(),
+              ),
+            );
+          } else if (d.label?.isNotEmpty == true && existingDoc.label != d.label) {
+            // Update label from API response if cleaner
+            final idx = coAppDocuments.indexOf(existingDoc);
+            if (idx != -1) {
+              coAppDocuments[idx] = CoAppDocumentItem(
+                key: existingDoc.key,
+                label: d.label,
+                allowMultiple: existingDoc.allowMultiple,
+                acceptedFormats: existingDoc.acceptedFormats,
+                maxSizeMb: existingDoc.maxSizeMb,
+                uploadField: existingDoc.uploadField,
+                ocrAutofill: existingDoc.ocrAutofill,
+                uploaded: d.uploaded ?? fileList.isNotEmpty,
+                status: d.status,
+                files: d.files.map((f) => f.toJson()).toList(),
+              );
+            }
+          }
+        }
+      }
     }
+  }
+
+  /// Format document key to readable label
+  String _formatDocKey(String key) {
+    if (key == 'aadhar_card_front') return 'Aadhaar Card (Front)';
+    if (key == 'aadhar_card_back') return 'Aadhaar Card (Back)';
+    if (key == 'aadhar_card_combined_pdf') return 'Aadhaar Card (Single PDF)';
+    if (key == 'aadhar_card' || key == 'aadhaar_card') return 'Aadhaar Card';
+    if (key == 'pan_card_image' || key == 'pan_card') return 'PAN Card';
+    if (key == 'profile_image') return 'Co-Applicant Photo';
+    if (key == 'latest_salary_slips') return 'Salary Slip';
+    if (key == 'bank_statement') return 'Bank Statement';
+    if (key == 'form_16_itr') return 'Form 16 / ITR';
+    if (key == 'salary_letterpad') return 'Company Letterpad';
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 
   /// Reset form fields when opening add screen fresh
   void resetAddCoApplicantForm() {
     editingCoApplicantId.value = null;
+    currentDraftCoAppId.value = null;
+    coAppDocumentErrors.clear();
+    coAppExistingFiles.clear();
     fullNameController.clear();
     mobileNumberController.clear();
     selectedRelationship.value = '';
@@ -264,16 +390,34 @@ class ApplicantDetailsController extends GetxController {
         // Upload any newly selected documents via dedicated upload endpoint
         if (coAppUploadedFiles.isNotEmpty) {
           final uploadRes = await _uploadSelectedCoAppDocs(coApplicantId);
-          if (uploadRes != null &&
+          final isUploadOk = uploadRes != null &&
               (uploadRes['success'] == true ||
                   uploadRes['status_code'] == 200 ||
-                  uploadRes['status_code'] == 201)) {
-            if (uploadRes['message'] != null &&
-                uploadRes['message'].toString().isNotEmpty) {
-              successMsg = uploadRes['message'].toString();
-            }
+                  uploadRes['status_code'] == 201);
+
+          if (!isUploadOk) {
+            _setDocumentErrors(uploadRes);
+            final errorMsg = ApiService.getErrorMessage(uploadRes);
+            Get.snackbar(
+              'Document Upload Failed',
+              errorMsg,
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: AppColors.errorRed,
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 4),
+            );
+            return false;
+          }
+
+          if (uploadRes['message'] != null &&
+              uploadRes['message'].toString().isNotEmpty) {
+            successMsg = uploadRes['message'].toString();
           }
         }
+
+        coAppDocumentErrors.clear();
+        currentDraftCoAppId.value = null;
 
         // Refresh co-applicants list and applicant details
         fetchCoApplicants();
@@ -496,7 +640,62 @@ class ApplicantDetailsController extends GetxController {
     }
 
     if (matchedDocs.isNotEmpty) {
-      coAppDocuments.assignAll(matchedDocs);
+      final List<CoAppDocumentItem> expandedDocs = [];
+      for (final doc in matchedDocs) {
+        final key = doc.key ?? '';
+        if (key == 'aadhar_card' || key == 'aadhaar_card') {
+          // Expand into Front and Back separate items
+          expandedDocs.add(
+            CoAppDocumentItem(
+              key: 'aadhar_card_front',
+              label: 'Aadhaar Card (Front)',
+              allowMultiple: false,
+              acceptedFormats: doc.acceptedFormats.isNotEmpty
+                  ? doc.acceptedFormats
+                  : ['pdf', 'jpg', 'jpeg', 'png'],
+              maxSizeMb: doc.maxSizeMb ?? 5,
+              uploadField: 'documents[aadhar_card_front]',
+              ocrAutofill: true,
+              uploaded: false,
+              status: 'not_uploaded',
+            ),
+          );
+          expandedDocs.add(
+            CoAppDocumentItem(
+              key: 'aadhar_card_back',
+              label: 'Aadhaar Card (Back)',
+              allowMultiple: false,
+              acceptedFormats: doc.acceptedFormats.isNotEmpty
+                  ? doc.acceptedFormats
+                  : ['pdf', 'jpg', 'jpeg', 'png'],
+              maxSizeMb: doc.maxSizeMb ?? 5,
+              uploadField: 'documents[aadhar_card_back]',
+              ocrAutofill: true,
+              uploaded: false,
+              status: 'not_uploaded',
+            ),
+          );
+        } else if (key == 'pan_card' || key == 'pan_card_image') {
+          expandedDocs.add(
+            CoAppDocumentItem(
+              key: 'pan_card_image',
+              label: 'PAN Card',
+              allowMultiple: false,
+              acceptedFormats: doc.acceptedFormats.isNotEmpty
+                  ? doc.acceptedFormats
+                  : ['pdf', 'jpg', 'jpeg', 'png'],
+              maxSizeMb: doc.maxSizeMb ?? 5,
+              uploadField: 'documents[pan_card_image]',
+              ocrAutofill: true,
+              uploaded: doc.uploaded,
+              status: doc.status,
+            ),
+          );
+        } else {
+          expandedDocs.add(doc);
+        }
+      }
+      coAppDocuments.assignAll(expandedDocs);
     } else {
       coAppDocuments.clear();
     }
@@ -508,17 +707,12 @@ class ApplicantDetailsController extends GetxController {
   }
 
   void addCoAppFile(String docKey, XFile file) {
+    clearCoAppDocError(docKey);
     final currentList = List<XFile>.from(coAppUploadedFiles[docKey] ?? []);
     final docItem = coAppDocuments.firstWhereOrNull((d) => d.key == docKey);
     final isMulti = docItem?.allowMultiple == true;
-    final isAadhaar = docKey == 'aadhar_card' || docKey == 'aadhaar_card';
 
     if (isMulti) {
-      currentList.add(file);
-    } else if (isAadhaar &&
-        !file.name.toLowerCase().endsWith('.pdf') &&
-        currentList.length < 2) {
-      // Allow Front + Back images for Aadhaar
       currentList.add(file);
     } else {
       currentList.clear();
@@ -527,22 +721,64 @@ class ApplicantDetailsController extends GetxController {
     coAppUploadedFiles[docKey] = currentList;
   }
 
+  /// Sets document errors from API response for inline error display
+  void _setDocumentErrors(Map<String, dynamic>? response) {
+    coAppDocumentErrors.clear();
+    if (response != null && response['errors'] is Map) {
+      final errMap = response['errors'] as Map;
+      errMap.forEach((k, v) {
+        final keyStr = k.toString();
+        final msg = v is List ? (v.isNotEmpty ? v.first.toString() : '') : v.toString();
+        if (msg.isNotEmpty) {
+          coAppDocumentErrors[keyStr] = msg;
+          for (final doc in coAppDocuments) {
+            final dKey = doc.key ?? '';
+            if (dKey.isNotEmpty &&
+                (keyStr == dKey ||
+                    keyStr.contains(dKey) ||
+                    (dKey.contains('aadhar') && keyStr.contains('aadhar')))) {
+              coAppDocumentErrors[dKey] = msg;
+            }
+          }
+        }
+      });
+    }
+  }
+
+  /// Clears document error for a specific document key
+  void clearCoAppDocError(String docKey) {
+    coAppDocumentErrors.remove(docKey);
+    coAppDocumentErrors.removeWhere((k, _) =>
+        k.contains(docKey) || (docKey.contains('aadhar') && k.contains('aadhar')));
+  }
+
+  /// Returns the API upload_field for a document key
+  String getUploadFieldForDocKey(String docKey) {
+    if (docKey == 'aadhar_card_front') return 'documents[aadhar_card_front]';
+    if (docKey == 'aadhar_card_back') return 'documents[aadhar_card_back]';
+    if (docKey == 'aadhar_card_combined_pdf') return 'documents[aadhar_card_combined_pdf]';
+    if (docKey == 'pan_card' || docKey == 'pan_card_image') return 'documents[pan_card_image]';
+    if (docKey == 'profile_image') return 'documents[profile_image]';
+
+    final docItem = coAppDocuments.firstWhereOrNull((d) => d.key == docKey);
+    if (docItem?.uploadField != null && docItem!.uploadField!.isNotEmpty) {
+      return docItem.uploadField!;
+    }
+    if (docItem?.allowMultiple == true || docKey == 'bank_statement' || docKey == 'latest_salary_slips') {
+      return 'co_multi_files[$docKey][]';
+    }
+    return 'documents[$docKey]';
+  }
+
   /// Helper to upload all files in [coAppUploadedFiles] using each document's API upload_field
   Future<Map<String, dynamic>?> _uploadSelectedCoAppDocs(
       dynamic coApplicantId) async {
     if (coApplicantId == null || coAppUploadedFiles.isEmpty) return null;
 
     final Map<String, String> fieldMapping = {};
-    for (final doc in coAppDocuments) {
-      final k = doc.key;
-      if (k == null || k.isEmpty) continue;
-      if (doc.uploadField != null && doc.uploadField!.isNotEmpty) {
-        fieldMapping[k] = doc.uploadField!;
-      } else if (doc.allowMultiple == true) {
-        fieldMapping[k] = 'co_multi_files[$k][]';
-      } else {
-        fieldMapping[k] = 'documents[$k]';
-      }
+    for (final entry in coAppUploadedFiles.entries) {
+      final k = entry.key;
+      fieldMapping[k] = getUploadFieldForDocKey(k);
     }
 
     return ApiService.uploadCoApplicantDocuments(
@@ -552,20 +788,286 @@ class ApplicantDetailsController extends GetxController {
     );
   }
 
-  void removeCoAppFile(String docKey, [int? index]) {
-    if (index != null && coAppUploadedFiles[docKey] != null) {
-      final list = List<XFile>.from(coAppUploadedFiles[docKey]!);
-      if (index >= 0 && index < list.length) {
-        list.removeAt(index);
-        if (list.isEmpty) {
-          coAppUploadedFiles.remove(docKey);
-        } else {
-          coAppUploadedFiles[docKey] = list;
+  /// Upload a single document or sub-document immediately to the server
+  Future<bool> uploadSingleDocOnServer({
+    required dynamic coApplicantId,
+    required String docKey,
+    required XFile file,
+    String? uploadField,
+  }) async {
+    uploadingDocKeys.add(docKey);
+    clearCoAppDocError(docKey);
+    try {
+      final field = uploadField ?? getUploadFieldForDocKey(docKey);
+      final res = await ApiService.uploadSingleCoApplicantDocument(
+        coApplicantId: coApplicantId,
+        file: file,
+        uploadField: field,
+      );
+
+      if (res['success'] == true || res['status_code'] == 200) {
+        if (res['data'] != null && res['data'] is Map<String, dynamic>) {
+          final dataMap = res['data'] as Map<String, dynamic>;
+          if (dataMap['documents'] is List) {
+            updateDocumentsFromDeleteResponse(dataMap['documents'] as List);
+          }
         }
+
+        // Ensure local existing files state has this uploaded file
+        final docItem = coAppDocuments.firstWhereOrNull((d) => d.key == docKey);
+        final isMulti = docItem?.allowMultiple == true;
+        final list = List<Map<String, dynamic>>.from(coAppExistingFiles[docKey] ?? []);
+        if (isMulti) {
+          list.add({
+            'doc_key': docKey,
+            'index': list.length,
+            'name': file.name,
+            'status': 'accepted',
+          });
+        } else {
+          list.clear();
+          list.add({
+            'doc_key': docKey,
+            'index': 0,
+            'name': file.name,
+            'status': 'accepted',
+          });
+        }
+        coAppExistingFiles[docKey] = list;
+        coAppExistingFiles.refresh();
+
+        // Also refresh details and list in background
+        fetchCoApplicants();
+        fetchCoApplicantDetails(coApplicantId);
+
+        Get.snackbar(
+          'Success',
+          res['message']?.toString() ?? 'Document uploaded successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return true;
+      } else {
+        _setDocumentErrors(res);
+        final errorMsg = ApiService.getErrorMessage(res);
+        Get.snackbar(
+          'Upload Failed',
+          errorMsg,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.errorRed,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
       }
-    } else {
-      coAppUploadedFiles.remove(docKey);
+    } catch (e) {
+      debugPrint('Error in uploadSingleDocOnServer: $e');
+      return false;
+    } finally {
+      uploadingDocKeys.remove(docKey);
     }
+  }
+
+  void removeCoAppFile(String docKey, [int? index]) {
+    clearCoAppDocError(docKey);
+    if (coAppUploadedFiles.containsKey(docKey) &&
+        (coAppUploadedFiles[docKey]?.isNotEmpty == true)) {
+      if (index != null && coAppUploadedFiles[docKey] != null) {
+        final list = List<XFile>.from(coAppUploadedFiles[docKey]!);
+        if (index >= 0 && index < list.length) {
+          list.removeAt(index);
+          if (list.isEmpty) {
+            coAppUploadedFiles.remove(docKey);
+          } else {
+            coAppUploadedFiles[docKey] = list;
+          }
+        }
+      } else {
+        coAppUploadedFiles.remove(docKey);
+      }
+    } else if (coAppExistingFiles.containsKey(docKey) &&
+        (coAppExistingFiles[docKey]?.isNotEmpty == true)) {
+      if (index != null && coAppExistingFiles[docKey] != null) {
+        final list = List<Map<String, dynamic>>.from(coAppExistingFiles[docKey]!);
+        if (index >= 0 && index < list.length) {
+          list.removeAt(index);
+          if (list.isEmpty) {
+            coAppExistingFiles.remove(docKey);
+          } else {
+            coAppExistingFiles[docKey] = list;
+          }
+        }
+      } else {
+        coAppExistingFiles.remove(docKey);
+      }
+    }
+  }
+
+  /// Delete co-applicant document from server API: POST {{baseUrl}}/co-applicants/{id}/documents/delete
+  /// Dynamic form-data fields:
+  /// - doc_key: document key e.g. bank_statement, aadhar_card_front, pan_card_image
+  /// - index: position for multi-file documents e.g. 0
+  Future<bool> deleteCoAppDocumentOnServer({
+    required dynamic coApplicantId,
+    required String docKey,
+    dynamic index,
+  }) async {
+    isDeletingCoAppDoc.value = true;
+    try {
+      final res = await ApiService.deleteCoApplicantDocument(
+        coApplicantId: coApplicantId,
+        docKey: docKey,
+        index: index,
+      );
+
+      if (res['success'] == true || res['status_code'] == 200) {
+        // Close delete confirmation dialog first before showing snackbar
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
+        // Update documents dynamic state from API response data if provided
+        if (res['data'] != null && res['data'] is Map<String, dynamic>) {
+          final dataMap = res['data'] as Map<String, dynamic>;
+          if (dataMap['documents'] is List) {
+            updateDocumentsFromDeleteResponse(dataMap['documents'] as List);
+          } else {
+            removeCoAppFile(docKey, index is int ? index : int.tryParse(index?.toString() ?? ''));
+          }
+        } else {
+          removeCoAppFile(docKey, index is int ? index : int.tryParse(index?.toString() ?? ''));
+        }
+
+        // Also refresh co-applicants details and list in background
+        fetchCoApplicants();
+        if (coApplicantId != null) {
+          fetchCoApplicantDetails(coApplicantId);
+        }
+
+        Get.snackbar(
+          'Success',
+          res['message']?.toString() ?? 'Document deleted successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.successGreen,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return true;
+      } else {
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
+        Get.snackbar(
+          'Notice',
+          ApiService.getErrorMessage(res),
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.errorRed,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error in deleteCoAppDocumentOnServer: $e');
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      return false;
+    } finally {
+      isDeletingCoAppDoc.value = false;
+    }
+  }
+
+  /// Updates coAppExistingFiles & coAppDocuments dynamically from delete/upload API response
+  void updateDocumentsFromDeleteResponse(List<dynamic> apiDocs) {
+    for (final docRaw in apiDocs) {
+      if (docRaw is! Map) continue;
+      final docMap = Map<String, dynamic>.from(docRaw);
+      final key = docMap['key']?.toString() ?? '';
+      if (key.isEmpty) continue;
+
+      final isUploaded = docMap['uploaded'] == true;
+      final filesRaw = docMap['files'] as List<dynamic>? ?? [];
+
+      // Special handling for aadhar_card separate front & back
+      if (key == 'aadhar_card' || key == 'aadhaar_card') {
+        if (!isUploaded || filesRaw.isEmpty) {
+          coAppExistingFiles.remove('aadhar_card_front');
+          coAppExistingFiles.remove('aadhar_card_back');
+        } else {
+          bool hasFront = false;
+          bool hasBack = false;
+          for (int i = 0; i < filesRaw.length; i++) {
+            final f = filesRaw[i];
+            if (f is Map) {
+              final subKey = f['doc_key']?.toString() ?? '';
+              final isFront = subKey == 'aadhar_card_front' ||
+                  (f['name']?.toString().toLowerCase().contains('front') ?? false) ||
+                  i == 0;
+              final target = isFront ? 'aadhar_card_front' : 'aadhar_card_back';
+              if (isFront) hasFront = true;
+              if (!isFront) hasBack = true;
+              coAppExistingFiles[target] = [
+                {
+                  'doc_key': target,
+                  'index': f['index'] ?? i,
+                  'name': f['name'] ?? 'Aadhaar File',
+                  'status': f['status'],
+                  'url': f['url'],
+                }
+              ];
+            }
+          }
+          if (!hasFront) coAppExistingFiles.remove('aadhar_card_front');
+          if (!hasBack) coAppExistingFiles.remove('aadhar_card_back');
+        }
+        continue;
+      }
+
+      final targetKey = (key == 'pan_card' || key == 'pan_card_image') ? 'pan_card_image' : key;
+
+      if (!isUploaded || filesRaw.isEmpty) {
+        coAppExistingFiles.remove(targetKey);
+      } else {
+        final List<Map<String, dynamic>> newFileList = [];
+        for (int i = 0; i < filesRaw.length; i++) {
+          final f = filesRaw[i];
+          if (f is Map) {
+            newFileList.add({
+              'doc_key': f['doc_key'] ?? targetKey,
+              'index': f['index'] ?? i,
+              'name': f['name'] ?? 'Document File',
+              'status': f['status'],
+              'url': f['url'],
+            });
+          }
+        }
+        coAppExistingFiles[targetKey] = newFileList;
+      }
+
+      // Also update coAppDocuments list if present
+      final docItemIndex = coAppDocuments.indexWhere((d) => d.key == targetKey);
+      if (docItemIndex != -1) {
+        final current = coAppDocuments[docItemIndex];
+        coAppDocuments[docItemIndex] = CoAppDocumentItem(
+          key: current.key,
+          label: docMap['label']?.toString() ?? current.label,
+          allowMultiple: current.allowMultiple,
+          acceptedFormats: current.acceptedFormats,
+          maxSizeMb: current.maxSizeMb,
+          uploadField: current.uploadField,
+          ocrAutofill: current.ocrAutofill,
+          uploaded: isUploaded,
+          status: docMap['status']?.toString() ?? current.status,
+          files: filesRaw,
+        );
+      }
+    }
+    coAppExistingFiles.refresh();
+    coAppDocuments.refresh();
   }
 
   /// Get relationship options strictly from API
@@ -695,18 +1197,45 @@ class ApplicantDetailsController extends GetxController {
             res['message']?.toString() ?? 'Co-Applicant added successfully!';
         final createdCoAppId =
             model.data?.coApplicantId ?? model.data?.coApplicant?.id;
+
+        if (createdCoAppId != null) {
+          currentDraftCoAppId.value = createdCoAppId;
+        }
+
         if (createdCoAppId != null && coAppUploadedFiles.isNotEmpty) {
           final uploadRes = await _uploadSelectedCoAppDocs(createdCoAppId);
-          if (uploadRes != null &&
+          final isUploadOk = uploadRes != null &&
               (uploadRes['success'] == true ||
                   uploadRes['status_code'] == 200 ||
-                  uploadRes['status_code'] == 201)) {
-            if (uploadRes['message'] != null &&
-                uploadRes['message'].toString().isNotEmpty) {
-              successMsg = uploadRes['message'].toString();
-            }
+                  uploadRes['status_code'] == 201);
+
+          if (!isUploadOk) {
+            _setDocumentErrors(uploadRes);
+            final errorMsg = ApiService.getErrorMessage(uploadRes);
+            Get.snackbar(
+              'Document Upload Failed',
+              errorMsg,
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: AppColors.errorRed,
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 4),
+            );
+            // Refresh co-applicants list in background so draft is saved
+            fetchCoApplicants();
+            // DO NOT reset form fields, DO NOT pop screen, RETURN FALSE!
+            return false;
+          }
+
+          if (uploadRes['message'] != null &&
+              uploadRes['message'].toString().isNotEmpty) {
+            successMsg = uploadRes['message'].toString();
           }
         }
+
+        // Upload succeeded or no documents were attached
+        currentDraftCoAppId.value = null;
+        coAppDocumentErrors.clear();
 
         // Refresh co-applicants list and applicant details
         fetchCoApplicants();

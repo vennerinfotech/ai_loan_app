@@ -9,6 +9,7 @@ import '../../models/co_applicant_detail_model.dart';
 import '../../models/applicant_detail_model.dart';
 import 'add_co_applicant_screen.dart';
 import 'recommended_loan_offers_screen.dart';
+import '../photo_gallery_screen.dart';
 
 /// Screen displaying primary applicant & co-applicant details (Reference Image Left Screen)
 class ApplicantDetailsScreen extends StatelessWidget {
@@ -1035,93 +1036,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       ),
 
                       // Section 4: Documents & Proofs
-                      _buildDetailCard(
-                        title: 'DOCUMENTS & PROOFS',
-                        icon: Icons.folder_open_rounded,
-                        trailing: details.summary != null
-                            ? Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.successGreenBg,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: AppColors.successGreen.withValues(alpha: 0.25),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.check_circle_rounded,
-                                      size: 11,
-                                      color: AppColors.successGreen,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${details.summary?.uploaded ?? 0}/${details.summary?.total ?? details.documents.length} Uploaded',
-                                      style: const TextStyle(
-                                        color: AppColors.successGreen,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : null,
-                        children: [
-                          if (details.summary != null) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${details.summary?.uploaded ?? 0} of ${details.summary?.total ?? details.documents.length} Completed',
-                                  style: const TextStyle(
-                                    color: AppColors.muted,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '${details.summary?.total != null && details.summary!.total! > 0 ? (((details.summary?.uploaded ?? 0) / details.summary!.total!) * 100).toInt() : 0}%',
-                                  style: const TextStyle(
-                                    color: AppColors.textDark,
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: LinearProgressIndicator(
-                                value: (details.summary?.total != null && details.summary!.total! > 0)
-                                    ? ((details.summary?.uploaded ?? 0) / details.summary!.total!)
-                                    : 0.0,
-                                minHeight: 3.5,
-                                backgroundColor: AppColors.canvas,
-                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.successGreen),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          if (details.documents.isNotEmpty)
-                            for (final doc in details.documents)
-                              _buildDocDetailTile(doc)
-                          else
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Center(
-                                child: Text(
-                                  'No documents found.',
-                                  style: TextStyle(color: AppColors.muted, fontSize: 12.5),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                      _buildDocumentsSection(context, details),
 
                       const SizedBox(height: 20),
                     ],
@@ -1351,169 +1266,604 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// Document item tile inside details bottom sheet
-  Widget _buildDocDetailTile(CoApplicantDocumentConfig doc) {
-    final isUploaded = doc.uploaded == true || doc.status?.toLowerCase() == 'uploaded' || doc.files.isNotEmpty;
+  /// Documents & Proofs section — card-based style matching Upload Documents screen
+  Widget _buildDocumentsSection(BuildContext context, CoApplicantDetailData details) {
+    final hasDocuments = details.documents.isNotEmpty;
+    final uploadedCount = details.documents
+        .where((d) => d.uploaded == true || d.files.isNotEmpty)
+        .length;
+    final totalCount = details.documents.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Header OUTSIDE card (consistent with upload document screen)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8, top: 4),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.indigoTint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.folder_open_rounded, color: AppColors.navy, size: 15),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'DOCUMENTS & PROOFS',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              if (hasDocuments)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: uploadedCount == totalCount && totalCount > 0
+                        ? AppColors.successGreenBg
+                        : AppColors.canvas,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.line),
+                  ),
+                  child: Text(
+                    '$uploadedCount/$totalCount',
+                    style: TextStyle(
+                      color: uploadedCount == totalCount && totalCount > 0
+                          ? AppColors.successGreen
+                          : AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // Document Cards
+        if (hasDocuments)
+          for (final doc in details.documents)
+            _buildDocUploadStyleCard(context, doc)
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.indigoTint,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.folder_open_rounded,
+                      color: AppColors.navy,
+                      size: 22,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'No Documents Uploaded',
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'No documents or proofs have been uploaded for this co-applicant.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Individual Document Card matching the Upload Document screen card style
+  Widget _buildDocUploadStyleCard(BuildContext context, CoApplicantDocumentConfig doc) {
+    final isUploaded = doc.uploaded == true ||
+        doc.status?.toLowerCase() == 'uploaded' ||
+        doc.files.isNotEmpty;
     final fileCount = doc.files.length;
+    final hasRejected = doc.files.any((f) => f.status?.toLowerCase() == 'rejected');
+    final String label = doc.label ?? _formatDocKey(doc.key ?? 'Document');
+    final docKey = doc.key ?? '';
+
+    // Collect all valid URLs for viewing in photo gallery
+    final allUrls = doc.files
+        .map((f) => (f.url?.isNotEmpty == true) ? f.url! : (f.name ?? ''))
+        .where((u) => u.isNotEmpty)
+        .toList();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 6),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUploaded ? AppColors.successGreen.withValues(alpha: 0.35) : AppColors.line,
-          width: 1,
+          color: hasRejected
+              ? AppColors.errorRed
+              : isUploaded
+                  ? AppColors.indigo.withValues(alpha: 0.35)
+                  : AppColors.line,
+          width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                // Icon Container
+                // Leading Icon Container (42x42 squircle matching upload screen)
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: isUploaded ? AppColors.successGreenBg : AppColors.indigoTint,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isUploaded
-                          ? AppColors.successGreen.withValues(alpha: 0.2)
-                          : AppColors.indigo.withValues(alpha: 0.15),
-                    ),
+                    color: hasRejected
+                        ? AppColors.errorRedBg
+                        : isUploaded
+                            ? AppColors.successGreenBg
+                            : AppColors.indigoTint,
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
                     child: Icon(
-                      isUploaded ? Icons.verified_user_outlined : Icons.description_outlined,
-                      color: isUploaded ? AppColors.successGreen : AppColors.navy,
-                      size: 20,
+                      hasRejected
+                          ? Icons.error_outline_rounded
+                          : isUploaded
+                              ? Icons.check_circle_rounded
+                              : _getDocIcon(docKey),
+                      color: hasRejected
+                          ? AppColors.errorRed
+                          : isUploaded
+                              ? AppColors.successGreen
+                              : AppColors.navy,
+                      size: 22,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
 
-                // Label and status text
+                // Title + Subtitle / File count
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        doc.label ?? doc.key ?? 'Document',
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              label,
+                              style: const TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (fileCount > 1) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: AppColors.canvas,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.line),
+                              ),
+                              child: Text(
+                                '$fileCount',
+                                style: const TextStyle(
+                                  color: AppColors.navy,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         isUploaded
-                            ? (fileCount > 0 ? '$fileCount file(s) attached' : 'Verified & Uploaded')
+                            ? (fileCount == 1
+                                ? (doc.files.first.name ?? 'Uploaded ✓')
+                                : '$fileCount files attached')
                             : 'Upload pending',
                         style: TextStyle(
-                          color: isUploaded ? AppColors.successGreen : AppColors.muted,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          color: hasRejected
+                              ? AppColors.errorRed
+                              : isUploaded
+                                  ? AppColors.successGreen
+                                  : AppColors.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
 
-                // Status badge with light border
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
-                  decoration: BoxDecoration(
-                    color: isUploaded ? AppColors.successGreenBg : AppColors.canvas,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: isUploaded
-                          ? AppColors.successGreen.withValues(alpha: 0.3)
-                          : AppColors.line,
-                      width: 1,
+                const SizedBox(width: 8),
+
+                // Trailing Action: View Document Button (if uploaded) or Pending Tag
+                if (isUploaded)
+                  GestureDetector(
+                    onTap: () => _showVerifyToViewDocDialog(
+                      context,
+                      docTitle: label,
+                      imagePaths: allUrls,
+                      initialIndex: 0,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isUploaded ? Icons.check_circle_rounded : Icons.schedule_rounded,
-                        size: 11,
-                        color: isUploaded ? AppColors.successGreen : AppColors.muted,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isUploaded ? 'Uploaded' : 'Pending',
-                        style: TextStyle(
-                          color: isUploaded ? AppColors.successGreen : AppColors.muted,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: AppColors.indigoTint,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.indigo.withValues(alpha: 0.25),
                         ),
                       ),
-                    ],
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.visibility_outlined,
+                            size: 14,
+                            color: AppColors.navy,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'View',
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.canvas,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.line),
+                    ),
+                    child: const Text(
+                      'Pending',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
               ],
             ),
 
-            // Attached files list
-            if (doc.files.isNotEmpty) ...[
+            // If multiple files, display file pills list below
+            if (fileCount > 1) ...[
               const SizedBox(height: 10),
               const Divider(height: 1, thickness: 1, color: AppColors.line),
               const SizedBox(height: 8),
-              for (final f in doc.files)
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.canvas,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.line.withValues(alpha: 0.6)),
-                  ),
+              ...doc.files.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final file = entry.value;
+                final fileName = file.name?.trim().isNotEmpty == true
+                    ? file.name!
+                    : 'Attached Document #${idx + 1}';
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Row(
                     children: [
-                      const Icon(Icons.attach_file_rounded, size: 13, color: AppColors.muted),
+                      const Icon(
+                        Icons.insert_drive_file_outlined,
+                        size: 13,
+                        color: AppColors.muted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          f.name ?? 'Attached Document',
+                          fileName,
                           style: const TextStyle(
-                            color: AppColors.textDark,
+                            color: AppColors.muted,
                             fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      if (f.status != null)
-                        Text(
-                          f.status!.toUpperCase(),
-                          style: const TextStyle(
-                            color: AppColors.successGreen,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w800,
+                      GestureDetector(
+                        onTap: () => _showVerifyToViewDocDialog(
+                          context,
+                          docTitle: label,
+                          fileName: fileName,
+                          imagePaths: allUrls,
+                          initialIndex: idx,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.canvas,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.line),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.visibility_outlined,
+                                size: 11,
+                                color: AppColors.navy,
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                'View',
+                                style: TextStyle(
+                                  color: AppColors.navy,
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
                     ],
                   ),
-                ),
+                );
+              }),
             ],
           ],
         ),
       ),
     );
+  }
+
+  /// Get icon for document key matching upload documents screen
+  IconData _getDocIcon(String key) {
+    final k = key.toLowerCase();
+    if (k.contains('profile')) return Icons.account_circle_outlined;
+    if (k.contains('aadhar') || k.contains('aadhaar')) return Icons.badge_outlined;
+    if (k.contains('pan')) return Icons.credit_card_outlined;
+    if (k.contains('bank')) return Icons.account_balance_outlined;
+    if (k.contains('salary') || k.contains('payslip')) return Icons.receipt_long_outlined;
+    if (k.contains('itr') || k.contains('form_16') || k.contains('tax')) return Icons.request_quote_outlined;
+    return Icons.description_outlined;
+  }
+
+  /// Confirmation dialog before viewing documents (requires number verification)
+  void _showVerifyToViewDocDialog(
+    BuildContext context, {
+    String? docTitle,
+    String? fileName,
+    List<String> imagePaths = const [],
+    int initialIndex = 0,
+  }) {
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Security Shield / Lock Icon
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.indigoTint,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.indigo.withValues(alpha: 0.25),
+                    width: 1.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.navy,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              const Text(
+                'Verification Required',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              Text(
+                docTitle != null
+                    ? 'To view "$docTitle", registered mobile number verification is required.'
+                    : 'To view co-applicant documents, registered mobile number verification is required.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  height: 1.45,
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // Info note badge
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.line),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: AppColors.indigo,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Mobile number verification feature will be implemented soon.',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: OutlinedButton(
+                        onPressed: () => Get.back(),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.line),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Get.back();
+                          if (imagePaths.isNotEmpty) {
+                            Get.to(() => PhotoGalleryScreen(
+                                  imagePaths: imagePaths,
+                                  initialIndex: initialIndex,
+                                ));
+                          } else {
+                            Get.snackbar(
+                              'Notice',
+                              'No document file available to view.',
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: AppColors.navy,
+                              colorText: Colors.white,
+                              margin: const EdgeInsets.all(16),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Verify Number',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Format document key to readable label
+  String _formatDocKey(String key) {
+    if (key == 'aadhar_card_front') return 'Aadhaar Card (Front)';
+    if (key == 'aadhar_card_back') return 'Aadhaar Card (Back)';
+    if (key == 'aadhar_card_combined_pdf') return 'Aadhaar Card (Single PDF)';
+    if (key == 'aadhar_card' || key == 'aadhaar_card') return 'Aadhaar Card';
+    if (key == 'pan_card_image' || key == 'pan_card') return 'PAN Card';
+    if (key == 'profile_image') return 'Co-Applicant Photo';
+    if (key == 'latest_salary_slips') return 'Salary Slip';
+    if (key == 'bank_statement') return 'Bank Statement';
+    if (key == 'form_16_itr') return 'Form 16 / ITR';
+    if (key == 'salary_letterpad') return 'Company Letterpad';
+    return key
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
+        .join(' ');
   }
 
   /// Skeleton shimmer placeholder for co-applicants list
