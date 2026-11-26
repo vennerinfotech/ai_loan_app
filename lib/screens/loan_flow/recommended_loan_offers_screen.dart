@@ -217,7 +217,7 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
         children: [
           // Squircle Back Button
           GestureDetector(
-            onTap: () => Get.back(),
+            onTap: () => Get.offAll(() => const MainNavScreen()),
             child: Container(
               width: 40,
               height: 40,
