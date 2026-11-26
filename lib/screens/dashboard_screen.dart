@@ -1,7 +1,9 @@
 import 'dart:math' as math;
+import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../models/dashboard_response_model.dart';
 import '../theme/app_colors.dart';
 import '../controller/dashboard_controller.dart';
 
@@ -982,68 +984,38 @@ class DashboardScreen extends StatelessWidget {
     }
 
     return Obx(() {
+      final activeApps = controller.dashboardData.value?.activeLoanApplications;
       final appStatus = controller.dashboardData.value?.applicationStatus;
       final latestLead = appStatus?.latestLead;
       final isSubmitted = appStatus?.isSubmitted == true;
 
-      // If user hasn't applied for any loan or there is no active lead, remove static fallback data entirely
-      if (latestLead == null && !isSubmitted) {
+      final items = activeApps?.items ?? [];
+
+      // If user hasn't applied for any loan or there are no active applications, hide section
+      if (items.isEmpty && latestLead == null && !isSubmitted) {
         return const SizedBox.shrink();
       }
 
-      final progressVal = appStatus?.progressPercent != null
-          ? (appStatus!.progressPercent! / 100.0).clamp(0.0, 1.0)
-          : 0.0;
-      final percentDisplay = appStatus?.progressPercent != null
-          ? '${appStatus!.progressPercent}%'
-          : '0%';
+      // Display up to 2 active applications as requested
+      final List<DashboardActiveLoanItem> displayItems = items.isNotEmpty
+          ? items.take(2).toList()
+          : [
+              if (latestLead != null)
+                DashboardActiveLoanItem(
+                  id: latestLead.id,
+                  loanType: latestLead.loanType,
+                  loanAmount: latestLead.loanAmount,
+                  employmentType: latestLead.employmentType,
+                  status: latestLead.status,
+                  statusLabel: latestLead.status != null
+                      ? '${latestLead.status![0].toUpperCase()}${latestLead.status!.substring(1)}'
+                      : 'Lead',
+                  createdAt: latestLead.createdAt,
+                ),
+            ];
 
-      final activeStepRaw = appStatus?.activeStep ?? '';
-      final activeStepTitle = activeStepRaw
-          .replaceAll('_', ' ')
-          .split(' ')
-          .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
-          .join(' ');
-
-      final totalSteps = appStatus?.steps.isNotEmpty == true ? appStatus!.steps.length : 6;
-
-      // Determine step number dynamically from steps array (not raw internal currentStep id)
-      int currentStepNum = 1;
-      if (appStatus?.steps.isNotEmpty == true) {
-        final activeStepObj = appStatus!.steps.firstWhereOrNull(
-          (s) =>
-              s.key?.toLowerCase() == activeStepRaw.toLowerCase() ||
-              s.status?.toLowerCase() == 'active',
-        );
-        if (activeStepObj != null && activeStepObj.stepNumber != null) {
-          currentStepNum = activeStepObj.stepNumber!;
-        } else {
-          final completedCount = appStatus.steps
-              .where((s) => s.isCompleted == true || s.status?.toLowerCase() == 'completed')
-              .length;
-          currentStepNum = (completedCount + 1).clamp(1, totalSteps > 0 ? totalSteps : 1);
-        }
-      }
-
-      // Dynamic loan details from latestLead (no static fallback)
-      String loanTitle = 'Loan application';
-      String loanSubtitle = '';
-      if (latestLead is Map) {
-        loanTitle = latestLead['title']?.toString() ??
-            latestLead['loan_type']?.toString() ??
-            'Loan application';
-        final amt = latestLead['amount']?.toString();
-        final tenure = latestLead['tenure']?.toString();
-        if (amt != null && tenure != null) {
-          loanSubtitle = '$amt • $tenure';
-        } else if (amt != null) {
-          loanSubtitle = amt;
-        } else if (tenure != null) {
-          loanSubtitle = tenure;
-        }
-      }
-
-      final statusText = isSubmitted ? 'Submitted' : 'In review';
+      final sectionTitle = activeApps?.title ??
+          (displayItems.length > 1 ? 'Active applications' : 'Active application');
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1051,9 +1023,9 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Active application',
-                style: TextStyle(
+              Text(
+                sectionTitle,
+                style: const TextStyle(
                   color: AppColors.textDark,
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
@@ -1062,141 +1034,239 @@ class DashboardScreen extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () => controller.onDashboardOptionSelected('All Applications'),
-                child: const Text(
-                  'View all',
-                  style: TextStyle(
-                    color: AppColors.primaryPurple,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View all',
+                      style: TextStyle(
+                        color: AppColors.primaryPurple,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 15,
+                      color: AppColors.primaryPurple,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
 
-          GestureDetector(
-            onTap: () => controller.onDashboardOptionSelected('Home loan Application'),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.indigoTint,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.home_outlined,
-                            color: AppColors.primaryPurple,
-                            size: 19,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              loanTitle,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            if (loanSubtitle.isNotEmpty) ...[
-                              const SizedBox(height: 1),
-                              Text(
-                                loanSubtitle,
-                                style: const TextStyle(
-                                  color: AppColors.textDarkSecondary,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-
-                      // Status pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.reviewPillBg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          statusText,
-                          style: const TextStyle(
-                            color: AppColors.reviewPillText,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Linear Progress Indicator
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: progressVal,
-                      backgroundColor: AppColors.line,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                      minHeight: 4,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Step $currentStepNum of $totalSteps • $activeStepTitle',
-                        style: const TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                      Text(
-                        percentDisplay,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+          for (int i = 0; i < displayItems.length; i++)
+            _buildActiveAppItemCard(
+              controller: controller,
+              item: displayItems[i],
+              appStatus: appStatus,
             ),
-          ),
         ],
       );
     });
+  }
+
+  /// Single Active Application Item Card
+  Widget _buildActiveAppItemCard({
+    required DashboardController controller,
+    required DashboardActiveLoanItem item,
+    required DashboardApplicationStatus? appStatus,
+  }) {
+    final loanTitle = item.loanType ?? 'Loan application';
+    final amountFormatted = item.loanAmount != null
+        ? NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0).format(item.loanAmount)
+        : '';
+    final loanSubtitle = [
+      if (amountFormatted.isNotEmpty) amountFormatted,
+      if (item.employmentType?.isNotEmpty == true) item.employmentType!,
+      if (item.bankName?.isNotEmpty == true) item.bankName!,
+    ].join(' • ');
+
+    final statusText = item.statusLabel ??
+        item.status ??
+        (appStatus?.isSubmitted == true ? 'Submitted' : 'In review');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: () => controller.onDashboardOptionSelected('All Applications'),
+        child: Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.indigoTint,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        _getLoanTypeIcon(item.loanType),
+                        color: _getLoanTypeColor(item.loanType),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          loanTitle,
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (loanSubtitle.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            loanSubtitle,
+                            style: const TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Status pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: _getStatusBgColor(statusText),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: _getStatusTextColor(statusText),
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              if (item.createdAt != null || item.id != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (item.createdAt != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time_rounded, size: 12, color: AppColors.muted),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatShortDate(item.createdAt!),
+                            style: const TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      const SizedBox.shrink(),
+                    if (item.id != null)
+                      Text(
+                        'Ref: #${item.id}',
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Icon mapping for loan types
+  IconData _getLoanTypeIcon(String? loanType) {
+    final type = loanType?.toLowerCase() ?? '';
+    if (type.contains('home')) return Icons.home_outlined;
+    if (type.contains('business')) return Icons.business_center_outlined;
+    if (type.contains('education')) return Icons.school_outlined;
+    if (type.contains('vehicle') || type.contains('car') || type.contains('auto')) {
+      return Icons.directions_car_outlined;
+    }
+    if (type.contains('personal')) return Icons.person_outline;
+    if (type.contains('lap') || type.contains('property')) return Icons.apartment_outlined;
+    return Icons.account_balance_outlined;
+  }
+
+  Color _getLoanTypeColor(String? loanType) {
+    final type = loanType?.toLowerCase() ?? '';
+    if (type.contains('home')) return AppColors.primaryPurple;
+    if (type.contains('business')) return AppColors.navy;
+    if (type.contains('education')) return AppColors.indigo;
+    return AppColors.primaryPurple;
+  }
+
+  Color _getStatusBgColor(String? status) {
+    final s = status?.toLowerCase() ?? '';
+    if (s.contains('approved') || s.contains('disbursed') || s.contains('completed')) {
+      return AppColors.successGreenBg;
+    }
+    if (s.contains('reject')) {
+      return AppColors.errorRedBg;
+    }
+    return AppColors.reviewPillBg;
+  }
+
+  Color _getStatusTextColor(String? status) {
+    final s = status?.toLowerCase() ?? '';
+    if (s.contains('approved') || s.contains('disbursed') || s.contains('completed')) {
+      return AppColors.successGreen;
+    }
+    if (s.contains('reject')) {
+      return AppColors.errorRed;
+    }
+    return AppColors.reviewPillText;
+  }
+
+  String _formatShortDate(String rawDate) {
+    try {
+      final dt = DateTime.parse(rawDate).toLocal();
+      return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
+    } catch (_) {
+      return rawDate;
+    }
   }
 }
 

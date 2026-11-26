@@ -3,12 +3,14 @@
 class MyDocumentsResponseData {
   final MyDocumentsUser? user;
   final MyDocumentItem? document;
+  final MyDocumentUrls? documentUrls;
   final List<MyDocumentsCoApplicant> coApplicants;
   final List<MyDocumentsLead> leads;
 
   MyDocumentsResponseData({
     this.user,
     this.document,
+    this.documentUrls,
     this.coApplicants = const [],
     this.leads = const [],
   });
@@ -25,6 +27,9 @@ class MyDocumentsResponseData {
           : null,
       document: data['document'] != null && data['document'] is Map<String, dynamic>
           ? MyDocumentItem.fromJson(data['document'] as Map<String, dynamic>)
+          : null,
+      documentUrls: data['document_urls'] != null && data['document_urls'] is Map<String, dynamic>
+          ? MyDocumentUrls.fromJson(data['document_urls'] as Map<String, dynamic>)
           : null,
       coApplicants: data['co_applicants'] != null && data['co_applicants'] is List
           ? (data['co_applicants'] as List)
@@ -44,6 +49,7 @@ class MyDocumentsResponseData {
   Map<String, dynamic> toJson() => {
         if (user != null) 'user': user!.toJson(),
         if (document != null) 'document': document!.toJson(),
+        if (documentUrls != null) 'document_urls': documentUrls!.toJson(),
         'co_applicants': coApplicants.map((e) => e.toJson()).toList(),
         'leads': leads.map((e) => e.toJson()).toList(),
       };
@@ -54,8 +60,15 @@ class MyDocumentsUser {
   final String? name;
   final String? phone;
   final String? email;
+  final String? profilePhotoUrl;
 
-  MyDocumentsUser({this.id, this.name, this.phone, this.email});
+  MyDocumentsUser({
+    this.id,
+    this.name,
+    this.phone,
+    this.email,
+    this.profilePhotoUrl,
+  });
 
   factory MyDocumentsUser.fromJson(Map<String, dynamic> json) {
     return MyDocumentsUser(
@@ -63,6 +76,7 @@ class MyDocumentsUser {
       name: json['name']?.toString(),
       phone: json['phone']?.toString(),
       email: json['email']?.toString(),
+      profilePhotoUrl: json['profile_photo_url']?.toString(),
     );
   }
 
@@ -71,6 +85,85 @@ class MyDocumentsUser {
         if (name != null) 'name': name,
         if (phone != null) 'phone': phone,
         if (email != null) 'email': email,
+        if (profilePhotoUrl != null) 'profile_photo_url': profilePhotoUrl,
+      };
+}
+
+class MyDocumentUrls {
+  final List<MyDocumentFileItem> aadhaar;
+  final List<MyDocumentFileItem> pan;
+  final List<MyDocumentFileItem> incomeProofs;
+
+  MyDocumentUrls({
+    this.aadhaar = const [],
+    this.pan = const [],
+    this.incomeProofs = const [],
+  });
+
+  factory MyDocumentUrls.fromJson(Map<String, dynamic> json) {
+    return MyDocumentUrls(
+      aadhaar: _parseFiles(json['aadhaar']),
+      pan: _parseFiles(json['pan']),
+      incomeProofs: _parseFiles(json['income_proofs']),
+    );
+  }
+
+  static List<MyDocumentFileItem> _parseFiles(dynamic list) {
+    if (list is List) {
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map((e) => MyDocumentFileItem.fromJson(e))
+          .toList();
+    }
+    return const [];
+  }
+
+  Map<String, dynamic> toJson() => {
+        'aadhaar': aadhaar.map((e) => e.toJson()).toList(),
+        'pan': pan.map((e) => e.toJson()).toList(),
+        'income_proofs': incomeProofs.map((e) => e.toJson()).toList(),
+      };
+}
+
+class MyDocumentFileItem {
+  final int? index;
+  final String? side;
+  final String? name;
+  final String? status;
+  final String? url;
+  final String? extension;
+  final bool isImage;
+
+  MyDocumentFileItem({
+    this.index,
+    this.side,
+    this.name,
+    this.status,
+    this.url,
+    this.extension,
+    this.isImage = true,
+  });
+
+  factory MyDocumentFileItem.fromJson(Map<String, dynamic> json) {
+    return MyDocumentFileItem(
+      index: json['index'] is int ? json['index'] : int.tryParse(json['index']?.toString() ?? ''),
+      side: json['side']?.toString(),
+      name: json['name']?.toString(),
+      status: json['status']?.toString(),
+      url: json['url']?.toString(),
+      extension: json['extension']?.toString(),
+      isImage: json['is_image'] is bool ? json['is_image'] as bool : (json['is_image']?.toString() == 'true'),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        if (index != null) 'index': index,
+        if (side != null) 'side': side,
+        if (name != null) 'name': name,
+        if (status != null) 'status': status,
+        if (url != null) 'url': url,
+        if (extension != null) 'extension': extension,
+        'is_image': isImage,
       };
 }
 
@@ -174,6 +267,11 @@ class MyDocumentsCoApplicant {
   final String? employmentType;
   final dynamic documents;
   final String? applicantType;
+  final String? createdAt;
+  final String? updatedAt;
+  final String? panCardImageUrl;
+  final List<MyDocumentFileItem> aadhaarCardImageUrls;
+  final dynamic documentUrls;
 
   MyDocumentsCoApplicant({
     this.id,
@@ -193,6 +291,11 @@ class MyDocumentsCoApplicant {
     this.employmentType,
     this.documents,
     this.applicantType,
+    this.createdAt,
+    this.updatedAt,
+    this.panCardImageUrl,
+    this.aadhaarCardImageUrls = const [],
+    this.documentUrls,
   });
 
   factory MyDocumentsCoApplicant.fromJson(Map<String, dynamic> json) {
@@ -214,6 +317,16 @@ class MyDocumentsCoApplicant {
       employmentType: json['employment_type']?.toString(),
       documents: json['documents'],
       applicantType: json['applicant_type']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
+      panCardImageUrl: json['pan_card_image_url']?.toString(),
+      aadhaarCardImageUrls: json['aadhaar_card_image_urls'] is List
+          ? (json['aadhaar_card_image_urls'] as List)
+              .whereType<Map<String, dynamic>>()
+              .map((e) => MyDocumentFileItem.fromJson(e))
+              .toList()
+          : const [],
+      documentUrls: json['document_urls'],
     );
   }
 
@@ -235,6 +348,10 @@ class MyDocumentsCoApplicant {
         if (employmentType != null) 'employment_type': employmentType,
         if (documents != null) 'documents': documents,
         if (applicantType != null) 'applicant_type': applicantType,
+        if (createdAt != null) 'created_at': createdAt,
+        if (updatedAt != null) 'updated_at': updatedAt,
+        if (panCardImageUrl != null) 'pan_card_image_url': panCardImageUrl,
+        'aadhaar_card_image_urls': aadhaarCardImageUrls.map((e) => e.toJson()).toList(),
       };
 }
 
@@ -242,7 +359,7 @@ class MyDocumentsLead {
   final int? id;
   final dynamic userId;
   final String? loanType;
-  final num? loanAmount;
+  final dynamic loanAmount;
   final String? employmentType;
   final String? status;
   final String? createdAt;
@@ -256,6 +373,7 @@ class MyDocumentsLead {
   final String? gstRegistration;
   final String? udyamRegistration;
   final String? otherDoc;
+  final Map<String, List<MyDocumentFileItem>> documentFiles;
 
   MyDocumentsLead({
     this.id,
@@ -275,6 +393,7 @@ class MyDocumentsLead {
     this.gstRegistration,
     this.udyamRegistration,
     this.otherDoc,
+    this.documentFiles = const {},
   });
 
   factory MyDocumentsLead.fromJson(Map<String, dynamic> json) {
@@ -282,9 +401,7 @@ class MyDocumentsLead {
       id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
       userId: json['user_id'],
       loanType: json['loan_type']?.toString(),
-      loanAmount: json['loan_amount'] is num
-          ? json['loan_amount']
-          : num.tryParse(json['loan_amount']?.toString() ?? ''),
+      loanAmount: json['loan_amount'],
       employmentType: json['employment_type']?.toString(),
       status: json['status']?.toString(),
       createdAt: json['created_at']?.toString(),
@@ -298,7 +415,24 @@ class MyDocumentsLead {
       gstRegistration: json['gst_registration']?.toString(),
       udyamRegistration: json['udyam_registration']?.toString(),
       otherDoc: json['other_doc']?.toString(),
+      documentFiles: _parseLeadDocumentFiles(json['document_files']),
     );
+  }
+
+  static Map<String, List<MyDocumentFileItem>> _parseLeadDocumentFiles(dynamic raw) {
+    if (raw is Map<String, dynamic>) {
+      final Map<String, List<MyDocumentFileItem>> result = {};
+      raw.forEach((key, val) {
+        if (val is List) {
+          result[key] = val
+              .whereType<Map<String, dynamic>>()
+              .map((e) => MyDocumentFileItem.fromJson(e))
+              .toList();
+        }
+      });
+      return result;
+    }
+    return const {};
   }
 
   Map<String, dynamic> toJson() => {

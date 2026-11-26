@@ -47,6 +47,7 @@ class DashboardData {
   final DashboardCreditScore? creditScore;
   final List<DashboardQuickAction> quickActions;
   final DashboardApplicationStatus? applicationStatus;
+  final DashboardActiveLoanApplications? activeLoanApplications;
   final List<DashboardMainAction> mainActions;
   final DashboardAiInsights? aiInsights;
 
@@ -58,6 +59,7 @@ class DashboardData {
     this.creditScore,
     this.quickActions = const [],
     this.applicationStatus,
+    this.activeLoanApplications,
     this.mainActions = const [],
     this.aiInsights,
   });
@@ -82,6 +84,9 @@ class DashboardData {
       applicationStatus: json['application_status'] != null && json['application_status'] is Map
           ? DashboardApplicationStatus.fromJson(Map<String, dynamic>.from(json['application_status']))
           : null,
+      activeLoanApplications: json['active_loan_applications'] != null && json['active_loan_applications'] is Map
+          ? DashboardActiveLoanApplications.fromJson(Map<String, dynamic>.from(json['active_loan_applications']))
+          : null,
       mainActions: (json['main_actions'] as List?)
               ?.map((item) => DashboardMainAction.fromJson(Map<String, dynamic>.from(item)))
               .toList() ??
@@ -101,6 +106,7 @@ class DashboardData {
       if (creditScore != null) 'credit_score': creditScore!.toJson(),
       'quick_actions': quickActions.map((e) => e.toJson()).toList(),
       if (applicationStatus != null) 'application_status': applicationStatus!.toJson(),
+      if (activeLoanApplications != null) 'active_loan_applications': activeLoanApplications!.toJson(),
       'main_actions': mainActions.map((e) => e.toJson()).toList(),
       if (aiInsights != null) 'ai_insights': aiInsights!.toJson(),
     };
@@ -741,6 +747,119 @@ class DocumentVerificationItem {
       if (key != null) 'key': key,
       if (title != null) 'title': title,
       if (status != null) 'status': status,
+    };
+  }
+}
+
+class DashboardActiveLoanApplications {
+  final String? title;
+  final int? total;
+  final int? shown;
+  final String? viewAllEndpoint;
+  final List<DashboardActiveLoanItem> items;
+
+  DashboardActiveLoanApplications({
+    this.title,
+    this.total,
+    this.shown,
+    this.viewAllEndpoint,
+    this.items = const [],
+  });
+
+  factory DashboardActiveLoanApplications.fromJson(Map<String, dynamic> json) {
+    return DashboardActiveLoanApplications(
+      title: json['title']?.toString(),
+      total: json['total'] is int
+          ? json['total']
+          : int.tryParse(json['total']?.toString() ?? ''),
+      shown: json['shown'] is int
+          ? json['shown']
+          : int.tryParse(json['shown']?.toString() ?? ''),
+      viewAllEndpoint: json['view_all_endpoint']?.toString(),
+      items: json['items'] != null && json['items'] is List
+          ? (json['items'] as List)
+              .whereType<Map>()
+              .map((e) => DashboardActiveLoanItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList()
+          : const [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (title != null) 'title': title,
+      if (total != null) 'total': total,
+      if (shown != null) 'shown': shown,
+      if (viewAllEndpoint != null) 'view_all_endpoint': viewAllEndpoint,
+      'items': items.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+class DashboardActiveLoanItem {
+  final int? id;
+  final String? loanApplicationNumber;
+  final String? loanType;
+  final num? loanAmount;
+  final String? employmentType;
+  final String? status;
+  final String? statusLabel;
+  final String? bankName;
+  final dynamic assignedTo;
+  final String? createdAt;
+  final String? lastActivityAt;
+  final String? detailsEndpoint;
+
+  DashboardActiveLoanItem({
+    this.id,
+    this.loanApplicationNumber,
+    this.loanType,
+    this.loanAmount,
+    this.employmentType,
+    this.status,
+    this.statusLabel,
+    this.bankName,
+    this.assignedTo,
+    this.createdAt,
+    this.lastActivityAt,
+    this.detailsEndpoint,
+  });
+
+  factory DashboardActiveLoanItem.fromJson(Map<String, dynamic> json) {
+    return DashboardActiveLoanItem(
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id']?.toString() ?? ''),
+      loanApplicationNumber: json['loan_application_number']?.toString(),
+      loanType: json['loan_type']?.toString(),
+      loanAmount: json['loan_amount'] is num
+          ? json['loan_amount']
+          : num.tryParse(json['loan_amount']?.toString() ?? ''),
+      employmentType: json['employment_type']?.toString(),
+      status: json['status']?.toString(),
+      statusLabel: json['status_label']?.toString(),
+      bankName: json['bank_name']?.toString(),
+      assignedTo: json['assigned_to'],
+      createdAt: json['created_at']?.toString(),
+      lastActivityAt: json['last_activity_at']?.toString(),
+      detailsEndpoint: json['details_endpoint']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      if (loanApplicationNumber != null) 'loan_application_number': loanApplicationNumber,
+      if (loanType != null) 'loan_type': loanType,
+      if (loanAmount != null) 'loan_amount': loanAmount,
+      if (employmentType != null) 'employment_type': employmentType,
+      if (status != null) 'status': status,
+      if (statusLabel != null) 'status_label': statusLabel,
+      if (bankName != null) 'bank_name': bankName,
+      if (assignedTo != null) 'assigned_to': assignedTo,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastActivityAt != null) 'last_activity_at': lastActivityAt,
+      if (detailsEndpoint != null) 'details_endpoint': detailsEndpoint,
     };
   }
 }

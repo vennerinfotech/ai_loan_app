@@ -1970,40 +1970,4 @@ class ApiService {
       };
     }
   }
-
-  /// Get Document Details API: GET {{baseUrl}}/my-documents/{document_type} (e.g. aadhaar, pan)
-  static Future<Map<String, dynamic>> getDocumentDetails({
-    required String documentType,
-    String? token,
-  }) async {
-    final url = Uri.parse('$baseUrl/my-documents/$documentType');
-    final authToken = token ?? await SessionManager.getAuthToken();
-
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
-    };
-
-    try {
-      final response = await http.get(url, headers: headers);
-
-      debugPrint('========== Get Document Details ==========');
-      debugPrint('--> GET $url');
-      debugPrint('Headers: $headers');
-      debugPrint('<--------- Status:---------- ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
-
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      return data;
-    } catch (e) {
-      debugPrint('Exception in getDocumentDetails: $e');
-      return {
-        'success': false,
-        'status_code': 500,
-        'message': 'Failed to fetch document details. Please try again.',
-        'errors': e.toString(),
-      };
-    }
-  }
 }
