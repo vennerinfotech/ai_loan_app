@@ -1,12 +1,16 @@
+import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../theme/app_colors.dart';
 import '../controller/document_wallet_controller.dart';
 import '../models/document_detail_model.dart';
-import '../widgets/image_picker_bottom_sheet.dart';
 import 'photo_gallery_screen.dart';
 
 /// Screen displaying a single document in clean light mode.
@@ -29,6 +33,8 @@ class DocumentViewScreen extends StatefulWidget {
 class _DocumentViewScreenState extends State<DocumentViewScreen> {
   int _selectedImageIndex = 0;
   bool _isNumberHidden = true;
+  bool _isDownloading = false;
+  bool _isSharing = false;
 
   late DocumentDetailModel documentDetail;
   late String docType;
@@ -732,7 +738,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     );
   }
 
-  /// Bottom Actions: Download, Share, Replace
+  /// Bottom Actions: Download & Share
   Widget _buildBottomActionButtons(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
@@ -745,28 +751,20 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
             Expanded(
               child: _buildActionButton(
                 icon: Icons.file_download_outlined,
-                label: 'Download',
-                onTap: _handleDownload,
+                label: _isDownloading ? 'Saving...' : 'Download',
+                isLoading: _isDownloading,
+                onTap: _isDownloading ? () {} : _handleDownload,
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
 
             // Share Button
             Expanded(
               child: _buildActionButton(
                 icon: Icons.share_outlined,
-                label: 'Share',
-                onTap: _handleShare,
-              ),
-            ),
-            const SizedBox(width: 10),
-
-            // Replace Button
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.upload_file_outlined,
-                label: 'Replace',
-                onTap: () => _handleReplace(context),
+                label: _isSharing ? 'Sharing...' : 'Share',
+                isLoading: _isSharing,
+                onTap: _isSharing ? () {} : _handleShare,
               ),
             ),
           ],
@@ -780,6 +778,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool isLoading = false,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -799,11 +798,21 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 20,
-              color: AppColors.amber,
-            ),
+            if (isLoading)
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.amber,
+                ),
+              )
+            else
+              Icon(
+                icon,
+                size: 20,
+                color: AppColors.amber,
+              ),
             const SizedBox(height: 3),
             Text(
               label,
@@ -819,19 +828,19 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     );
   }
 
-  void _handleDownload() {
+  Future<void> _handleDownload() async {
     final title = documentDetail.title ?? docType.toUpperCase();
     final images = documentDetail.imageUrls;
-    String? currentUrl;
+    DocumentDetailImageItem? currentItem;
     if (images.isNotEmpty && _selectedImageIndex < images.length) {
-      currentUrl = images[_selectedImageIndex].url;
+      currentItem = images[_selectedImageIndex];
     }
+    final currentUrl = currentItem?.url;
 
-    if (currentUrl != null && currentUrl.isNotEmpty) {
-      Clipboard.setData(ClipboardData(text: currentUrl));
+    if (currentUrl == null || currentUrl.isEmpty) {
       Get.snackbar(
-        'Download Link Ready',
-        'Direct link for $title copied to clipboard.',
+        'Unavailable',
+        'No downloadable file found for $title.',
         snackPosition: SnackPosition.TOP,
         backgroundColor: AppColors.navy,
         colorText: Colors.white,
@@ -839,75 +848,122 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         margin: const EdgeInsets.all(16),
         borderRadius: 12,
       );
-    } else {
-      Get.snackbar(
-        'Download',
-        'Downloading $title to your device...',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
-    }
-  }
-
-  void _handleShare() {
-    final title = documentDetail.title ?? docType.toUpperCase();
-    final images = documentDetail.imageUrls;
-    String? currentUrl;
-    if (images.isNotEmpty && _selectedImageIndex < images.length) {
-      currentUrl = images[_selectedImageIndex].url;
+      return;
     }
 
-    if (currentUrl != null && currentUrl.isNotEmpty) {
-      Clipboard.setData(ClipboardData(text: currentUrl));
-      Get.snackbar(
-        'Link Copied',
-        'Secure share link for $title copied to clipboard.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
-    } else {
-      Get.snackbar(
-        'Share document',
-        'Preparing secure share link for $title...',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: AppColors.navy,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
-    }
-  }
+    setState(() => _isDownloading = true);
 
-  Future<void> _handleReplace(BuildContext context) async {
-    final title = documentDetail.title ?? docType.toUpperCase();
-    final file = await ImagePickerBottomSheet.show(
-      context: context,
-      title: 'Replace $title',
-      subtitle: 'Upload a clear copy of your $title',
-    );
-    if (file != null) {
-      final bytes = await file.readAsBytes();
-
-      if (Get.isRegistered<DocumentWalletController>()) {
-        Get.find<DocumentWalletController>().updateDocumentImage(
-          docType,
-          bytes,
-          isFront: _selectedImageIndex == 0,
-        );
+    try {
+      final response = await http.get(Uri.parse(currentUrl));
+      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+        throw Exception('Server returned ${response.statusCode}');
       }
 
+      final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+      final isPdf = _isPdfItem(currentItem) || contentType.contains('application/pdf');
+
+      String ext;
+      if (isPdf) {
+        ext = 'pdf';
+      } else if (currentItem?.extension != null &&
+          currentItem!.extension!.isNotEmpty) {
+        ext = currentItem.extension!.toLowerCase().replaceAll('.', '');
+      } else if (contentType.contains('png')) {
+        ext = 'png';
+      } else if (contentType.contains('webp')) {
+        ext = 'webp';
+      } else {
+        ext = 'jpg';
+      }
+
+      final safeDocType = docType.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final sidePart = (currentItem?.side ?? 'doc').replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final fileName =
+          '${safeDocType}_${sidePart}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+
+      File? savedFile;
+      if (Platform.isAndroid) {
+        try {
+          final downloadDir = Directory('/storage/emulated/0/Download');
+          if (await downloadDir.exists()) {
+            final candidate = File('${downloadDir.path}/$fileName');
+            await candidate.writeAsBytes(response.bodyBytes, flush: true);
+            savedFile = candidate;
+          }
+        } catch (_) {
+          // Fallback to app documents directory if public Download is restricted
+        }
+      }
+
+      if (savedFile == null) {
+        final appDir = await getApplicationDocumentsDirectory();
+        savedFile = File('${appDir.path}/$fileName');
+        await savedFile.writeAsBytes(response.bodyBytes, flush: true);
+      }
+
+      if (!mounted) return;
+
+      if (isPdf) {
+        final openResult = await OpenFilex.open(
+          savedFile.path,
+          type: 'application/pdf',
+        );
+        if (openResult.type != ResultType.done) {
+          Get.snackbar(
+            'PDF Downloaded',
+            'Saved to ${savedFile.path}. Could not auto-open (${openResult.message}).',
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: AppColors.navy,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+            margin: const EdgeInsets.all(16),
+            borderRadius: 12,
+          );
+        }
+      } else {
+        Get.snackbar(
+          'Image Downloaded',
+          '$title saved to ${savedFile.path}',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       Get.snackbar(
-        'Document updated',
-        'Image for $title has been selected.',
+        'Download Failed',
+        'Unable to download $title: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
+
+  Future<void> _handleShare() async {
+    final title = documentDetail.title ?? docType.toUpperCase();
+    final images = documentDetail.imageUrls;
+    DocumentDetailImageItem? currentItem;
+    if (images.isNotEmpty && _selectedImageIndex < images.length) {
+      currentItem = images[_selectedImageIndex];
+    }
+    final currentUrl = currentItem?.url;
+
+    if (currentUrl == null || currentUrl.isEmpty) {
+      Get.snackbar(
+        'Unavailable',
+        'No file available to share for $title.',
         snackPosition: SnackPosition.TOP,
         backgroundColor: AppColors.navy,
         colorText: Colors.white,
@@ -915,6 +971,70 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
         margin: const EdgeInsets.all(16),
         borderRadius: 12,
       );
+      return;
+    }
+
+    setState(() => _isSharing = true);
+
+    final box = context.findRenderObject() as RenderBox?;
+    final shareOrigin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : const Rect.fromLTWH(0, 0, 100, 100);
+
+    try {
+      final response = await http.get(Uri.parse(currentUrl));
+      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+
+      final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+      final isPdf = _isPdfItem(currentItem) || contentType.contains('application/pdf');
+
+      String ext;
+      if (isPdf) {
+        ext = 'pdf';
+      } else if (currentItem?.extension != null &&
+          currentItem!.extension!.isNotEmpty) {
+        ext = currentItem.extension!.toLowerCase().replaceAll('.', '');
+      } else if (contentType.contains('png')) {
+        ext = 'png';
+      } else if (contentType.contains('webp')) {
+        ext = 'webp';
+      } else {
+        ext = 'jpg';
+      }
+
+      final safeDocType = docType.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final sidePart = (currentItem?.side ?? 'doc').replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = File('${tempDir.path}/${safeDocType}_$sidePart.$ext');
+      await tempFile.writeAsBytes(response.bodyBytes, flush: true);
+
+      if (!mounted) return;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(tempFile.path)],
+          text: title,
+          sharePositionOrigin: shareOrigin,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Get.snackbar(
+        'Share Failed',
+        'Unable to share $title: ${e.toString()}',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade800,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
     }
   }
 }
