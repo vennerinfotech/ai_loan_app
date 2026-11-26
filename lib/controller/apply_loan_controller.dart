@@ -8,6 +8,7 @@ import '../models/loan_types_model.dart';
 import '../models/store_loan_amount_model.dart';
 import '../models/lead_store_model.dart';
 import '../screens/loan_flow/applicant_details_screen.dart';
+import '../screens/main_nav_screen.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
@@ -87,7 +88,7 @@ class ApplyLoanController extends GetxController {
       stepHistory.removeLast();
       currentStep.value = stepHistory.last;
     } else {
-      Get.back();
+      Get.offAll(() => const MainNavScreen());
     }
   }
 

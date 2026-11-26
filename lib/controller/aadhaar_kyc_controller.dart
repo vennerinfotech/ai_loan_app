@@ -1,14 +1,18 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../screens/aadhaar_otp_screen.dart';
+import '../screens/upload_aadhaar_screen.dart';
 import '../screens/review_aadhaar_details_screen.dart';
 import '../screens/enter_pan_screen.dart';
 import 'pan_kyc_controller.dart';
 import 'kyc_flow_controller.dart';
 import '../widgets/image_picker_bottom_sheet.dart';
+import '../widgets/aadhaar_extracting_dialog.dart';
 import '../models/aadhaar_kyc_model.dart';
 import '../models/upload_aadhaar_model.dart';
 import '../services/api_service.dart';
@@ -33,6 +37,16 @@ class AadhaarKycController extends GetxController {
   final backImagePath = ''.obs;
   final frontImageBytes = Rxn<Uint8List>();
   final backImageBytes = Rxn<Uint8List>();
+
+  // Upload Mode: 0 = Front & Back Images/PDF, 1 = Single PDF (Front + Back)
+  final uploadModeIndex = 0.obs;
+  bool get isSinglePdfMode => uploadModeIndex.value == 1;
+
+  // Single PDF upload state
+  final singlePdfPath = ''.obs;
+  final singlePdfBytes = Rxn<Uint8List>();
+  final singlePdfFilename = ''.obs;
+  final singlePdfUploaded = false.obs;
 
   // Manual Document Upload fallback state
   final showManualUpload = false.obs;
@@ -176,38 +190,132 @@ class AadhaarKycController extends GetxController {
     }
   }
 
-  /// Upload both Aadhaar Front & Back documents via POST /upload-aadhaar
-  /// Content-Type: multipart/form-data
-  /// Fields: upload_mode='separate', aadhaar_front_image, aadhaar_back_image
-  Future<void> uploadBothAadhaarDocuments() async {
-    final hasFront = frontImagePath.value.isNotEmpty || frontImageBytes.value != null;
-    final hasBack = backImagePath.value.isNotEmpty || backImageBytes.value != null;
+  /// Switch upload mode (0: Front & Back Images/PDF, 1: Single PDF)
+  void setUploadMode(int index) {
+    uploadModeIndex.value = index;
+  }
 
-    if (!hasFront || !hasBack) {
+  /// Pick single Aadhaar PDF document (containing Front + Back)
+  /// Combined mode requires PDF only - directly opens file picker filtered for .pdf files
+  Future<void> pickSinglePdfDocument({BuildContext? context}) async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+      );
+
+      if (result.isNotEmpty && result.first.path != null) {
+        final file = result.first;
+        final path = file.path!;
+        final name = file.name;
+
+        if (!name.toLowerCase().endsWith('.pdf') && !path.toLowerCase().endsWith('.pdf')) {
+          Get.snackbar(
+            'PDF Required',
+            'The file must be a PDF.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.red.shade800,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+          return;
+        }
+
+        final bytes = await File(path).readAsBytes();
+        singlePdfPath.value = path;
+        singlePdfBytes.value = bytes;
+        singlePdfUploaded.value = true;
+        singlePdfFilename.value = name;
+      }
+    } catch (e) {
+      debugPrint('pickSinglePdfDocument error: $e');
       Get.snackbar(
-        'Both Documents Required',
-        'Please select both front and back images of your Aadhaar card before uploading.',
+        'Picker Error',
+        'Failed to select PDF document: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade800,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
       );
-      return;
+    }
+  }
+
+  /// Remove selected Single PDF document
+  void removeSinglePdfDocument() {
+    singlePdfUploaded.value = false;
+    singlePdfPath.value = '';
+    singlePdfBytes.value = null;
+    singlePdfFilename.value = '';
+  }
+
+  /// Upload Aadhaar documents via POST /upload-aadhaar
+  /// Handles both 'separate' (Front & Back) and 'combined' (Single PDF)
+  Future<void> uploadBothAadhaarDocuments() async {
+    final isSingle = isSinglePdfMode;
+
+    if (isSingle) {
+      final hasSingle = singlePdfPath.value.isNotEmpty || singlePdfBytes.value != null;
+      if (!hasSingle) {
+        Get.snackbar(
+          'Document Required',
+          'Please select a single PDF containing both front and back sides of your Aadhaar card.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+
+      if (!singlePdfPath.value.toLowerCase().endsWith('.pdf') &&
+          !singlePdfFilename.value.toLowerCase().endsWith('.pdf')) {
+        Get.snackbar(
+          'Validation Error',
+          'The file must be a PDF.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+    } else {
+      final hasFront = frontImagePath.value.isNotEmpty || frontImageBytes.value != null;
+      final hasBack = backImagePath.value.isNotEmpty || backImageBytes.value != null;
+
+      if (!hasFront || !hasBack) {
+        Get.snackbar(
+          'Both Documents Required',
+          'Please select both front and back images of your Aadhaar card before uploading.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade800,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
     }
 
     if (isUploadingDocuments.value) return;
     isUploadingDocuments.value = true;
 
     try {
-      final response = await ApiService.uploadAadhaar(
-        frontPath: frontImagePath.value,
-        backPath: backImagePath.value,
-        frontBytes: frontImageBytes.value,
-        backBytes: backImageBytes.value,
-        frontFilename: frontUploadedFilename.value.isNotEmpty ? frontUploadedFilename.value : null,
-        backFilename: backUploadedFilename.value.isNotEmpty ? backUploadedFilename.value : null,
-        uploadMode: 'separate',
-      );
+      final response = isSingle
+          ? await ApiService.uploadAadhaar(
+              uploadMode: 'combined',
+              singlePdfPath: singlePdfPath.value,
+              singlePdfBytes: singlePdfBytes.value,
+              singlePdfFilename: singlePdfFilename.value.isNotEmpty ? singlePdfFilename.value : null,
+            )
+          : await ApiService.uploadAadhaar(
+              uploadMode: 'separate',
+              frontPath: frontImagePath.value,
+              backPath: backImagePath.value,
+              frontBytes: frontImageBytes.value,
+              backBytes: backImageBytes.value,
+              frontFilename: frontUploadedFilename.value.isNotEmpty ? frontUploadedFilename.value : null,
+              backFilename: backUploadedFilename.value.isNotEmpty ? backUploadedFilename.value : null,
+            );
       isUploadingDocuments.value = false;
 
       final isSuccess = response['success'] == true ||
@@ -252,17 +360,20 @@ class AadhaarKycController extends GetxController {
           }
         }
 
-        Get.snackbar(
-          'Documents Verified',
-          response['message']?.toString() ??
-              'Aadhaar documents verified and uploaded successfully.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: AppColors.navy,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
+        // Show "Extracting details..." modal loader dialog for 5 seconds
+        Get.dialog(
+          const AadhaarExtractingDialog(),
+          barrierDismissible: false,
         );
 
+        await Future.delayed(const Duration(seconds: 5));
+
+        // Dismiss the extracting details loader dialog
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
+        // After 5s extracting loader, proceed to Review Details
         if (Get.isRegistered<KycFlowController>()) {
           Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
         } else {
@@ -293,6 +404,158 @@ class AadhaarKycController extends GetxController {
         duration: const Duration(seconds: 3),
       );
     }
+  }
+
+  /// Triggered on tap "Send OTP":
+  /// Shows only the "Aadhaar Verified!" modal dialog with "Proceed" button
+  void initiateAadhaarVerification() {
+    if (!isAadhaarValid || isSendingOtp.value) {
+      if (!isAadhaarValid) {
+        Get.snackbar(
+          'Invalid Aadhaar',
+          'Please enter a valid 12-digit Aadhaar number.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade700,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+      return;
+    }
+
+    // Show only the "Aadhaar Verified!" dialog directly
+    _showAadhaarVerifiedDialog();
+  }
+
+  /// Displays the "Aadhaar Verified!" dialog matching the reference design:
+  /// - Green circle with checkmark
+  /// - "Aadhaar Verified!" title
+  /// - "Aadhaar {number} verification initiated successfully."
+  /// - "Proceed" CTA button that calls sendOtp()
+  void _showAadhaarVerifiedDialog() {
+    Get.dialog(
+      PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          elevation: 10,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Green Circle Checkmark Badge
+                Container(
+                  width: 74,
+                  height: 74,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F7EE),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFC7EBD4),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Color(0xFF4CAF50),
+                      size: 44,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+
+                // Title: Aadhaar Verified!
+                const Text(
+                  'Aadhaar Verified!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textDark,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Subtitle: Aadhaar {number} verification initiated successfully.
+                Text.rich(
+                  TextSpan(
+                    text: 'Aadhaar ',
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14.5,
+                      height: 1.45,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: aadhaarNumber.value,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ' verification initiated successfully.',
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 22),
+
+                // "Proceed" CTA Button with loader while isSendingOtp is true
+                Obx(
+                  () {
+                    final isSending = isSendingOtp.value;
+                    return SizedBox(
+                      width: 130,
+                      height: 46,
+                      child: ElevatedButton(
+                        onPressed: isSending ? null : () => sendOtp(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          disabledBackgroundColor:
+                              AppColors.navy.withValues(alpha: 0.8),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: isSending
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
+                                ),
+                              )
+                            : const Text(
+                                'Proceed',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
   /// Send OTP to registered mobile number via POST /store-aadhaar
@@ -346,6 +609,10 @@ class AadhaarKycController extends GetxController {
           }
         }
 
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
         Get.snackbar(
           'OTP Sent',
           response['message']?.toString() ??
@@ -364,6 +631,9 @@ class AadhaarKycController extends GetxController {
           Get.to(() => const AadhaarOtpScreen());
         }
       } else {
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
         final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Store Aadhaar Error: $errorMsg');
         Get.snackbar(
@@ -378,6 +648,9 @@ class AadhaarKycController extends GetxController {
       }
     } catch (e) {
       isSendingOtp.value = false;
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
       debugPrint('Store Aadhaar Exception: $e');
       Get.snackbar(
         'Error',
@@ -507,7 +780,7 @@ class AadhaarKycController extends GetxController {
           response['status_code'] == 200 ||
           response['status_code'] == 201;
 
-      if (isSuccess && isMobileLinked.value) {
+      if (isSuccess) {
         if (response['data'] != null && response['data'] is Map) {
           final model = AadhaarKycModel.fromJson(Map<String, dynamic>.from(response['data']));
           aadhaarKycData.value = model;
@@ -529,55 +802,40 @@ class AadhaarKycController extends GetxController {
           duration: const Duration(seconds: 2),
         );
 
+        // After OTP verification, navigate to Upload Aadhaar Document screen (Front & Back)
         if (Get.isRegistered<KycFlowController>()) {
-          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarReview);
+          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarUpload);
         } else {
-          Get.to(() => const ReviewAadhaarDetailsScreen());
+          Get.to(() => const UploadAadhaarScreen());
         }
       } else {
-        // Aadhaar OTP verification failed or mobile not linked:
-        // Activate manual upload and return to Aadhaar input screen
-        showManualUpload.value = true;
-
-        final errorMsg = !isMobileLinked.value
-            ? 'Mobile number is not linked to this Aadhaar.'
-            : ApiService.getErrorMessage(response);
+        // Aadhaar OTP verification failed: stay on OTP screen and show error
+        final errorMsg = ApiService.getErrorMessage(response);
 
         Get.snackbar(
           'Verification Unsuccessful',
-          '$errorMsg Please upload Aadhaar card images to verify.',
+          errorMsg.isNotEmpty
+              ? errorMsg
+              : 'Failed to verify Aadhaar OTP. Please check the code and try again.',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange.shade800,
+          backgroundColor: Colors.red.shade800,
           colorText: Colors.white,
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 4),
         );
-
-        if (Get.isRegistered<KycFlowController>()) {
-          Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
-        } else {
-          Get.back();
-        }
       }
     } catch (e) {
       isVerifyingOtp.value = false;
       debugPrint('verifyAadhaarOtp exception: $e');
-      showManualUpload.value = true;
       Get.snackbar(
         'Verification Failed',
-        'Failed to verify OTP. Please upload Aadhaar card images instead.',
+        'Failed to verify OTP: ${e.toString()}',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red.shade800,
         colorText: Colors.white,
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 4),
       );
-
-      if (Get.isRegistered<KycFlowController>()) {
-        Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
-      } else {
-        Get.back();
-      }
     }
   }
 
@@ -585,9 +843,9 @@ class AadhaarKycController extends GetxController {
   void navigateToManualUpload() {
     showManualUpload.value = true;
     if (Get.isRegistered<KycFlowController>()) {
-      Get.find<KycFlowController>().setStep(KycSubStep.aadhaarInput);
+      Get.find<KycFlowController>().setStep(KycSubStep.aadhaarUpload);
     } else {
-      Get.back();
+      Get.to(() => const UploadAadhaarScreen());
     }
   }
 

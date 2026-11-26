@@ -417,7 +417,7 @@ class CibilScoreScreen extends StatelessWidget {
         height: 52,
         child: ElevatedButton(
           onPressed: () {
-            Get.to(() => const ChooseLoanTypeScreen());
+            Get.offAll(() => const ChooseLoanTypeScreen());
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.indigo,

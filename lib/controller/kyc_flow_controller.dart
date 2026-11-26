@@ -7,6 +7,7 @@ enum KycSubStep {
   // Step 1: Aadhaar
   aadhaarInput,
   aadhaarOtp,
+  aadhaarUpload,
   aadhaarNotLinked,
   aadhaarReview,
 
@@ -50,6 +51,7 @@ class KycFlowController extends GetxController {
     switch (currentSubStep.value) {
       case KycSubStep.aadhaarInput:
       case KycSubStep.aadhaarOtp:
+      case KycSubStep.aadhaarUpload:
       case KycSubStep.aadhaarNotLinked:
       case KycSubStep.aadhaarReview:
         return 1;

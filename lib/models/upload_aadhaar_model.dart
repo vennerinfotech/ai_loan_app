@@ -3,6 +3,8 @@ class UploadAadhaarData {
   final String? uploadMode;
   final String? front;
   final String? back;
+  final String? frontUrl;
+  final String? backUrl;
   final String? aadhaarStatus;
   final AadhaarExtractedData? extractedData;
   final int? userId;
@@ -11,6 +13,8 @@ class UploadAadhaarData {
     this.uploadMode,
     this.front,
     this.back,
+    this.frontUrl,
+    this.backUrl,
     this.aadhaarStatus,
     this.extractedData,
     this.userId,
@@ -21,6 +25,8 @@ class UploadAadhaarData {
       uploadMode: json['upload_mode']?.toString(),
       front: json['front']?.toString(),
       back: json['back']?.toString(),
+      frontUrl: json['front_url']?.toString(),
+      backUrl: json['back_url']?.toString(),
       aadhaarStatus: json['aadhaar_status']?.toString(),
       extractedData: json['extracted_data'] != null && json['extracted_data'] is Map
           ? AadhaarExtractedData.fromJson(Map<String, dynamic>.from(json['extracted_data']))
@@ -36,6 +42,8 @@ class UploadAadhaarData {
       if (uploadMode != null) 'upload_mode': uploadMode,
       if (front != null) 'front': front,
       if (back != null) 'back': back,
+      if (frontUrl != null) 'front_url': frontUrl,
+      if (backUrl != null) 'back_url': backUrl,
       if (aadhaarStatus != null) 'aadhaar_status': aadhaarStatus,
       if (extractedData != null) 'extracted_data': extractedData?.toJson(),
       if (userId != null) 'user_id': userId,

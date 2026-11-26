@@ -513,16 +513,19 @@ class ApiService {
 
   /// Upload Aadhaar Documents API: POST {{baseUrl}}/upload-aadhaar
   /// Multipart form-data with:
-  /// - 'upload_mode': 'separate'
-  /// - 'aadhaar_front_image': Front image file
-  /// - 'aadhaar_back_image': Back image file
+  /// - 'upload_mode': 'separate' | 'combined'
+  /// - When separate: 'aadhaar_front_image' & 'aadhaar_back_image'
+  /// - When combined: 'aadhar_card_image' & 'aadhaar_front_image' (single combined PDF)
   static Future<Map<String, dynamic>> uploadAadhaar({
-    required String frontPath,
-    required String backPath,
+    String? frontPath,
+    String? backPath,
     Uint8List? frontBytes,
     Uint8List? backBytes,
     String? frontFilename,
     String? backFilename,
+    String? singlePdfPath,
+    Uint8List? singlePdfBytes,
+    String? singlePdfFilename,
     String uploadMode = 'separate',
     String? token,
   }) async {
@@ -539,57 +542,90 @@ class ApiService {
 
       request.fields['upload_mode'] = uploadMode;
 
-      // Add Front Image / Document
-      final resolvedFrontName = frontFilename ??
-          (frontPath.isNotEmpty
-              ? frontPath.split('/').last
-              : (frontPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_front.pdf' : 'aadhaar_front.jpg'));
-      if (frontBytes != null && frontBytes.isNotEmpty) {
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'aadhaar_front_image',
-            frontBytes,
-            filename: resolvedFrontName,
-          ),
-        );
-      } else if (frontPath.isNotEmpty) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'aadhaar_front_image',
-            frontPath,
-            filename: resolvedFrontName,
-          ),
-        );
-      }
+      if (uploadMode == 'combined') {
+        final effectivePath = singlePdfPath ?? '';
+        final effectiveBytes = singlePdfBytes;
+        final resolvedName = singlePdfFilename ??
+            (effectivePath.isNotEmpty
+                ? effectivePath.split('/').last
+                : (effectivePath.toLowerCase().endsWith('.pdf') ? 'aadhaar_combined.pdf' : 'aadhaar_combined.jpg'));
 
-      // Add Back Image / Document
-      final resolvedBackName = backFilename ??
-          (backPath.isNotEmpty
-              ? backPath.split('/').last
-              : (backPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_back.pdf' : 'aadhaar_back.jpg'));
-      if (backBytes != null && backBytes.isNotEmpty) {
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'aadhaar_back_image',
-            backBytes,
-            filename: resolvedBackName,
-          ),
-        );
-      } else if (backPath.isNotEmpty) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'aadhaar_back_image',
-            backPath,
-            filename: resolvedBackName,
-          ),
-        );
+        if (effectiveBytes != null && effectiveBytes.isNotEmpty) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'aadhaar_pdf',
+              effectiveBytes,
+              filename: resolvedName,
+            ),
+          );
+        } else if (effectivePath.isNotEmpty) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'aadhaar_pdf',
+              effectivePath,
+              filename: resolvedName,
+            ),
+          );
+        }
+      } else {
+        // Add Front Image / Document
+        final safeFrontPath = frontPath ?? '';
+        final resolvedFrontName = frontFilename ??
+            (safeFrontPath.isNotEmpty
+                ? safeFrontPath.split('/').last
+                : (safeFrontPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_front.pdf' : 'aadhaar_front.jpg'));
+        if (frontBytes != null && frontBytes.isNotEmpty) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'aadhaar_front_image',
+              frontBytes,
+              filename: resolvedFrontName,
+            ),
+          );
+        } else if (safeFrontPath.isNotEmpty) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'aadhaar_front_image',
+              safeFrontPath,
+              filename: resolvedFrontName,
+            ),
+          );
+        }
+
+        // Add Back Image / Document
+        final safeBackPath = backPath ?? '';
+        final resolvedBackName = backFilename ??
+            (safeBackPath.isNotEmpty
+                ? safeBackPath.split('/').last
+                : (safeBackPath.toLowerCase().endsWith('.pdf') ? 'aadhaar_back.pdf' : 'aadhaar_back.jpg'));
+        if (backBytes != null && backBytes.isNotEmpty) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'aadhaar_back_image',
+              backBytes,
+              filename: resolvedBackName,
+            ),
+          );
+        } else if (safeBackPath.isNotEmpty) {
+          request.files.add(
+            await http.MultipartFile.fromPath(
+              'aadhaar_back_image',
+              safeBackPath,
+              filename: resolvedBackName,
+            ),
+          );
+        }
       }
 
       debugPrint('========== Upload Aadhaar Documents ==========');
       debugPrint('--> POST (Multipart) $url');
       debugPrint('Upload Mode: $uploadMode');
-      debugPrint('Front Image Path: $frontPath');
-      debugPrint('Back Image Path: $backPath');
+      if (uploadMode == 'combined') {
+        debugPrint('Single PDF Path: $singlePdfPath');
+      } else {
+        debugPrint('Front Image Path: $frontPath');
+        debugPrint('Back Image Path: $backPath');
+      }
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);

@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
@@ -83,28 +81,6 @@ class AadhaarVerificationBody extends StatelessWidget {
                 // Aadhaar Number TextFormField
                 _buildAadhaarInputField(controller),
                 const SizedBox(height: 24),
-
-                // Manual Card Upload Option (shown only if Aadhaar is unlinked or verification fails)
-                Obx(() {
-                  if (!controller.showManualUpload.value) {
-                    return const SizedBox.shrink();
-                  }
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // "OR UPLOAD CARD" Divider
-                      _buildOrUploadDivider(),
-                      const SizedBox(height: 20),
-
-                      // Front side & Back side upload cards
-                      _buildUploadCardsRow(context, controller),
-                      const SizedBox(height: 24),
-                    ],
-                  );
-                }),
-
-                // Test toggle for linking simulation (Linked vs Unlinked branch)
-                _buildBranchingTestToggle(controller),
               ],
             ),
           ),
@@ -186,377 +162,7 @@ class AadhaarVerificationBody extends StatelessWidget {
     );
   }
 
-  /// "OR UPLOAD CARD" horizontal line divider
-  Widget _buildOrUploadDivider() {
-    return Row(
-      children: [
-        const Expanded(
-          child: Divider(color: AppColors.line, thickness: 1),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'OR UPLOAD CARD',
-            style: TextStyle(
-              color: AppColors.muted,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
-        const Expanded(
-          child: Divider(color: AppColors.line, thickness: 1),
-        ),
-      ],
-    );
-  }
-
-  /// Front side & Back side upload cards
-  Widget _buildUploadCardsRow(BuildContext context, AadhaarKycController controller) {
-    return Row(
-      children: [
-        // Front Side Card
-        Expanded(
-          child: Obx(
-            () => _buildUploadCard(
-              title: 'Front side',
-              subtitle: controller.isUploadingDocuments.value
-                  ? 'Uploading...'
-                  : (controller.frontUploaded.value
-                      ? 'Selected ✓'
-                      : 'Camera or gallery'),
-              isUploaded: controller.frontUploaded.value,
-              isUploading: controller.isUploadingDocuments.value,
-              imagePath: controller.frontImagePath.value,
-              imageBytes: controller.frontImageBytes.value,
-              filename: controller.frontUploadedFilename.value,
-              onTap: () => controller.pickAadhaarDocument(isFront: true, context: context),
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-
-        // Back Side Card
-        Expanded(
-          child: Obx(
-            () => _buildUploadCard(
-              title: 'Back side',
-              subtitle: controller.isUploadingDocuments.value
-                  ? 'Uploading...'
-                  : (controller.backUploaded.value
-                      ? 'Selected ✓'
-                      : 'Camera or gallery'),
-              isUploaded: controller.backUploaded.value,
-              isUploading: controller.isUploadingDocuments.value,
-              imagePath: controller.backImagePath.value,
-              imageBytes: controller.backImageBytes.value,
-              filename: controller.backUploadedFilename.value,
-              onTap: () => controller.pickAadhaarDocument(isFront: false, context: context),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUploadCard({
-    required String title,
-    required String subtitle,
-    required bool isUploaded,
-    bool isUploading = false,
-    required String imagePath,
-    Uint8List? imageBytes,
-    String? filename,
-    required VoidCallback onTap,
-  }) {
-    final effectiveFilename = filename != null && filename.isNotEmpty
-        ? filename
-        : (imagePath.isNotEmpty ? imagePath.split('/').last : '');
-    final hasFile = imageBytes != null ||
-        (imagePath.isNotEmpty && File(imagePath).existsSync()) ||
-        effectiveFilename.isNotEmpty;
-    final isPdf = imagePath.toLowerCase().endsWith('.pdf') ||
-        effectiveFilename.toLowerCase().endsWith('.pdf');
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 130,
-        foregroundDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isUploaded ? AppColors.successGreen : AppColors.kycUploadCardBorder,
-            width: isUploaded ? 1.8 : 1.2,
-          ),
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: isUploaded
-                  ? AppColors.successGreen.withValues(alpha: 0.12)
-                  : Colors.black.withValues(alpha: 0.02),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: hasFile
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Full Card Image or PDF Preview
-                  if (isPdf)
-                    Container(
-                      color: const Color(0xFFF9FAFC),
-                      padding: const EdgeInsets.fromLTRB(10, 10, 10, 28),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFEBEE),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.picture_as_pdf_rounded,
-                              color: Color(0xFFE53935),
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            effectiveFilename.isNotEmpty ? effectiveFilename : 'document.pdf',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textDark,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 1),
-                          const Text(
-                            'PDF Document',
-                            style: TextStyle(
-                              color: Color(0xFFE53935),
-                              fontSize: 9.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else if (imageBytes != null)
-                    Image.memory(
-                      imageBytes,
-                      fit: BoxFit.cover,
-                    )
-                  else
-                    Image.file(
-                      File(imagePath),
-                      fit: BoxFit.cover,
-                    ),
-
-                  // Bottom Gradient dark overlay for readability
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    height: 54,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.8),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Bottom Title & Uploaded Checkmark badge
-                  Positioned(
-                    left: 10,
-                    right: 10,
-                    bottom: 8,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          color: AppColors.successGreen,
-                          size: 15,
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Top-Right "Change" Tag
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.edit_rounded, color: Colors.white, size: 11),
-                          SizedBox(width: 3),
-                          Text(
-                            'Change',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: isUploading
-                          ? AppColors.indigoTint
-                          : (isUploaded
-                              ? AppColors.successGreenBg
-                              : AppColors.kycUploadIconBg),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: isUploading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: AppColors.indigo,
-                              ),
-                            )
-                          : Icon(
-                              isUploaded
-                                  ? Icons.check_circle_rounded
-                                  : Icons.photo_camera_back_outlined,
-                              color: isUploaded
-                                  ? AppColors.successGreen
-                                  : AppColors.kycUploadIcon,
-                              size: 22,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isUploading
-                          ? AppColors.indigo
-                          : (isUploaded
-                              ? AppColors.successGreen
-                              : AppColors.textDarkSecondary),
-                      fontSize: 10.5,
-                      fontWeight: isUploaded || isUploading
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  /// Helpful simulation bar allowing user to test both branches (Mobile Linked vs Not Linked)
-  Widget _buildBranchingTestToggle(AadhaarKycController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.indigoTint,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line, width: 1),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.settings_suggest_rounded, color: AppColors.primaryPurple, size: 20),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Simulation: Mobile Linked to Aadhaar?',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'Toggle to test both success & unlinked flows',
-                  style: TextStyle(
-                    color: AppColors.textDarkSecondary,
-                    fontSize: 10.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Obx(
-            () => Switch(
-              value: controller.isMobileLinked.value,
-              activeThumbColor: AppColors.primaryPurple,
-              activeTrackColor: AppColors.primaryPurple.withValues(alpha: 0.3),
-              onChanged: (val) => controller.isMobileLinked.value = val,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Bottom section: Security notice + Dynamic Action button (Send OTP or Upload & Verify Aadhaar)
+  /// Bottom section: Security notice + "Send OTP" button
   Widget _buildBottomSection(AadhaarKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 8, 22, 20),
@@ -580,91 +186,17 @@ class AadhaarVerificationBody extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Action Button: Either "Upload & Verify Aadhaar" or "Send OTP"
+          // Send OTP Button
           Obx(
             () {
-              if (controller.showManualUpload.value) {
-                final isUploading = controller.isUploadingDocuments.value;
-                final canUpload = controller.frontUploaded.value &&
-                    controller.backUploaded.value &&
-                    !isUploading;
-
-                return Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: canUpload ? controller.uploadBothAadhaarDocuments : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryButtonBackground,
-                          disabledBackgroundColor:
-                              AppColors.navy.withValues(alpha: 0.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: isUploading
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.2,
-                                ),
-                              )
-                            : const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.file_upload_outlined,
-                                    color: AppColors.accentGold,
-                                    size: 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Upload & Verify Aadhaar',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  SizedBox(width: 6),
-                                  Icon(
-                                    Icons.arrow_forward_rounded,
-                                    color: AppColors.accentGold,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: () => controller.showManualUpload.value = false,
-                      child: const Text(
-                        'Verify via OTP instead',
-                        style: TextStyle(
-                          color: AppColors.primaryPurple,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
-
-              final isSending = controller.isSendingOtp.value;
               final isValid = controller.isAadhaarValid;
 
               return SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: (isValid && !isSending) ? controller.sendOtp : null,
+                  onPressed:
+                      isValid ? controller.initiateAadhaarVerification : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryButtonBackground,
                     disabledBackgroundColor:
@@ -674,34 +206,25 @@ class AadhaarVerificationBody extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: isSending
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.2,
-                          ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Send OTP',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              color: AppColors.accentGold,
-                              size: 16,
-                            ),
-                          ],
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Send OTP',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
                         ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.accentGold,
+                        size: 16,
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

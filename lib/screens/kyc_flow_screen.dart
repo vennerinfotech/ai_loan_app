@@ -6,6 +6,7 @@ import '../widgets/kyc_stepper.dart';
 
 import 'aadhaar_verification_screen.dart';
 import 'aadhaar_otp_screen.dart';
+import 'upload_aadhaar_screen.dart';
 import 'aadhaar_not_linked_screen.dart';
 import 'review_aadhaar_details_screen.dart';
 import 'enter_pan_screen.dart';
@@ -75,6 +76,8 @@ class KycFlowScreen extends StatelessWidget {
                       return const AadhaarVerificationBody();
                     case KycSubStep.aadhaarOtp:
                       return const AadhaarOtpBody();
+                    case KycSubStep.aadhaarUpload:
+                      return const UploadAadhaarBody();
                     case KycSubStep.aadhaarNotLinked:
                       return const AadhaarNotLinkedBody();
                     case KycSubStep.aadhaarReview:
