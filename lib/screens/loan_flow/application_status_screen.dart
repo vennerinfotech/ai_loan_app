@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../../controller/apply_loan_controller.dart';
 import '../../controller/application_status_controller.dart';
+import '../../services/support_service.dart';
 import '../main_nav_screen.dart';
 
 /// Screen: "Application status" (Matching attached reference design)
@@ -658,17 +659,7 @@ class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
         children: [
           // Left: Support Chat Button
           GestureDetector(
-            onTap: () {
-              Get.snackbar(
-                'Finsphere Support',
-                'Connecting to your loan advisor...',
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: AppColors.navy,
-                colorText: Colors.white,
-                margin: const EdgeInsets.all(16),
-                duration: const Duration(seconds: 2),
-              );
-            },
+            onTap: () => SupportService.openWhatsApp(),
             child: Container(
               width: 52,
               height: 52,

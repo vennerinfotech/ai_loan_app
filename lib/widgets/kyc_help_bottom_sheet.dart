@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
+import '../services/support_service.dart';
 
 /// Clean & balanced KYC Verification Help Bottom Sheet.
 class KycHelpBottomSheet extends StatelessWidget {
@@ -141,32 +142,44 @@ class KycHelpBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Support info banner
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.canvas,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.line, width: 1),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.support_agent_rounded,
-                  size: 18,
-                  color: AppColors.primaryPurple,
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Need assistance? Our support team is available 24/7.',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: AppColors.textDarkSecondary,
+          // Support info banner (Direct WhatsApp)
+          GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              SupportService.openWhatsApp();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.canvas,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.line, width: 1),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.support_agent_rounded,
+                    size: 18,
+                    color: AppColors.primaryPurple,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Need assistance? Chat on WhatsApp or Email us 24/7.',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textDarkSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: AppColors.primaryPurple,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 18),

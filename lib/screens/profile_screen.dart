@@ -9,6 +9,7 @@ import 'document_wallet_screen.dart';
 import 'personal_details_screen.dart';
 import 'reset_mpin_screen.dart';
 import '../widgets/language_selection_bottom_sheet.dart';
+import '../services/support_service.dart';
 
 /// Screen displaying user profile, account settings, security, and support (Reference Image 2)
 class ProfileScreen extends StatefulWidget {
@@ -490,34 +491,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           _buildActionRow(
             icon: Icons.chat_bubble_outline_rounded,
-            iconBg: AppColors.warningAmberBg,
-            iconColor: AppColors.warningAmber,
+            iconBg: const Color(0xFFE8F7EE),
+            iconColor: const Color(0xFF25D366),
             title: 'WhatsApp chat',
-            onTap: () {
-              Get.snackbar(
-                'Support',
-                'Connecting to Finsphere WhatsApp support...',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppColors.navy,
-                colorText: Colors.white,
-              );
-            },
+            onTap: () => SupportService.openWhatsApp(),
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
             icon: Icons.mail_outline_rounded,
-            iconBg: AppColors.warningAmberBg,
-            iconColor: AppColors.warningAmber,
+            iconBg: AppColors.indigoTint,
+            iconColor: AppColors.navy,
             title: 'Email us',
-            onTap: () {
-              Get.snackbar(
-                'Support',
-                'Support email: support@finsphere.ai',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: AppColors.navy,
-                colorText: Colors.white,
-              );
-            },
+            onTap: () => SupportService.openEmail(),
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildActionRow(
