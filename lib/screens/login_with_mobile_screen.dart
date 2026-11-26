@@ -63,14 +63,6 @@ class LoginWithMobileScreen extends StatelessWidget {
 
                           // "Get OTP →" Primary Button
                           _buildGetOtpButton(controller),
-                          const SizedBox(height: 24),
-
-                          // "OR" Divider
-                          _buildOrDivider(),
-                          const SizedBox(height: 20),
-
-                          // "Sign in with MPIN" Secondary Card Button
-                          _buildSignInWithMpinButton(controller),
                         ],
                       ),
                     ),
@@ -362,77 +354,6 @@ class LoginWithMobileScreen extends StatelessWidget {
         ),
       );
     });
-  }
-
-  /// "OR" Divider
-  Widget _buildOrDivider() {
-    return Row(
-      children: const [
-        Expanded(
-          child: Divider(
-            color: AppColors.numPadKeyBorder,
-            thickness: 1,
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            'OR',
-            style: TextStyle(
-              color: AppColors.inputLabel,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(
-            color: AppColors.numPadKeyBorder,
-            thickness: 1,
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// "Sign in with MPIN" Card Button
-  Widget _buildSignInWithMpinButton(LoginWithMobileController controller) {
-    return InkWell(
-      onTap: controller.signInWithMpin,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 54,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.inputBorder,
-            width: 1.2,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.lock_outline_rounded,
-              color: AppColors.primaryPurple,
-              size: 20,
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Sign in with MPIN',
-              style: TextStyle(
-                color: AppColors.textDark,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Bottom Footer Link: "New to Finsphere? Create an account"

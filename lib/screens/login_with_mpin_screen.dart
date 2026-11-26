@@ -9,18 +9,54 @@ import '../theme/theme.dart';
 /// intersecting animated cosmic orbit rings with moving golden satellite,
 /// 4 MPIN indicator dots, and responsive numeric keypad with biometric button.
 /// Exact pixel-perfect match to Figma reference design.
-class LoginWithMpinScreen extends StatelessWidget {
+class LoginWithMpinScreen extends StatefulWidget {
   final String? phoneNumber;
 
   const LoginWithMpinScreen({super.key, this.phoneNumber});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = Get.put(MpinLoginController(initialPhone: phoneNumber));
-    if (phoneNumber != null && phoneNumber!.trim().isNotEmpty) {
-      controller.setPhoneNumber(phoneNumber!.trim());
+  State<LoginWithMpinScreen> createState() => _LoginWithMpinScreenState();
+}
+
+class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _orbitController;
+  late final Animation<double> _orbitAnimation;
+  late final MpinLoginController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Get.isRegistered<MpinLoginController>()) {
+      Get.delete<MpinLoginController>(force: true);
+    }
+    controller = Get.put(MpinLoginController(initialPhone: widget.phoneNumber));
+    if (widget.phoneNumber != null && widget.phoneNumber!.trim().isNotEmpty) {
+      controller.setPhoneNumber(widget.phoneNumber!.trim());
     }
     controller.mpin.value = '';
+
+    _orbitController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 24),
+    )..repeat();
+    _orbitAnimation = CurvedAnimation(
+      parent: _orbitController,
+      curve: Curves.linear,
+    );
+  }
+
+  @override
+  void dispose() {
+    _orbitController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_orbitController.isAnimating) {
+      _orbitController.repeat();
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,
@@ -71,7 +107,7 @@ class LoginWithMpinScreen extends StatelessWidget {
           Positioned.fill(
             child: CustomPaint(
               painter: _TopCardCosmicPainter(
-                animation: controller.orbitAnimation,
+                animation: _orbitAnimation,
               ),
             ),
           ),
@@ -259,34 +295,21 @@ class LoginWithMpinScreen extends StatelessWidget {
     );
   }
 
-  /// Footer Links: "Use mobile number" and "Forgot MPIN?"
+  /// Footer Link: "Forgot MPIN?"
   Widget _buildFooterLinks(MpinLoginController controller) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        GestureDetector(
-          onTap: controller.useMobileNumber,
-          child: const Text(
-            'Use mobile number',
-            style: TextStyle(
-              color: AppColors.numPadKeyText,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: controller.forgotMpin,
+        child: const Text(
+          'Forgot MPIN?',
+          style: TextStyle(
+            color: AppColors.primaryPurple,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        GestureDetector(
-          onTap: controller.forgotMpin,
-          child: const Text(
-            'Forgot MPIN?',
-            style: TextStyle(
-              color: AppColors.primaryPurple,
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
