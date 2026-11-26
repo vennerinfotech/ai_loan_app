@@ -101,6 +101,12 @@ class ApplicantDetailsController extends GetxController {
   // Set of document keys currently uploading individually
   final uploadingDocKeys = <String>{}.obs;
 
+  // Aadhaar upload mode: 'separate' (Front & Back) or 'combined' (Single PDF)
+  final selectedAadhaarUploadMode = 'separate'.obs;
+
+  // Store the original aadhaar doc item from API (with upload_modes) for reference
+  CoAppDocumentItem? _originalAadhaarDocItem;
+
   // Temporary holder for newly created co-applicant if document upload fails,
   // preventing duplicate creations on retry
   final currentDraftCoAppId = Rxn<dynamic>();
@@ -365,6 +371,112 @@ class ApplicantDetailsController extends GetxController {
     selectedEmploymentType.value = '';
     coAppDocuments.clear();
     coAppUploadedFiles.clear();
+    selectedAadhaarUploadMode.value = 'separate';
+    _originalAadhaarDocItem = null;
+  }
+
+  /// Switch Aadhaar upload mode between 'separate' (Front & Back) and 'combined' (Single PDF)
+  void switchAadhaarUploadMode(String mode) {
+    if (selectedAadhaarUploadMode.value == mode) return;
+
+    // Clear any existing aadhaar files when switching modes
+    coAppUploadedFiles.remove('aadhar_card_front');
+    coAppUploadedFiles.remove('aadhar_card_back');
+    coAppUploadedFiles.remove('aadhar_card_combined_pdf');
+    coAppExistingFiles.remove('aadhar_card_front');
+    coAppExistingFiles.remove('aadhar_card_back');
+    coAppExistingFiles.remove('aadhar_card_combined_pdf');
+    clearCoAppDocError('aadhar_card_front');
+    clearCoAppDocError('aadhar_card_back');
+    clearCoAppDocError('aadhar_card_combined_pdf');
+
+    selectedAadhaarUploadMode.value = mode;
+
+    // Re-expand aadhaar docs based on new mode
+    _rebuildAadhaarDocs();
+  }
+
+  /// Rebuilds the aadhaar document entries in coAppDocuments based on selected mode
+  void _rebuildAadhaarDocs() {
+    final doc = _originalAadhaarDocItem;
+    if (doc == null) return;
+
+    // Find and remove existing aadhaar entries
+    coAppDocuments.removeWhere((d) {
+      final k = d.key ?? '';
+      return k == 'aadhar_card' || k == 'aadhaar_card' ||
+          k == 'aadhar_card_front' || k == 'aadhar_card_back' ||
+          k == 'aadhar_card_combined_pdf';
+    });
+
+    // Find the insertion index (after profile_image if exists, else at start)
+    int insertIndex = 0;
+    final profileIdx = coAppDocuments.indexWhere((d) => d.key == 'profile_image');
+    if (profileIdx >= 0) insertIndex = profileIdx + 1;
+
+    if (selectedAadhaarUploadMode.value == 'combined') {
+      // Single combined PDF mode
+      final combinedMode = doc.uploadModes?.firstWhereOrNull((m) => m.key == 'combined');
+      coAppDocuments.insert(
+        insertIndex,
+        CoAppDocumentItem(
+          key: 'aadhar_card_combined_pdf',
+          label: 'Aadhaar Card (Single PDF)',
+          allowMultiple: false,
+          acceptedFormats: combinedMode?.acceptedFormats.isNotEmpty == true
+              ? combinedMode!.acceptedFormats
+              : ['pdf'],
+          maxSizeMb: doc.maxSizeMb ?? 5,
+          uploadField: combinedMode?.fields.isNotEmpty == true
+              ? combinedMode!.fields.first
+              : 'documents[aadhar_card_combined_pdf]',
+          ocrAutofill: doc.ocrAutofill,
+          uploaded: false,
+          status: 'not_uploaded',
+        ),
+      );
+    } else {
+      // Separate Front & Back mode
+      final separateMode = doc.uploadModes?.firstWhereOrNull((m) => m.key == 'separate');
+      final frontField = separateMode != null && separateMode.fields.isNotEmpty
+          ? separateMode.fields.first
+          : 'documents[aadhar_card_front]';
+      final backField = separateMode != null && separateMode.fields.length > 1
+          ? separateMode.fields[1]
+          : 'documents[aadhar_card_back]';
+      final formats = separateMode?.acceptedFormats.isNotEmpty == true
+          ? separateMode!.acceptedFormats
+          : (doc.acceptedFormats.isNotEmpty ? doc.acceptedFormats : ['pdf', 'jpg', 'jpeg', 'png']);
+
+      coAppDocuments.insert(
+        insertIndex,
+        CoAppDocumentItem(
+          key: 'aadhar_card_front',
+          label: 'Aadhaar Card (Front)',
+          allowMultiple: false,
+          acceptedFormats: formats,
+          maxSizeMb: doc.maxSizeMb ?? 5,
+          uploadField: frontField,
+          ocrAutofill: true,
+          uploaded: false,
+          status: 'not_uploaded',
+        ),
+      );
+      coAppDocuments.insert(
+        insertIndex + 1,
+        CoAppDocumentItem(
+          key: 'aadhar_card_back',
+          label: 'Aadhaar Card (Back)',
+          allowMultiple: false,
+          acceptedFormats: formats,
+          maxSizeMb: doc.maxSizeMb ?? 5,
+          uploadField: backField,
+          ocrAutofill: true,
+          uploaded: false,
+          status: 'not_uploaded',
+        ),
+      );
+    }
   }
 
   /// Update Co-Applicant API: PUT {{baseUrl}}/co-applicants/{id}
@@ -657,37 +769,103 @@ class ApplicantDetailsController extends GetxController {
       for (final doc in matchedDocs) {
         final key = doc.key ?? '';
         if (key == 'aadhar_card' || key == 'aadhaar_card') {
-          // Expand into Front and Back separate items
-          expandedDocs.add(
-            CoAppDocumentItem(
-              key: 'aadhar_card_front',
-              label: 'Aadhaar Card (Front)',
-              allowMultiple: false,
-              acceptedFormats: doc.acceptedFormats.isNotEmpty
-                  ? doc.acceptedFormats
-                  : ['pdf', 'jpg', 'jpeg', 'png'],
-              maxSizeMb: doc.maxSizeMb ?? 5,
-              uploadField: 'documents[aadhar_card_front]',
-              ocrAutofill: true,
-              uploaded: false,
-              status: 'not_uploaded',
-            ),
-          );
-          expandedDocs.add(
-            CoAppDocumentItem(
-              key: 'aadhar_card_back',
-              label: 'Aadhaar Card (Back)',
-              allowMultiple: false,
-              acceptedFormats: doc.acceptedFormats.isNotEmpty
-                  ? doc.acceptedFormats
-                  : ['pdf', 'jpg', 'jpeg', 'png'],
-              maxSizeMb: doc.maxSizeMb ?? 5,
-              uploadField: 'documents[aadhar_card_back]',
-              ocrAutofill: true,
-              uploaded: false,
-              status: 'not_uploaded',
-            ),
-          );
+          // Store the original aadhaar doc item with upload_modes for later use
+          _originalAadhaarDocItem = doc;
+
+          // Check if upload_modes are available from API
+          if (doc.uploadModes != null && doc.uploadModes!.isNotEmpty) {
+            // Use the selected mode to expand
+            if (selectedAadhaarUploadMode.value == 'combined') {
+              final combinedMode = doc.uploadModes!.firstWhereOrNull((m) => m.key == 'combined');
+              expandedDocs.add(
+                CoAppDocumentItem(
+                  key: 'aadhar_card_combined_pdf',
+                  label: 'Aadhaar Card (Single PDF)',
+                  allowMultiple: false,
+                  acceptedFormats: combinedMode?.acceptedFormats.isNotEmpty == true
+                      ? combinedMode!.acceptedFormats
+                      : ['pdf'],
+                  maxSizeMb: doc.maxSizeMb ?? 5,
+                  uploadField: combinedMode?.fields.isNotEmpty == true
+                      ? combinedMode!.fields.first
+                      : 'documents[aadhar_card_combined_pdf]',
+                  ocrAutofill: doc.ocrAutofill,
+                  uploaded: false,
+                  status: 'not_uploaded',
+                ),
+              );
+            } else {
+              final separateMode = doc.uploadModes!.firstWhereOrNull((m) => m.key == 'separate');
+              final frontField = separateMode != null && separateMode.fields.isNotEmpty
+                  ? separateMode.fields.first
+                  : 'documents[aadhar_card_front]';
+              final backField = separateMode != null && separateMode.fields.length > 1
+                  ? separateMode.fields[1]
+                  : 'documents[aadhar_card_back]';
+              final formats = separateMode?.acceptedFormats.isNotEmpty == true
+                  ? separateMode!.acceptedFormats
+                  : (doc.acceptedFormats.isNotEmpty ? doc.acceptedFormats : ['pdf', 'jpg', 'jpeg', 'png']);
+
+              expandedDocs.add(
+                CoAppDocumentItem(
+                  key: 'aadhar_card_front',
+                  label: 'Aadhaar Card (Front)',
+                  allowMultiple: false,
+                  acceptedFormats: formats,
+                  maxSizeMb: doc.maxSizeMb ?? 5,
+                  uploadField: frontField,
+                  ocrAutofill: true,
+                  uploaded: false,
+                  status: 'not_uploaded',
+                ),
+              );
+              expandedDocs.add(
+                CoAppDocumentItem(
+                  key: 'aadhar_card_back',
+                  label: 'Aadhaar Card (Back)',
+                  allowMultiple: false,
+                  acceptedFormats: formats,
+                  maxSizeMb: doc.maxSizeMb ?? 5,
+                  uploadField: backField,
+                  ocrAutofill: true,
+                  uploaded: false,
+                  status: 'not_uploaded',
+                ),
+              );
+            }
+          } else {
+            // No upload_modes — fallback to separate front/back
+            expandedDocs.add(
+              CoAppDocumentItem(
+                key: 'aadhar_card_front',
+                label: 'Aadhaar Card (Front)',
+                allowMultiple: false,
+                acceptedFormats: doc.acceptedFormats.isNotEmpty
+                    ? doc.acceptedFormats
+                    : ['pdf', 'jpg', 'jpeg', 'png'],
+                maxSizeMb: doc.maxSizeMb ?? 5,
+                uploadField: 'documents[aadhar_card_front]',
+                ocrAutofill: true,
+                uploaded: false,
+                status: 'not_uploaded',
+              ),
+            );
+            expandedDocs.add(
+              CoAppDocumentItem(
+                key: 'aadhar_card_back',
+                label: 'Aadhaar Card (Back)',
+                allowMultiple: false,
+                acceptedFormats: doc.acceptedFormats.isNotEmpty
+                    ? doc.acceptedFormats
+                    : ['pdf', 'jpg', 'jpeg', 'png'],
+                maxSizeMb: doc.maxSizeMb ?? 5,
+                uploadField: 'documents[aadhar_card_back]',
+                ocrAutofill: true,
+                uploaded: false,
+                status: 'not_uploaded',
+              ),
+            );
+          }
         } else if (key == 'pan_card' || key == 'pan_card_image') {
           expandedDocs.add(
             CoAppDocumentItem(
@@ -718,6 +896,11 @@ class ApplicantDetailsController extends GetxController {
   List<CoApplicantFormField> get activeAddFormFields {
     return formOptionsData.value?.addForm ?? [];
   }
+
+  /// Whether the Aadhaar card has upload_modes from the API (supports mode switching)
+  bool get hasAadhaarUploadModes =>
+      _originalAadhaarDocItem?.uploadModes != null &&
+      _originalAadhaarDocItem!.uploadModes!.length > 1;
 
   void addCoAppFile(String docKey, XFile file) {
     clearCoAppDocError(docKey);
@@ -1186,8 +1369,77 @@ class ApplicantDetailsController extends GetxController {
         }
 
         // Directly store all document options returned in the API response
+        // but expand aadhaar_card based on selected upload mode
         if (model.data?.documents.isNotEmpty == true) {
-          coAppDocuments.assignAll(model.data!.documents);
+          final List<CoAppDocumentItem> expandedApiDocs = [];
+          for (final doc in model.data!.documents) {
+            final key = doc.key ?? '';
+            if (key == 'aadhar_card' || key == 'aadhaar_card') {
+              // Store original and expand based on selected mode
+              _originalAadhaarDocItem = doc;
+              if (selectedAadhaarUploadMode.value == 'combined') {
+                final combinedMode = doc.uploadModes?.firstWhereOrNull((m) => m.key == 'combined');
+                expandedApiDocs.add(
+                  CoAppDocumentItem(
+                    key: 'aadhar_card_combined_pdf',
+                    label: 'Aadhaar Card (Single PDF)',
+                    allowMultiple: false,
+                    acceptedFormats: combinedMode?.acceptedFormats.isNotEmpty == true
+                        ? combinedMode!.acceptedFormats
+                        : ['pdf'],
+                    maxSizeMb: doc.maxSizeMb ?? 5,
+                    uploadField: combinedMode?.fields.isNotEmpty == true
+                        ? combinedMode!.fields.first
+                        : 'documents[aadhar_card_combined_pdf]',
+                    ocrAutofill: doc.ocrAutofill,
+                    uploaded: false,
+                    status: 'not_uploaded',
+                  ),
+                );
+              } else {
+                final separateMode = doc.uploadModes?.firstWhereOrNull((m) => m.key == 'separate');
+                final frontField = separateMode != null && separateMode.fields.isNotEmpty
+                    ? separateMode.fields.first
+                    : 'documents[aadhar_card_front]';
+                final backField = separateMode != null && separateMode.fields.length > 1
+                    ? separateMode.fields[1]
+                    : 'documents[aadhar_card_back]';
+                final formats = separateMode?.acceptedFormats.isNotEmpty == true
+                    ? separateMode!.acceptedFormats
+                    : (doc.acceptedFormats.isNotEmpty ? doc.acceptedFormats : ['pdf', 'jpg', 'jpeg', 'png']);
+
+                expandedApiDocs.add(
+                  CoAppDocumentItem(
+                    key: 'aadhar_card_front',
+                    label: 'Aadhaar Card (Front)',
+                    allowMultiple: false,
+                    acceptedFormats: formats,
+                    maxSizeMb: doc.maxSizeMb ?? 5,
+                    uploadField: frontField,
+                    ocrAutofill: true,
+                    uploaded: false,
+                    status: 'not_uploaded',
+                  ),
+                );
+                expandedApiDocs.add(
+                  CoAppDocumentItem(
+                    key: 'aadhar_card_back',
+                    label: 'Aadhaar Card (Back)',
+                    allowMultiple: false,
+                    acceptedFormats: formats,
+                    maxSizeMb: doc.maxSizeMb ?? 5,
+                    uploadField: backField,
+                    ocrAutofill: true,
+                    uploaded: false,
+                    status: 'not_uploaded',
+                  ),
+                );
+              }
+            } else {
+              expandedApiDocs.add(doc);
+            }
+          }
+          coAppDocuments.assignAll(expandedApiDocs);
         }
 
         coApplicants.add(

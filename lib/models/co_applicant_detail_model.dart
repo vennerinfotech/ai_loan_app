@@ -2,6 +2,8 @@
 // Endpoint: GET {{baseUrl}}/co-applicants/{co_applicant_id}
 // Model for applicant data only (without success, status_code, message wrapper)
 
+import 'add_co_applicant_model.dart' show CoAppDocumentAccess;
+
 class CoApplicantDetailData {
   final int? coApplicantId;
   final CoApplicantDetailProfile? coApplicant;
@@ -9,6 +11,7 @@ class CoApplicantDetailData {
   final String? employmentType;
   final String? applicantType;
   final List<CoApplicantDocumentConfig> documents;
+  final CoAppDocumentAccess? documentAccess;
   final CoApplicantSummary? summary;
   final CoApplicantUploadConfig? upload;
 
@@ -19,6 +22,7 @@ class CoApplicantDetailData {
     this.employmentType,
     this.applicantType,
     this.documents = const [],
+    this.documentAccess,
     this.summary,
     this.upload,
   });
@@ -53,6 +57,9 @@ class CoApplicantDetailData {
       employmentType: json['employment_type']?.toString(),
       applicantType: json['applicant_type']?.toString(),
       documents: parsedDocs,
+      documentAccess: json['document_access'] != null && json['document_access'] is Map<String, dynamic>
+          ? CoAppDocumentAccess.fromJson(json['document_access'] as Map<String, dynamic>)
+          : null,
       summary: json['summary'] != null && json['summary'] is Map<String, dynamic>
           ? CoApplicantSummary.fromJson(json['summary'] as Map<String, dynamic>)
           : null,
@@ -168,6 +175,7 @@ class CoApplicantDetailData {
       if (employmentType != null) 'employment_type': employmentType,
       if (applicantType != null) 'applicant_type': applicantType,
       'documents': documents.map((e) => e.toJson()).toList(),
+      if (documentAccess != null) 'document_access': documentAccess!.toJson(),
       if (summary != null) 'summary': summary!.toJson(),
       if (upload != null) 'upload': upload!.toJson(),
     };
@@ -245,6 +253,8 @@ class CoApplicantDetailProfile {
   final Map<String, dynamic>? documentUrls;
   final String? panCardImageUrl;
   final List<dynamic>? aadhaarCardImageUrls;
+  final String? profileImageUrl;
+  final CoAppDocumentAccess? documentAccess;
 
   CoApplicantDetailProfile({
     this.id,
@@ -317,6 +327,8 @@ class CoApplicantDetailProfile {
     this.documentUrls,
     this.panCardImageUrl,
     this.aadhaarCardImageUrls,
+    this.profileImageUrl,
+    this.documentAccess,
   });
 
   factory CoApplicantDetailProfile.fromJson(Map<String, dynamic> json) {
@@ -396,6 +408,10 @@ class CoApplicantDetailProfile {
       documentUrls: json['document_urls'] as Map<String, dynamic>?,
       panCardImageUrl: json['pan_card_image_url']?.toString(),
       aadhaarCardImageUrls: json['aadhaar_card_image_urls'] as List<dynamic>?,
+      profileImageUrl: json['profile_image_url']?.toString(),
+      documentAccess: json['document_access'] != null && json['document_access'] is Map<String, dynamic>
+          ? CoAppDocumentAccess.fromJson(json['document_access'] as Map<String, dynamic>)
+          : null,
     );
   }
 

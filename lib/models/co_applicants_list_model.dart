@@ -1,5 +1,7 @@
 // Model for GET {{baseUrl}}/co-applicants response
 
+import 'add_co_applicant_model.dart' show CoAppDocumentAccess;
+
 class CoApplicantsListResponseModel {
   final bool? success;
   final int? statusCode;
@@ -98,6 +100,11 @@ class CoApplicantItem {
   final dynamic cibilScore;
   final String? cibilIssue;
   final dynamic obligations;
+  final String? profileImageUrl;
+  final List<dynamic>? aadhaarCardImageUrls;
+  final String? panCardImageUrl;
+  final dynamic documentUrls;
+  final CoAppDocumentAccess? documentAccess;
 
   CoApplicantItem({
     this.id,
@@ -150,6 +157,11 @@ class CoApplicantItem {
     this.cibilScore,
     this.cibilIssue,
     this.obligations,
+    this.profileImageUrl,
+    this.aadhaarCardImageUrls,
+    this.panCardImageUrl,
+    this.documentUrls,
+    this.documentAccess,
   });
 
   factory CoApplicantItem.fromJson(Map<String, dynamic> json) {
@@ -204,6 +216,13 @@ class CoApplicantItem {
       cibilScore: json['cibil_score'],
       cibilIssue: json['cibil_issue']?.toString(),
       obligations: json['obligations'],
+      profileImageUrl: json['profile_image_url']?.toString(),
+      aadhaarCardImageUrls: json['aadhaar_card_image_urls'] as List<dynamic>?,
+      panCardImageUrl: json['pan_card_image_url']?.toString(),
+      documentUrls: json['document_urls'],
+      documentAccess: json['document_access'] != null && json['document_access'] is Map<String, dynamic>
+          ? CoAppDocumentAccess.fromJson(json['document_access'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

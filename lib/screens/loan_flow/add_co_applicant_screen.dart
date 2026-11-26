@@ -499,8 +499,121 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
           const SizedBox(height: 12),
 
           // Render document upload cards directly from API response items
-          ...docItems.map((docItem) => _buildDocUploadCard(context, controller, docItem)),
+          ...docItems.map((docItem) {
+            final docKey = docItem.key ?? '';
+            // Show aadhaar upload mode toggle before aadhaar cards
+            if (_isAadhaarKey(docKey)) {
+              final isFirstAadhaar = docItems.indexWhere((d) => _isAadhaarKey(d.key ?? '')) ==
+                  docItems.indexOf(docItem);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Show mode toggle only once, before the first aadhaar card
+                  if (isFirstAadhaar && controller.hasAadhaarUploadModes)
+                    _buildAadhaarModeToggle(controller),
+                  _buildDocUploadCard(context, controller, docItem),
+                ],
+              );
+            }
+            return _buildDocUploadCard(context, controller, docItem);
+          }),
         ],
+      );
+    });
+  }
+
+  /// Check if a doc key is related to Aadhaar
+  bool _isAadhaarKey(String key) {
+    return key == 'aadhar_card_front' ||
+        key == 'aadhar_card_back' ||
+        key == 'aadhar_card_combined_pdf' ||
+        key == 'aadhar_card' ||
+        key == 'aadhaar_card';
+  }
+
+  /// Aadhaar upload mode toggle: Front & Back vs Single PDF
+  Widget _buildAadhaarModeToggle(ApplicantDetailsController controller) {
+    return Obx(() {
+      final mode = controller.selectedAadhaarUploadMode.value;
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.inputFill,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => controller.switchAadhaarUploadMode('separate'),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: mode == 'separate' ? AppColors.navy : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.flip_rounded,
+                        size: 15,
+                        color: mode == 'separate' ? Colors.white : AppColors.muted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Front & Back',
+                        style: TextStyle(
+                          color: mode == 'separate' ? Colors.white : AppColors.muted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => controller.switchAadhaarUploadMode('combined'),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: mode == 'combined' ? AppColors.navy : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.picture_as_pdf_rounded,
+                        size: 15,
+                        color: mode == 'combined' ? Colors.white : AppColors.muted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Single PDF',
+                        style: TextStyle(
+                          color: mode == 'combined' ? Colors.white : AppColors.muted,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     });
   }
