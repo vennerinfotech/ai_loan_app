@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
@@ -42,17 +43,19 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       final d = widget.document!;
       final List<DocumentDetailImageItem> images = [];
       if (d.frontImageUrl != null && d.frontImageUrl!.isNotEmpty) {
+        final isPdf = d.frontImageUrl!.toLowerCase().contains('.pdf');
         images.add(DocumentDetailImageItem(
           side: 'front',
           url: d.frontImageUrl,
-          isImage: true,
+          isImage: !isPdf,
         ));
       }
       if (d.backImageUrl != null && d.backImageUrl!.isNotEmpty) {
+        final isPdf = d.backImageUrl!.toLowerCase().contains('.pdf');
         images.add(DocumentDetailImageItem(
           side: 'back',
           url: d.backImageUrl,
-          isImage: true,
+          isImage: !isPdf,
         ));
       }
       documentDetail = DocumentDetailModel(
@@ -269,6 +272,19 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     );
   }
 
+  /// Whether the given item represents a PDF (not a raster image)
+  bool _isPdfItem(DocumentDetailImageItem? item) {
+    if (item == null) return false;
+    if (!item.isImage) return true;
+    final ext = item.extension?.toLowerCase() ?? '';
+    if (ext == 'pdf') return true;
+    final name = item.name?.toLowerCase() ?? '';
+    if (name.endsWith('.pdf')) return true;
+    final url = item.url?.toLowerCase() ?? '';
+    if (url.contains('.pdf')) return true;
+    return false;
+  }
+
   /// Document image preview card - tapping opens full photo gallery view
   Widget _buildPreviewCard(List<DocumentDetailImageItem> images) {
     DocumentDetailImageItem? currentItem;
@@ -277,6 +293,7 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
     }
 
     final imageUrl = currentItem?.url;
+    final isPdf = _isPdfItem(currentItem);
 
     final allImageUrls = images
         .map((e) => e.url ?? '')
@@ -287,9 +304,11 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
       allImageUrls.add(imageUrl);
     }
 
-    // Determine top right chip label (FRONT, BACK, VIEW, etc.)
+    // Determine top right chip label (FRONT, BACK, VIEW, PDF, etc.)
     final String chipLabel;
-    if (currentItem?.side != null && currentItem!.side!.isNotEmpty) {
+    if (isPdf) {
+      chipLabel = 'PDF';
+    } else if (currentItem?.side != null && currentItem!.side!.isNotEmpty) {
       final s = currentItem.side!.toUpperCase();
       chipLabel = s == 'SINGLE' ? 'VIEW' : s;
     } else if (images.length > 1) {
@@ -302,15 +321,24 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
 
     return GestureDetector(
       onTap: () {
-        if (allImageUrls.isNotEmpty) {
-          final initial = (_selectedImageIndex >= 0 &&
-                  _selectedImageIndex < allImageUrls.length)
-              ? _selectedImageIndex
-              : 0;
-          Get.to(() => PhotoGalleryScreen(
-                imagePaths: allImageUrls,
-                initialIndex: initial,
-              ));
+        // Don't open photo gallery for PDFs
+        if (!isPdf && allImageUrls.isNotEmpty) {
+          final galleryUrls = <String>[];
+          int adjustedIndex = 0;
+          for (int i = 0; i < images.length; i++) {
+            if (!_isPdfItem(images[i]) &&
+                images[i].url != null &&
+                images[i].url!.isNotEmpty) {
+              if (i == _selectedImageIndex) adjustedIndex = galleryUrls.length;
+              galleryUrls.add(images[i].url!);
+            }
+          }
+          if (galleryUrls.isNotEmpty) {
+            Get.to(() => PhotoGalleryScreen(
+                  imagePaths: galleryUrls,
+                  initialIndex: adjustedIndex,
+                ));
+          }
         }
       },
       child: Container(
@@ -333,28 +361,71 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Document Image or Placeholder
-              if (imageUrl != null && imageUrl.isNotEmpty)
-                Image.network(
-                  imageUrl,
+              // PDF Placeholder
+              if (isPdf)
+                Container(
+                  color: AppColors.canvas,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFEBEE),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.picture_as_pdf_rounded,
+                            size: 32,
+                            color: Color(0xFFE53935),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        currentItem?.name ?? 'PDF Document',
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'PDF document uploaded',
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              // Document Image (Cached)
+              else if (imageUrl != null && imageUrl.isNotEmpty)
+                CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
+                  progressIndicatorBuilder: (context, url, downloadProgress) {
                     return Container(
                       color: AppColors.canvas,
                       alignment: Alignment.center,
                       child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
+                        value: downloadProgress.progress,
                         color: AppColors.navy,
                       ),
                     );
                   },
-                  errorBuilder: (context, error, stackTrace) {
+                  errorWidget: (context, url, error) {
                     return Container(
                       color: AppColors.canvas,
                       child: const Center(
@@ -420,8 +491,10 @@ class _DocumentViewScreenState extends State<DocumentViewScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
-                          Icons.fullscreen_rounded,
+                        Icon(
+                          isPdf
+                              ? Icons.picture_as_pdf_rounded
+                              : Icons.fullscreen_rounded,
                           size: 14,
                           color: Colors.white,
                         ),
