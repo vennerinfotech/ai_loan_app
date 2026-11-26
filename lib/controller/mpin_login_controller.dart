@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../screens/login_with_mobile_screen.dart';
 import '../screens/forgot_mpin_screen.dart';
 import '../screens/main_nav_screen.dart';
+import '../widgets/mpin_verification_dialog.dart';
 import '../services/session_manager.dart';
 import '../services/api_service.dart';
 import '../models/auth_response_model.dart';
@@ -82,6 +83,7 @@ class MpinLoginController extends GetxController
   }
 
   void enterDigit(String digit) {
+    if (isSubmitting.value) return;
     if (mpin.value.length < 6) {
       mpin.value += digit;
       if (mpin.value.length == 6) {
@@ -91,9 +93,18 @@ class MpinLoginController extends GetxController
   }
 
   void deleteDigit() {
+    if (isSubmitting.value) return;
     if (mpin.value.isNotEmpty) {
       mpin.value = mpin.value.substring(0, mpin.value.length - 1);
     }
+  }
+
+  /// Displays a non-dismissible loader dialog during MPIN verification
+  void _showVerifyingDialog() {
+    Get.dialog(
+      const MpinVerificationDialog(),
+      barrierDismissible: false,
+    );
   }
 
   /// Submit Login with Phone & MPIN: POST /login
@@ -121,10 +132,20 @@ class MpinLoginController extends GetxController
       return;
     }
 
+    // Show loader dialog
+    _showVerifyingDialog();
+
     try {
       isSubmitting.value = true;
+      final stopwatch = Stopwatch()..start();
+
       final response = await ApiService.login(phone: phone, mpin: enteredMpin);
-      isSubmitting.value = false;
+
+      // Ensure minimum display time for smooth user experience (~3.0s)
+      final elapsed = stopwatch.elapsedMilliseconds;
+      if (elapsed < 3000) {
+        await Future.delayed(Duration(milliseconds: 3000 - elapsed));
+      }
 
       final isSuccess = response['success'] == true ||
           response['status_code'] == 200 ||
@@ -144,6 +165,11 @@ class MpinLoginController extends GetxController
           token: token,
         );
 
+        // Safely close loader dialog
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
+
         Get.snackbar(
           'Success',
           model.message.isNotEmpty ? model.message : 'Login successful.',
@@ -156,6 +182,10 @@ class MpinLoginController extends GetxController
 
         Get.offAll(() => const MainNavScreen());
       } else {
+        // Safely close loader dialog
+        if (Get.isDialogOpen == true) {
+          Get.back();
+        }
         mpin.value = '';
         final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Login Error: $errorMsg');
@@ -170,7 +200,10 @@ class MpinLoginController extends GetxController
         );
       }
     } catch (e) {
-      isSubmitting.value = false;
+      // Safely close loader dialog
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
       mpin.value = '';
       debugPrint('Login Exception: $e');
       Get.snackbar(
@@ -182,33 +215,24 @@ class MpinLoginController extends GetxController
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 3),
       );
+    } finally {
+      isSubmitting.value = false;
     }
   }
 
   void triggerBiometric() {
-    Get.snackbar(
-      'Biometric Login',
-      'Authenticating via fingerprint...',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: AppColors.indigo,
-      colorText: Colors.white,
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(milliseconds: 800),
-    );
-    Future.delayed(const Duration(milliseconds: 900), () async {
-      // Save session with setString
-      await SessionManager.saveLoginSession(name: userName.value);
-      Get.offAll(() => const MainNavScreen());
-    });
+    // Biometric action disabled for now; only UI is displayed.
   }
 
   void useMobileNumber() {
+    if (isSubmitting.value) return;
     mpin.value = '';
     userPhone.value = '';
     Get.to(() => const LoginWithMobileScreen());
   }
 
   void forgotMpin() {
+    if (isSubmitting.value) return;
     Get.to(() => const ForgotMpinScreen());
   }
 }

@@ -168,9 +168,9 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
                       final isFilled = index < controller.mpin.value.length;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
-                        margin: const EdgeInsets.symmetric(horizontal: 5),
-                        width: 12,
-                        height: 12,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        width: 16,
+                        height: 16,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isFilled
@@ -180,7 +180,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
                             color: isFilled
                                 ? AppColors.mpinDotFilled
                                 : AppColors.mpinDotEmptyBorder,
-                            width: 1.8,
+                            width: 2.0,
                           ),
                         ),
                       );
@@ -231,20 +231,17 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
         final isBackspace = key == '⌫';
 
         if (isBio) {
-          // Biometric Fingerprint Button
-          return GestureDetector(
-            onTap: controller.triggerBiometric,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.mpinBiometricBackground,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.fingerprint_rounded,
-                color: AppColors.mpinBiometricIcon,
-                size: 26,
-              ),
+          // Biometric Fingerprint Button (action disabled for now, UI preserved)
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.mpinBiometricBackground,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.fingerprint_rounded,
+              color: AppColors.mpinBiometricIcon,
+              size: 26,
             ),
           );
         }
