@@ -8,6 +8,8 @@ import '../models/my_documents_response_model.dart';
 import '../models/document_detail_model.dart';
 import 'cibil_score_screen.dart';
 import 'document_view_screen.dart';
+import '../widgets/co_applicant_otp_bottom_sheet.dart';
+import '../services/api_service.dart';
 
 /// Screen displaying user's saved verification & loan documents in 3 dedicated sections
 /// maintaining the mobile app theme and 2-column GridView card UI:
@@ -369,10 +371,12 @@ class DocumentWalletScreen extends StatelessWidget {
               badgeText: 'Verified',
               icon: Icons.badge_outlined,
               onTap: () {
-                _showVerifyToViewDocDialog(
+                _checkVerificationAndProceed(
                   context,
+                  coApplicantId: ca.id,
                   docTitle: 'Aadhaar Card',
                   coApplicantName: ca.name,
+                  coApplicantPhone: ca.phone,
                   onVerified: () {
                     final List<DocumentDetailImageItem> images = ca
                         .aadhaarCardImageUrls
@@ -425,10 +429,12 @@ class DocumentWalletScreen extends StatelessWidget {
               badgeText: 'Uploaded',
               icon: Icons.credit_card_rounded,
               onTap: () {
-                _showVerifyToViewDocDialog(
+                _checkVerificationAndProceed(
                   context,
+                  coApplicantId: ca.id,
                   docTitle: 'PAN Card',
                   coApplicantName: ca.name,
+                  coApplicantPhone: ca.phone,
                   onVerified: () {
                     final List<DocumentDetailImageItem> images = [];
                     if (panUrl != null && panUrl.isNotEmpty) {
@@ -1236,12 +1242,137 @@ class DocumentWalletScreen extends StatelessWidget {
     );
   }
 
-  /// Confirmation dialog before viewing co-applicant documents (requires number verification)
-  void _showVerifyToViewDocDialog(
+  /// Checks co-applicant verification status via GET {{baseUrl}}/co-applicants/{id}/documents/verification-status
+  /// If verified -> onVerified() immediately opens DocumentViewScreen
+  /// If unverified -> opens CoApplicantOtpBottomSheet, and upon successful OTP verification opens DocumentViewScreen
+  Future<void> _checkVerificationAndProceed(
+    BuildContext context, {
+    required dynamic coApplicantId,
+    String? coApplicantName,
+    String? coApplicantPhone,
+    String? docTitle,
+    required VoidCallback onVerified,
+  }) async {
+    if (coApplicantId == null) {
+      onVerified();
+      return;
+    }
+
+    // Show loading dialog while checking verification status
+    Get.dialog(
+      Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.8,
+                  color: AppColors.navy,
+                ),
+              ),
+              SizedBox(height: 14),
+              Text(
+                'Checking Access...',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      final res = await ApiService.getCoApplicantDocumentVerificationStatus(
+        coApplicantId: coApplicantId,
+      );
+
+      // Close loading dialog
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      final isSuccess = res['success'] == true || res['status_code'] == 200;
+      if (isSuccess && res['data'] is Map<String, dynamic>) {
+        final data = res['data'] as Map<String, dynamic>;
+        final docAccess = data['document_access'] is Map<String, dynamic>
+            ? data['document_access'] as Map<String, dynamic>
+            : null;
+        final isVerified = docAccess != null && docAccess['verified'] == true;
+
+        if (isVerified) {
+          // Already verified on backend -> View directly
+          onVerified();
+        } else {
+          // Unverified -> Show Verification Required dialog
+          if (context.mounted) {
+            _showVerificationRequiredDialog(
+              context,
+              docTitle: docTitle,
+              onVerifyNumber: () {
+                CoApplicantOtpBottomSheet.show(
+                  context: context,
+                  coApplicantId: coApplicantId,
+                  coApplicantName: coApplicantName ?? 'Co-Applicant',
+                  initialPhone: coApplicantPhone,
+                  onVerified: onVerified,
+                );
+              },
+            );
+          }
+        }
+      } else {
+        // API returned notice/error
+        Get.snackbar(
+          'Notice',
+          res['message']?.toString() ??
+              'Unable to verify document access. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+    } catch (e) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      debugPrint('Error in checkVerificationStatus: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to verify document access. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.errorRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }
+  }
+
+  void _showVerificationRequiredDialog(
     BuildContext context, {
     String? docTitle,
-    String? coApplicantName,
-    required VoidCallback onVerified,
+    required VoidCallback onVerifyNumber,
   }) {
     Get.dialog(
       Dialog(
@@ -1252,7 +1383,6 @@ class DocumentWalletScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Security Shield / Lock Icon
               Container(
                 width: 56,
                 height: 56,
@@ -1271,7 +1401,6 @@ class DocumentWalletScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-
               const Text(
                 'Verification Required',
                 style: TextStyle(
@@ -1282,12 +1411,9 @@ class DocumentWalletScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-
               Text(
                 docTitle != null
-                    ? (coApplicantName != null
-                        ? 'To view $coApplicantName\'s "$docTitle", registered mobile number verification is required.'
-                        : 'To view "$docTitle", registered mobile number verification is required.')
+                    ? 'To view "$docTitle", registered mobile number verification is required.'
                     : 'To view co-applicant documents, registered mobile number verification is required.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
@@ -1297,9 +1423,37 @@ class DocumentWalletScreen extends StatelessWidget {
                   height: 1.45,
                 ),
               ),
-
-              const SizedBox(height: 22),
-
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  color: AppColors.canvas,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.line),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 16,
+                      color: AppColors.indigo,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'An OTP will be sent to the registered mobile number for verification.',
+                        style: TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -1331,7 +1485,7 @@ class DocumentWalletScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Get.back();
-                          onVerified();
+                          onVerifyNumber();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.navy,

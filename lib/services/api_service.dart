@@ -1807,6 +1807,166 @@ class ApiService {
     }
   }
 
+  /// Send Co-Applicant Document Access OTP API: POST {{baseUrl}}/co-applicants/{id}/documents/send-otp
+  static Future<Map<String, dynamic>> sendCoApplicantDocumentOtp({
+    required dynamic coApplicantId,
+    String? phone,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/send-otp');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final Map<String, dynamic> bodyMap = {};
+    if (phone != null && phone.trim().isNotEmpty) {
+      bodyMap['phone'] = phone.trim();
+    }
+    final body = jsonEncode(bodyMap);
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('========== Send Co-Applicant Document OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in sendCoApplicantDocumentOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to send OTP. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Resend Co-Applicant Document Access OTP API: POST {{baseUrl}}/co-applicants/{id}/documents/resend-otp
+  static Future<Map<String, dynamic>> resendCoApplicantDocumentOtp({
+    required dynamic coApplicantId,
+    String? phone,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/resend-otp');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final Map<String, dynamic> bodyMap = {};
+    if (phone != null && phone.trim().isNotEmpty) {
+      bodyMap['phone'] = phone.trim();
+    }
+    final body = jsonEncode(bodyMap);
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('========== Resend Co-Applicant Document OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in resendCoApplicantDocumentOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to resend OTP. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Verify Co-Applicant Document Access OTP API: POST {{baseUrl}}/co-applicants/{id}/documents/verify-otp
+  static Future<Map<String, dynamic>> verifyCoApplicantDocumentOtp({
+    required dynamic coApplicantId,
+    required String otp,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/verify-otp');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({'otp': otp.trim()});
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('========== Verify Co-Applicant Document OTP ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in verifyCoApplicantDocumentOtp: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to verify OTP. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
+  /// Get Co-Applicant Document Verification Status API: GET {{baseUrl}}/co-applicants/{id}/documents/verification-status
+  static Future<Map<String, dynamic>> getCoApplicantDocumentVerificationStatus({
+    required dynamic coApplicantId,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/co-applicants/$coApplicantId/documents/verification-status');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      debugPrint('========== Get Co-Applicant Verification Status ==========');
+      debugPrint('--> GET $url');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      debugPrint('Exception in getCoApplicantDocumentVerificationStatus: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to check verification status. Please try again.',
+        'errors': e.toString(),
+      };
+    }
+  }
+
   /// Get Bank Loan Suggestions API: POST {{baseUrl}}/loan-suggestions
   static Future<Map<String, dynamic>> getLoanSuggestions({
     String? token,

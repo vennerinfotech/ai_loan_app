@@ -10,6 +10,8 @@ import '../../models/applicant_detail_model.dart';
 import 'add_co_applicant_screen.dart';
 import 'recommended_loan_offers_screen.dart';
 import '../photo_gallery_screen.dart';
+import '../../widgets/co_applicant_otp_bottom_sheet.dart';
+import '../../services/api_service.dart';
 
 /// Screen displaying primary applicant & co-applicant details (Reference Image Left Screen)
 class ApplicantDetailsScreen extends StatelessWidget {
@@ -861,7 +863,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                       // Profile Hero Card
-                      _buildDetailHeroCard(profile, details),
+                      _buildDetailHeroCard(context, controller, profile, details),
 
                       const SizedBox(height: 10),
 
@@ -1044,7 +1046,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       ),
 
                       // Section 4: Documents & Proofs
-                      _buildDocumentsSection(context, details),
+                      _buildDocumentsSection(context, controller, details),
 
                       const SizedBox(height: 20),
                     ],
@@ -1062,7 +1064,12 @@ class ApplicantDetailsScreen extends StatelessWidget {
   }
 
   /// Profile Hero Card inside details bottom sheet
-  Widget _buildDetailHeroCard(CoApplicantDetailProfile profile, CoApplicantDetailData details) {
+  Widget _buildDetailHeroCard(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    CoApplicantDetailProfile profile,
+    CoApplicantDetailData details,
+  ) {
     final name = profile.name ?? 'Co-Applicant';
     final initials = name.trim().isNotEmpty
         ? name.trim().split(' ').take(2).map((e) => e.isNotEmpty ? e[0].toUpperCase() : '').join()
@@ -1275,7 +1282,11 @@ class ApplicantDetailsScreen extends StatelessWidget {
   }
 
   /// Documents & Proofs section — card-based style matching Upload Documents screen
-  Widget _buildDocumentsSection(BuildContext context, CoApplicantDetailData details) {
+  Widget _buildDocumentsSection(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    CoApplicantDetailData details,
+  ) {
     final hasDocuments = details.documents.isNotEmpty;
     final uploadedCount = details.documents
         .where((d) => d.uploaded == true || d.files.isNotEmpty)
@@ -1339,7 +1350,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         // Document Cards
         if (hasDocuments)
           for (final doc in details.documents)
-            _buildDocUploadStyleCard(context, doc)
+            _buildDocUploadStyleCard(context, controller, doc, details)
         else
           Container(
             width: double.infinity,
@@ -1395,7 +1406,12 @@ class ApplicantDetailsScreen extends StatelessWidget {
   }
 
   /// Individual Document Card matching the Upload Document screen card style
-  Widget _buildDocUploadStyleCard(BuildContext context, CoApplicantDocumentConfig doc) {
+  Widget _buildDocUploadStyleCard(
+    BuildContext context,
+    ApplicantDetailsController controller,
+    CoApplicantDocumentConfig doc,
+    CoApplicantDetailData details,
+  ) {
     final isUploaded = doc.uploaded == true ||
         doc.status?.toLowerCase() == 'uploaded' ||
         doc.files.isNotEmpty;
@@ -1536,8 +1552,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 // Trailing Action: View Document Button (if uploaded) or Pending Tag
                 if (isUploaded)
                   GestureDetector(
-                    onTap: () => _showVerifyToViewDocDialog(
+                    onTap: () => _onTapViewCoApplicantDoc(
                       context,
+                      controller,
+                      details: details,
                       docTitle: label,
                       imagePaths: allUrls,
                       initialIndex: 0,
@@ -1627,8 +1645,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () => _showVerifyToViewDocDialog(
+                        onTap: () => _onTapViewCoApplicantDoc(
                           context,
+                          controller,
+                          details: details,
                           docTitle: label,
                           fileName: fileName,
                           imagePaths: allUrls,
@@ -1685,13 +1705,153 @@ class ApplicantDetailsScreen extends StatelessWidget {
     return Icons.description_outlined;
   }
 
+  /// Live check co-applicant verification status upon tapping View.
+  /// If verified -> view directly.
+  /// If unverified -> show Verification Required dialog -> Verify Number opens OTP bottom sheet.
+  Future<void> _onTapViewCoApplicantDoc(
+    BuildContext context,
+    ApplicantDetailsController controller, {
+    required CoApplicantDetailData details,
+    required String docTitle,
+    String? fileName,
+    required List<String> imagePaths,
+    int initialIndex = 0,
+  }) async {
+    final coApplicantId = details.coApplicantId ?? details.coApplicant?.id;
+
+    if (coApplicantId == null) {
+      if (imagePaths.isNotEmpty) {
+        Get.to(() => PhotoGalleryScreen(
+              imagePaths: imagePaths,
+              initialIndex: initialIndex,
+            ));
+      }
+      return;
+    }
+
+    // Show loading while checking verification status
+    Get.dialog(
+      const Center(
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColors.navy,
+                  ),
+                ),
+                SizedBox(width: 14),
+                Text(
+                  'Checking verification...',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      final res = await ApiService.getCoApplicantDocumentVerificationStatus(
+        coApplicantId: coApplicantId,
+      );
+
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+
+      final isSuccess = res['success'] == true || res['status_code'] == 200;
+      bool isVerified = false;
+      if (isSuccess && res['data'] is Map<String, dynamic>) {
+        final data = res['data'] as Map<String, dynamic>;
+        final docAccess = data['document_access'] is Map<String, dynamic>
+            ? data['document_access'] as Map<String, dynamic>
+            : null;
+        isVerified = docAccess != null && docAccess['verified'] == true;
+      }
+
+      if (isVerified) {
+        // Already verified -> View document directly
+        if (imagePaths.isNotEmpty) {
+          Get.to(() => PhotoGalleryScreen(
+                imagePaths: imagePaths,
+                initialIndex: initialIndex,
+              ));
+        } else {
+          Get.snackbar(
+            'Notice',
+            'No document file available to view.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: AppColors.navy,
+            colorText: Colors.white,
+            margin: const EdgeInsets.all(16),
+          );
+        }
+      } else {
+        // Not verified -> Show "Verification Required" dialog
+        if (context.mounted) {
+          _showVerifyToViewDocDialog(
+            context,
+            docTitle: fileName ?? docTitle,
+            onVerifyNumber: () {
+              CoApplicantOtpBottomSheet.show(
+                context: context,
+                controller: controller,
+                coApplicantId: coApplicantId,
+                coApplicantName: details.coApplicant?.name ?? 'Co-Applicant',
+                initialPhone: details.coApplicant?.phone,
+                onVerified: () {
+                  controller.fetchCoApplicants();
+                  controller.fetchCoApplicantDetails(coApplicantId);
+                  if (imagePaths.isNotEmpty) {
+                    Get.to(() => PhotoGalleryScreen(
+                          imagePaths: imagePaths,
+                          initialIndex: initialIndex,
+                        ));
+                  }
+                },
+              );
+            },
+          );
+        }
+      }
+    } catch (e) {
+      if (Get.isDialogOpen == true) {
+        Get.back();
+      }
+      debugPrint('Error checking co-applicant verification status: $e');
+      Get.snackbar(
+        'Error',
+        'Failed to verify document access. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.errorRed,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+      );
+    }
+  }
+
   /// Confirmation dialog before viewing documents (requires number verification)
   void _showVerifyToViewDocDialog(
     BuildContext context, {
     String? docTitle,
-    String? fileName,
-    List<String> imagePaths = const [],
-    int initialIndex = 0,
+    required VoidCallback onVerifyNumber,
   }) {
     Get.dialog(
       Dialog(
@@ -1767,7 +1927,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Mobile number verification feature will be implemented soon.',
+                        'An OTP will be sent to the registered mobile number for verification.',
                         style: TextStyle(
                           color: AppColors.textDark,
                           fontSize: 11.5,
@@ -1812,21 +1972,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           Get.back();
-                          if (imagePaths.isNotEmpty) {
-                            Get.to(() => PhotoGalleryScreen(
-                                  imagePaths: imagePaths,
-                                  initialIndex: initialIndex,
-                                ));
-                          } else {
-                            Get.snackbar(
-                              'Notice',
-                              'No document file available to view.',
-                              snackPosition: SnackPosition.BOTTOM,
-                              backgroundColor: AppColors.navy,
-                              colorText: Colors.white,
-                              margin: const EdgeInsets.all(16),
-                            );
-                          }
+                          onVerifyNumber();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.navy,
@@ -3145,12 +3291,12 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 // Trailing Action: View Document Button (if uploaded) or Pending Tag
                 if (isUploaded && allUrls.isNotEmpty)
                   GestureDetector(
-                    onTap: () => _showVerifyToViewDocDialog(
-                      context,
-                      docTitle: label,
-                      imagePaths: allUrls,
-                      initialIndex: 0,
-                    ),
+                    onTap: () {
+                      Get.to(() => PhotoGalleryScreen(
+                            imagePaths: allUrls,
+                            initialIndex: 0,
+                          ));
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
@@ -3255,13 +3401,12 @@ class ApplicantDetailsScreen extends StatelessWidget {
                       ),
                       if (fileUrl.isNotEmpty)
                         GestureDetector(
-                          onTap: () => _showVerifyToViewDocDialog(
-                            context,
-                            docTitle: label,
-                            fileName: fileName,
-                            imagePaths: allUrls,
-                            initialIndex: idx,
-                          ),
+                          onTap: () {
+                            Get.to(() => PhotoGalleryScreen(
+                                  imagePaths: allUrls,
+                                  initialIndex: idx,
+                                ));
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(

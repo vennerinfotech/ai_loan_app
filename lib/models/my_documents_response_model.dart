@@ -1,3 +1,5 @@
+import 'add_co_applicant_model.dart' show CoAppDocumentAccess;
+
 /// Model representing GET {{base_url}}/my-documents response data.
 /// Clean entity without status_code, success, message, or errors.
 class MyDocumentsResponseData {
@@ -272,6 +274,7 @@ class MyDocumentsCoApplicant {
   final String? panCardImageUrl;
   final List<MyDocumentFileItem> aadhaarCardImageUrls;
   final dynamic documentUrls;
+  final CoAppDocumentAccess? documentAccess;
 
   MyDocumentsCoApplicant({
     this.id,
@@ -296,6 +299,7 @@ class MyDocumentsCoApplicant {
     this.panCardImageUrl,
     this.aadhaarCardImageUrls = const [],
     this.documentUrls,
+    this.documentAccess,
   });
 
   factory MyDocumentsCoApplicant.fromJson(Map<String, dynamic> json) {
@@ -327,6 +331,9 @@ class MyDocumentsCoApplicant {
               .toList()
           : const [],
       documentUrls: json['document_urls'],
+      documentAccess: json['document_access'] != null && json['document_access'] is Map<String, dynamic>
+          ? CoAppDocumentAccess.fromJson(json['document_access'] as Map<String, dynamic>)
+          : null,
     );
   }
 

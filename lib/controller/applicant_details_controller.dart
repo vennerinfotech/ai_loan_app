@@ -611,6 +611,70 @@ class ApplicantDetailsController extends GetxController {
     return null;
   }
 
+  // Loading states for Co-Applicant Document Access OTP
+  final isSendingCoAppOtp = false.obs;
+  final isVerifyingCoAppOtp = false.obs;
+
+  /// Send Co-Applicant Document Access OTP
+  Future<Map<String, dynamic>> sendCoApplicantOtp({
+    required dynamic coApplicantId,
+    String? phone,
+  }) async {
+    isSendingCoAppOtp.value = true;
+    try {
+      final res = await ApiService.sendCoApplicantDocumentOtp(
+        coApplicantId: coApplicantId,
+        phone: phone,
+      );
+      return res;
+    } finally {
+      isSendingCoAppOtp.value = false;
+    }
+  }
+
+  /// Resend Co-Applicant Document Access OTP
+  Future<Map<String, dynamic>> resendCoApplicantOtp({
+    required dynamic coApplicantId,
+    String? phone,
+  }) async {
+    isSendingCoAppOtp.value = true;
+    try {
+      final res = await ApiService.resendCoApplicantDocumentOtp(
+        coApplicantId: coApplicantId,
+        phone: phone,
+      );
+      return res;
+    } finally {
+      isSendingCoAppOtp.value = false;
+    }
+  }
+
+  /// Verify Co-Applicant Document Access OTP
+  Future<Map<String, dynamic>> verifyCoApplicantOtp({
+    required dynamic coApplicantId,
+    required String otp,
+  }) async {
+    isVerifyingCoAppOtp.value = true;
+    try {
+      final res = await ApiService.verifyCoApplicantDocumentOtp(
+        coApplicantId: coApplicantId,
+        otp: otp,
+      );
+
+      if (res['success'] == true || res['status_code'] == 200) {
+        // Refresh co-applicants list and selected co-applicant details
+        await fetchCoApplicants();
+        if (selectedCoApplicantDetails.value?.coApplicantId == coApplicantId ||
+            selectedCoApplicantDetails.value?.coApplicant?.id == coApplicantId) {
+          await fetchCoApplicantDetails(coApplicantId);
+        }
+      }
+      return res;
+    } finally {
+      isVerifyingCoAppOtp.value = false;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();

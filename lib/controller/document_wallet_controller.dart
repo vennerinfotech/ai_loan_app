@@ -98,6 +98,11 @@ class DocumentWalletController extends GetxController {
     return !hasApplicantDocuments && !hasCoApplicantDocuments && !hasLoanApplicationDocuments;
   }
 
+  /// Check verification status for a co-applicant via GET {{baseUrl}}/co-applicants/{id}/documents/verification-status
+  Future<Map<String, dynamic>> checkCoApplicantVerificationStatus(dynamic coApplicantId) async {
+    return ApiService.getCoApplicantDocumentVerificationStatus(coApplicantId: coApplicantId);
+  }
+
   void onSearchChanged(String val) {
     searchQuery.value = val;
   }
