@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../theme/app_colors.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
@@ -12,19 +13,36 @@ import '../main_nav_screen.dart';
 /// - Dynamic user loan amount, verification status segments, and active status step
 /// - Intersecting cosmic orbit curves in the top right corner of the card
 /// - "Your progress" vertical stepper dynamically driven by GET /loan/status
+/// - Shimmer skeleton loader state while fetching application status
 /// - Bottom support chat button and "Continue application →" CTA
-class ApplicationStatusScreen extends StatelessWidget {
+class ApplicationStatusScreen extends StatefulWidget {
   const ApplicationStatusScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final applyController = Get.isRegistered<ApplyLoanController>()
+  State<ApplicationStatusScreen> createState() =>
+      _ApplicationStatusScreenState();
+}
+
+class _ApplicationStatusScreenState extends State<ApplicationStatusScreen> {
+  late final ApplyLoanController _applyController;
+  late final ApplicationStatusController _statusController;
+
+  @override
+  void initState() {
+    super.initState();
+    _applyController = Get.isRegistered<ApplyLoanController>()
         ? Get.find<ApplyLoanController>()
         : Get.put(ApplyLoanController());
-    final statusController = Get.isRegistered<ApplicationStatusController>()
+    _statusController = Get.isRegistered<ApplicationStatusController>()
         ? Get.find<ApplicationStatusController>()
         : Get.put(ApplicationStatusController());
 
+    // Fetch latest loan status on screen entry
+    _statusController.fetchLoanStatus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -32,37 +50,50 @@ class ApplicationStatusScreen extends StatelessWidget {
           children: [
             // Scrollable Content (Top Hero Card + Stepper)
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: statusController.fetchLoanStatus,
-                color: AppColors.primaryPurple,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Top Hero Card (Loan Amount, Details, Segments, Cosmic Orbits)
-                      _buildTopHeroCard(applyController, statusController),
-                      const SizedBox(height: 22),
+              child: Obx(() {
+                final isLoading = _statusController.isLoading.value &&
+                    _statusController.loanStatus.value == null;
 
-                      // "Your progress" Header
-                      const Text(
-                        'Your progress',
-                        style: TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.3,
+                if (isLoading) {
+                  return _buildSkeletonLoader();
+                }
+
+                if (_statusController.loanStatus.value == null) {
+                  return _buildErrorState();
+                }
+
+                return RefreshIndicator(
+                  onRefresh: _statusController.fetchLoanStatus,
+                  color: AppColors.primaryPurple,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top Hero Card (Loan Amount, Details, Segments, Cosmic Orbits)
+                        _buildTopHeroCard(_applyController, _statusController),
+                        const SizedBox(height: 22),
+
+                        // "Your progress" Header
+                        const Text(
+                          'Your progress',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // Vertical Progress Stepper List
-                      Obx(() => _buildVerticalStepper(statusController)),
-                    ],
+                        // Vertical Progress Stepper List
+                        _buildVerticalStepper(_statusController),
+                      ],
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
             ),
 
             // Bottom Actions: Support Icon + "Continue application →"
@@ -78,6 +109,25 @@ class ApplicationStatusScreen extends StatelessWidget {
     ApplyLoanController applyController,
     ApplicationStatusController statusController,
   ) {
+    final userId = statusController.loanStatus.value?.user?.id;
+    final idText = userId != null ? '#FS-2611-00$userId' : '#FS-2611-0042';
+
+    final name = statusController.userName;
+    final loanType = applyController.selectedLoanType.value.isNotEmpty
+        ? applyController.selectedLoanType.value
+        : 'Home Loan';
+    final subtitle = name.isNotEmpty
+        ? '$loanType · $name'
+        : '$loanType · ${applyController.selectedTenureYears.value} years';
+
+    final amount = statusController.loanStatus.value?.user?.loanAmount != null
+        ? statusController.formattedLoanAmount
+        : applyController.formatIndianCurrency(applyController.loanAmount.value);
+
+    final completed = statusController.completedStepsCount;
+    final total = statusController.dynamicSteps.length;
+    final label = statusController.activeStepLabel;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -128,119 +178,272 @@ class ApplicationStatusScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Obx(() {
-                      final userId = statusController.loanStatus.value?.user?.id;
-                      final idText = userId != null ? '#FS-2611-00$userId' : '#FS-2611-0042';
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          width: 1.0,
                         ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            width: 1.0,
-                          ),
+                      ),
+                      child: Text(
+                        idText,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
                         ),
-                        child: Text(
-                          idText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      );
-                    }),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
 
                 // Loan Type · Name Subtitle
-                Obx(() {
-                  final name = statusController.userName;
-                  final loanType = applyController.selectedLoanType.value.isNotEmpty
-                      ? applyController.selectedLoanType.value
-                      : 'Home Loan';
-                  final subtitle = name.isNotEmpty
-                      ? '$loanType · $name'
-                      : '$loanType · ${applyController.selectedTenureYears.value} years';
-
-                  return Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                }),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 4),
 
                 // Large Amount Display
-                Obx(() {
-                  final amount = statusController.loanStatus.value?.user?.loanAmount != null
-                      ? statusController.formattedLoanAmount
-                      : applyController.formatIndianCurrency(applyController.loanAmount.value);
-
-                  return Text(
-                    amount,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.6,
-                    ),
-                  );
-                }),
+                Text(
+                  amount,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                  ),
+                ),
                 const SizedBox(height: 18),
 
                 // 6-Segment Horizontal Progress Bar
-                Obx(() {
-                  final completed = statusController.completedStepsCount;
-                  final total = statusController.dynamicSteps.length;
-                  return _buildSegmentedProgressBar(
-                    activeSegments: completed,
-                    totalSegments: total,
-                  );
-                }),
+                _buildSegmentedProgressBar(
+                  activeSegments: completed,
+                  totalSegments: total,
+                ),
                 const SizedBox(height: 8),
 
                 // Sub-row: "X of Y complete" & "Now: ..."
-                Obx(() {
-                  final completed = statusController.completedStepsCount;
-                  final total = statusController.dynamicSteps.length;
-                  final label = statusController.activeStepLabel;
-
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '$completed of $total complete',
-                        style: const TextStyle(
-                          color: AppColors.muted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w500,
-                        ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '$completed of $total complete',
+                      style: const TextStyle(
+                        color: AppColors.muted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
                       ),
-                      Text(
-                        label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                        ),
+                    ),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
                       ),
-                    ],
-                  );
-                }),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Pure neutral grey Skeletonizer loader matching application status layout
+  Widget _buildSkeletonLoader() {
+    return Skeletonizer(
+      enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top Hero Card Skeleton
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Bone.square(
+                        size: 38,
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
+                      Bone(
+                        width: 100,
+                        height: 26,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  const Bone.text(words: 2, fontSize: 13),
+                  const SizedBox(height: 8),
+                  const Bone.text(words: 1, fontSize: 30),
+                  const SizedBox(height: 18),
+                  const Bone(width: double.infinity, height: 5),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Bone.text(words: 3, fontSize: 11),
+                      Bone.text(words: 2, fontSize: 11),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // "Your progress" Header skeleton
+            const Bone.text(words: 2, fontSize: 18),
+            const SizedBox(height: 16),
+
+            // Vertical Progress Stepper Skeleton (4 steps)
+            ...List.generate(4, (index) {
+              final isLast = index == 3;
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        const Bone.circle(size: 28),
+                        if (!isLast)
+                          Expanded(
+                            child: Container(
+                              width: 2.0,
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              color: const Color(0xFFE5E7EB),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: isLast ? 0 : 22),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Bone.text(words: 2, fontSize: 14),
+                                SizedBox(height: 4),
+                                Bone.text(words: 3, fontSize: 12),
+                              ],
+                            ),
+                            const Bone(
+                              width: 60,
+                              height: 22,
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Clean Error / Retry State if fetch fails
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                color: AppColors.indigoTint,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.cloud_off_rounded,
+                color: AppColors.navy,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Unable to load status',
+              style: TextStyle(
+                color: AppColors.textDark,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Please check your connection and try again.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.muted,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _statusController.fetchLoanStatus,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
