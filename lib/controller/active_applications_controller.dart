@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +8,7 @@ import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
 
 /// GetX controller managing the active loan applications state,
-/// pagination, filtering, and real API integration from GET /loan-applications/active.
+/// pagination, search, filtering, and real API integration from GET /loan-applications/active.
 class ActiveApplicationsController extends GetxController {
   // Observables
   final applications = <ActiveApplicationModel>[].obs;
@@ -21,11 +22,17 @@ class ActiveApplicationsController extends GetxController {
   final currentPage = 1.obs;
   final int perPage = 7;
 
+  // Search state
+  final searchQuery = ''.obs;
+  late final TextEditingController searchController;
+  Timer? _debounceTimer;
+
   late final ScrollController scrollController;
 
   @override
   void onInit() {
     super.onInit();
+    searchController = TextEditingController();
     scrollController = ScrollController();
     scrollController.addListener(_onScroll);
     fetchApplications();
@@ -33,6 +40,8 @@ class ActiveApplicationsController extends GetxController {
 
   @override
   void onClose() {
+    _debounceTimer?.cancel();
+    searchController.dispose();
     scrollController.removeListener(_onScroll);
     scrollController.dispose();
     super.onClose();
@@ -45,6 +54,23 @@ class ActiveApplicationsController extends GetxController {
     if (maxScroll - currentScroll <= 150) {
       loadMoreApplications();
     }
+  }
+
+  /// Called when the search query text changes (debounced by 350ms)
+  void onSearchChanged(String query) {
+    searchQuery.value = query;
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 350), () {
+      fetchApplications(isRefresh: true);
+    });
+  }
+
+  /// Clears the active search query and reloads
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+    _debounceTimer?.cancel();
+    fetchApplications(isRefresh: true);
   }
 
   /// Sets the selected filter tab index (0: All, 1: In review, 2: Approved)
@@ -77,6 +103,11 @@ class ActiveApplicationsController extends GetxController {
       .where((a) => a.statusType == ApplicationStatusType.approved)
       .length;
 
+  /// Formats user search input for the backend API.
+  String _sanitizeSearchQuery(String input) {
+    return input.trim();
+  }
+
   /// Fetches initial page (page 1) strictly from GET {{baseUrl}}/loan-applications/active.
   Future<void> fetchApplications({bool isRefresh = false}) async {
     if (isRefresh) {
@@ -87,9 +118,13 @@ class ActiveApplicationsController extends GetxController {
     }
 
     try {
+      final rawQ = searchQuery.value.trim();
+      final cleanQ = _sanitizeSearchQuery(rawQ);
+
       final res = await ApiService.getActiveLoanApplications(
         page: 1,
         perPage: perPage,
+        search: cleanQ.isNotEmpty ? cleanQ : null,
       );
       if (res['success'] == true || res['status_code'] == 200) {
         final data = ActiveLoanApplicationsResponseData.fromJson(res);
@@ -124,9 +159,13 @@ class ActiveApplicationsController extends GetxController {
     final nextPage = currentPage.value + 1;
 
     try {
+      final rawQ = searchQuery.value.trim();
+      final cleanQ = _sanitizeSearchQuery(rawQ);
+
       final res = await ApiService.getActiveLoanApplications(
         page: nextPage,
         perPage: perPage,
+        search: cleanQ.isNotEmpty ? cleanQ : null,
       );
       if (res['success'] == true || res['status_code'] == 200) {
         final data = ActiveLoanApplicationsResponseData.fromJson(res);

@@ -25,6 +25,9 @@ class ActiveApplicationsScreen extends StatelessWidget {
             // Top Bar
             _buildTopBar(context, controller),
 
+            // Search Bar
+            _buildSearchBar(controller),
+
             // Filter Tabs Row (Left Aligned)
             _buildFilterTabs(controller),
 
@@ -44,7 +47,9 @@ class ActiveApplicationsScreen extends StatelessWidget {
                 final filtered = controller.filteredApplications;
 
                 if (filtered.isEmpty && !controller.isLoading.value) {
-                  return _buildEmptyState();
+                  return _buildEmptyState(
+                    isSearching: controller.searchQuery.value.trim().isNotEmpty,
+                  );
                 }
 
                 final hasLoadingMore = controller.isLoadingMore.value;
@@ -148,6 +153,64 @@ class ActiveApplicationsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Search Bar placed above filter tabs
+  Widget _buildSearchBar(ActiveApplicationsController controller) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: TextFormField(
+        controller: controller.searchController,
+        onChanged: controller.onSearchChanged,
+        style: const TextStyle(
+          color: AppColors.textDark,
+          fontSize: 13.5,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: Colors.white,
+          hintText: 'Search by applicant name, phone, email...',
+          hintStyle: const TextStyle(
+            color: AppColors.muted,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: AppColors.primaryPurple,
+            size: 20,
+          ),
+          suffixIcon: Obx(() {
+            if (controller.searchQuery.value.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return GestureDetector(
+              onTap: controller.clearSearch,
+              child: const Icon(
+                Icons.close_rounded,
+                color: AppColors.muted,
+                size: 18,
+              ),
+            );
+          }),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.dashboardCardBorder, width: 1.1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.dashboardCardBorder, width: 1.1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.3),
+          ),
+        ),
       ),
     );
   }
@@ -556,30 +619,32 @@ class ActiveApplicationsScreen extends StatelessWidget {
     );
   }
 
-  /// Empty state when no applications match filter
-  Widget _buildEmptyState() {
+  /// Empty state when no applications match filter or search
+  Widget _buildEmptyState({bool isSearching = false}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(
-            Icons.assignment_outlined,
+            isSearching ? Icons.search_off_rounded : Icons.assignment_outlined,
             size: 48,
             color: AppColors.line,
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           Text(
-            'No applications found',
-            style: TextStyle(
+            isSearching ? 'No matching applications' : 'No applications found',
+            style: const TextStyle(
               color: AppColors.textDark,
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Try selecting another filter above',
-            style: TextStyle(
+            isSearching
+                ? 'Try searching with another applicant name, phone or email'
+                : 'Try selecting another filter above',
+            style: const TextStyle(
               color: AppColors.muted,
               fontSize: 12.5,
             ),
