@@ -59,32 +59,44 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top Hero Card (User Avatar + Welcome back + Name + 4 MPIN dots)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 0.0),
-              child: _buildTopUserCard(controller),
-            ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Top Hero Card (User Avatar + Welcome back + Name + 6 MPIN dots)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16.0, 10.0, 16.0, 0.0),
+                      child: _buildTopUserCard(controller),
+                    ),
 
-            const Spacer(),
+                    const SizedBox(height: 16),
 
-            // Numeric Keypad with Biometrics + Footer Links
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildNumberPad(controller),
-                  const SizedBox(height: 20),
-                  _buildFooterLinks(controller),
-                  const SizedBox(height: 14),
-                ],
+                    // Numeric Keypad with Biometrics + Footer Links
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildNumberPad(controller),
+                          const SizedBox(height: 20),
+                          _buildFooterLinks(controller),
+                          const SizedBox(height: 14),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -231,19 +243,27 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
         final isBackspace = key == '⌫';
 
         if (isBio) {
-          // Biometric Fingerprint Button (action disabled for now, UI preserved)
-          return Container(
-            decoration: BoxDecoration(
-              color: AppColors.mpinBiometricBackground,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.fingerprint_rounded,
-              color: AppColors.mpinBiometricIcon,
-              size: 26,
-            ),
-          );
+          // Biometric Fingerprint Button (hidden until device supports biometrics & MPIN is saved)
+          return Obx(() {
+            if (!controller.isBiometricAvailable.value) {
+              return const SizedBox.shrink();
+            }
+            return GestureDetector(
+              onTap: controller.triggerBiometric,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.mpinBiometricBackground,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.fingerprint_rounded,
+                  color: AppColors.mpinBiometricIcon,
+                  size: 26,
+                ),
+              ),
+            );
+          });
         }
 
         if (isBackspace) {

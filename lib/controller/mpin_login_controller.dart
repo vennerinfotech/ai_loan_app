@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 
@@ -10,6 +11,7 @@ import '../screens/main_nav_screen.dart';
 import '../widgets/mpin_verification_dialog.dart';
 import '../services/session_manager.dart';
 import '../services/api_service.dart';
+import '../services/biometric_service.dart';
 import '../models/auth_response_model.dart';
 
 /// GetX controller for Login with MPIN flow.
@@ -25,6 +27,7 @@ class MpinLoginController extends GetxController
   final userPhone = ''.obs;
   final userInitials = 'AM'.obs;
   final isSubmitting = false.obs;
+  final isBiometricAvailable = false.obs;
   final authResponse = Rxn<AuthResponseModel>();
 
   late final AnimationController orbitController;
@@ -44,7 +47,27 @@ class MpinLoginController extends GetxController
       parent: orbitController,
       curve: Curves.linear,
     );
-    _loadUserSession();
+    _initSessionAndBiometric();
+  }
+
+  Future<void> _initSessionAndBiometric() async {
+    await _loadUserSession();
+    await _checkBiometricOnLaunch();
+  }
+
+  Future<void> _checkBiometricOnLaunch() async {
+    final phone = userPhone.value.isNotEmpty
+        ? userPhone.value
+        : await SessionManager.getUserPhone();
+    final isReady = await BiometricService.instance.isBiometricReady(phone: phone);
+    isBiometricAvailable.value = isReady;
+    if (isReady) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!isClosed && !isSubmitting.value) {
+          triggerBiometric();
+        }
+      });
+    }
   }
 
   Future<void> _loadUserSession() async {
@@ -165,6 +188,9 @@ class MpinLoginController extends GetxController
           token: token,
         );
 
+        // Keep Keystore MPIN updated with verified MPIN
+        await BiometricService.instance.saveStoredMpin(enteredMpin, phone: loggedPhone);
+
         // Safely close loader dialog
         if (Get.isDialogOpen == true) {
           Get.back();
@@ -189,6 +215,14 @@ class MpinLoginController extends GetxController
         mpin.value = '';
         final errorMsg = ApiService.getErrorMessage(response);
         debugPrint('Login Error: $errorMsg');
+
+        // If MPIN was changed on another device or invalid, clean up out-of-sync Keystore MPIN
+        if (response['status_code'] == 401 ||
+            errorMsg.toLowerCase().contains('invalid mpin')) {
+          await BiometricService.instance.deleteStoredMpin(phone: phone);
+          isBiometricAvailable.value = false;
+        }
+
         Get.snackbar(
           'Login Failed',
           errorMsg,
@@ -220,8 +254,72 @@ class MpinLoginController extends GetxController
     }
   }
 
-  void triggerBiometric() {
-    // Biometric action disabled for now; only UI is displayed.
+  /// Triggers biometric authentication (fingerprint) and performs auto-login.
+  /// Always available when device supports biometrics + stored MPIN exists.
+  Future<void> triggerBiometric() async {
+    if (isSubmitting.value) return;
+
+    // Check if device supports biometrics
+    final available = await BiometricService.instance.isBiometricAvailable();
+    if (!available) {
+      Get.snackbar(
+        'Biometrics Unavailable',
+        'Biometric hardware is not available or no fingerprint is enrolled on this device.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // Check if stored MPIN exists (user must have logged in with MPIN at least once)
+    final phone = userPhone.value.isNotEmpty
+        ? userPhone.value
+        : await SessionManager.getUserPhone();
+    final storedMpin = await BiometricService.instance.getStoredMpin(phone: phone);
+    if (storedMpin == null || storedMpin.trim().length != 6) {
+      Get.snackbar(
+        'Login with MPIN First',
+        'Log in with your 6-digit MPIN once to enable fingerprint login.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: AppColors.navy,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    // Check internet connectivity
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.contains(ConnectivityResult.none) ||
+          connectivityResult.isEmpty) {
+        Get.snackbar(
+          'No Internet Connection',
+          'Please check your internet connection and try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+    } catch (_) {}
+
+    // Authenticate with biometrics
+    final authenticated = await BiometricService.instance.authenticate(
+      localizedReason: 'Scan your fingerprint to log in to Finsphere',
+    );
+
+    if (!authenticated) {
+      return;
+    }
+
+    mpin.value = storedMpin.trim();
+    await submitLogin();
   }
 
   void useMobileNumber() {

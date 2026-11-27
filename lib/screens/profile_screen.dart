@@ -20,7 +20,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool fingerprintEnabled = true;
   bool notificationsEnabled = true;
 
   @override
@@ -435,17 +434,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconColor: AppColors.successGreen,
             title: 'Change MPIN',
             onTap: () => Get.to(() => const ResetMpinScreen()),
-          ),
-          const Divider(height: 1, color: AppColors.canvas, indent: 56),
-          _buildToggleRow(
-            icon: Icons.fingerprint_rounded,
-            iconBg: AppColors.successGreenBg,
-            iconColor: AppColors.successGreen,
-            title: 'Fingerprint login',
-            value: fingerprintEnabled,
-            onChanged: (val) {
-              setState(() => fingerprintEnabled = val);
-            },
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildToggleRow(

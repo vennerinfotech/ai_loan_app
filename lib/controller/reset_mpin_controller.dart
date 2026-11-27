@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../screens/login_with_mpin_screen.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
+import '../services/biometric_service.dart';
 import '../models/auth_response_model.dart';
 
 /// GetX controller for "Reset MPIN" (Set New MPIN) screen after Forgot MPIN OTP verification.
@@ -117,6 +118,9 @@ class ResetMpinController extends GetxController {
             token: token,
           );
         }
+
+        // Keep secure Keystore MPIN updated with new MPIN
+        await BiometricService.instance.saveStoredMpin(newMpin.value, phone: phone);
 
         Get.snackbar(
           'Success',

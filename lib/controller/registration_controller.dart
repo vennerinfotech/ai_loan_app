@@ -8,6 +8,7 @@ import '../models/registration_step.dart';
 import '../models/auth_response_model.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
+import '../services/biometric_service.dart';
 import '../screens/login_with_mpin_screen.dart';
 
 /// GetX controller for Create Account + OTP Verify registration flow.
@@ -606,6 +607,12 @@ class RegistrationController extends GetxController
         final phone = newModel.data?.user?.phone ??
             existingData?.phone ??
             mobileNumberController.text.trim();
+
+        // Save MPIN for biometric login if user enables it later
+        await BiometricService.instance.saveStoredMpin(
+          newMpin.value.trim(),
+          phone: phone,
+        );
         await Future.delayed(const Duration(milliseconds: 500));
         Get.offAll(() => LoginWithMpinScreen(phoneNumber: phone));
       } else {
