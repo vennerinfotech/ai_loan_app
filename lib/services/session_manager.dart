@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'notification_service.dart';
 
 /// Simple and lightweight session manager using SharedPreferences.
 /// Uses [setString] and [getString] to store and check user authentication state.
@@ -31,6 +32,10 @@ class SessionManager {
     if (userId != null && userId.toString().trim().isNotEmpty) {
       await prefs.setString(keyUserId, userId.toString().trim());
     }
+    // Sync FCM device token with backend now that user is logged in
+    try {
+      NotificationService.instance.syncDeviceToken();
+    } catch (_) {}
   }
 
   /// Get saved auth token

@@ -203,6 +203,50 @@ class ApiService {
     }
   }
 
+  /// Update FCM Device Token API: POST {{baseUrl}}/fcm-token
+  static Future<Map<String, dynamic>> updateFcmToken({
+    required String fcmToken,
+    String? deviceType,
+    String? token,
+  }) async {
+    final url = Uri.parse('$baseUrl/fcm-token');
+    final authToken = token ?? await SessionManager.getAuthToken();
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (authToken.isNotEmpty) 'Authorization': 'Bearer $authToken',
+    };
+
+    final body = jsonEncode({
+      'fcm_token': fcmToken,
+      if (deviceType != null && deviceType.isNotEmpty) 'device_type': deviceType,
+    });
+
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+
+      debugPrint('========== Update FCM Token ==========');
+      debugPrint('--> POST $url');
+      debugPrint('Request Body: $body');
+      debugPrint('<--------- Status:---------- ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body);
+      }
+      return {'success': false, 'status_code': response.statusCode};
+    } catch (e) {
+      debugPrint('Exception in updateFcmToken: $e');
+      return {
+        'success': false,
+        'status_code': 500,
+        'message': 'Failed to update FCM token',
+        'errors': e.toString(),
+      };
+    }
+  }
+
   /// Set MPIN API: POST {{baseUrl}}/set-mpin
   static Future<Map<String, dynamic>> setMpin({
     required String mpin,

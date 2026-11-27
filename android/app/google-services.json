@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195967709400",
+    "project_id": "ai-loan-app-72e04",
+    "storage_bucket": "ai-loan-app-72e04.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195967709400:android:c55b9c22eaa09f63b0a7ad",
+        "android_client_info": {
+          "package_name": "com.example.ai_loan_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHMTbl3JwVFMtaamHOp6w6J7cS1uxbxdA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
