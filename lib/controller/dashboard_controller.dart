@@ -35,8 +35,42 @@ class DashboardController extends GetxController {
   AadhaarKycController get kycController => Get.put(AadhaarKycController());
   PanKycController get panController => Get.put(PanKycController());
 
-  bool get isAadhaarCompleted => kycController.isAadhaarVerified.value;
-  bool get isPanCompleted => panController.isPanCompleted.value;
+  bool get isAadhaarCompleted {
+    if (kycController.isAadhaarVerified.value) return true;
+    final d = dashboardData.value;
+    if (d != null) {
+      final status = d.aiInsights?.getVerificationStatus('aadhaar')?.toLowerCase();
+      if (status == 'verified' || status == 'completed' || status == 'accepted') return true;
+      if (d.applicationStatus?.steps.any((s) =>
+              s.key == 'aadhaar' &&
+              (s.isCompleted == true ||
+                  s.status?.toLowerCase() == 'completed' ||
+                  s.status?.toLowerCase() == 'verified')) ==
+          true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool get isPanCompleted {
+    if (panController.isPanCompleted.value) return true;
+    final d = dashboardData.value;
+    if (d != null) {
+      final status = d.aiInsights?.getVerificationStatus('pan')?.toLowerCase();
+      if (status == 'verified' || status == 'completed' || status == 'accepted') return true;
+      if (d.applicationStatus?.steps.any((s) =>
+              s.key == 'pan' &&
+              (s.isCompleted == true ||
+                  s.status?.toLowerCase() == 'completed' ||
+                  s.status?.toLowerCase() == 'verified')) ==
+          true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool get isKycCompleted => isAadhaarCompleted && isPanCompleted;
 
   @override
@@ -243,6 +277,21 @@ class DashboardController extends GetxController {
     }
     if (featureName == 'AI eligibility') {
       // Navigation removed per user request
+      return;
+    }
+    if (featureName == 'Complete your KYC') {
+      if (checkIsKycCompleted) {
+        // KYC is already completed, disable tap
+        return;
+      }
+      final pendingStep = pendingKycStep;
+      if (pendingStep == KycSubStep.aadhaarInput) {
+        kycController.setTargetFeature(featureName);
+        Get.to(() => const KycFlowScreen(initialStep: KycSubStep.aadhaarInput));
+      } else {
+        panController.setTargetFeature(featureName);
+        Get.to(() => const KycFlowScreen(initialStep: KycSubStep.panInput));
+      }
       return;
     }
     if (!isAadhaarCompleted) {

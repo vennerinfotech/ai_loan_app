@@ -617,172 +617,186 @@ class DashboardScreen extends StatelessWidget {
 
   /// Compact Complete your KYC Card with reduced radius & padding
   Widget _buildKycStatusCard(DashboardController controller) {
-    final isAadhaarDone = controller.isAadhaarCompleted;
-    final isPanDone = controller.isPanCompleted;
+    return Obx(() {
+      final isAadhaarDone = controller.isAadhaarCompleted;
+      final isPanDone = controller.isPanCompleted;
+      final isKycDone = controller.checkIsKycCompleted;
 
-    String stepsText = '1 of 3 steps done • ~3 min left';
-    if (isAadhaarDone && isPanDone) {
-      stepsText = '3 of 3 steps done • All verified ✓';
-    } else if (isAadhaarDone) {
-      stepsText = '2 of 3 steps done • ~1 min left';
-    }
+      String stepsText = '1 of 3 steps done • ~3 min left';
+      if (isKycDone || (isAadhaarDone && isPanDone)) {
+        stepsText = '3 of 3 steps done • All verified ✓';
+      } else if (isAadhaarDone) {
+        stepsText = '2 of 3 steps done • ~1 min left';
+      }
 
-    return GestureDetector(
-      onTap: () => controller.onDashboardOptionSelected('Complete your KYC'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                // Soft orange icon box (Reduced size 36x36)
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.kycNotLinkedCircleBg,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: AppColors.warningAmber,
-                      size: 19,
+      return GestureDetector(
+        onTap: isKycDone ? null : () => controller.onDashboardOptionSelected('Complete your KYC'),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  // Icon box: Soft green when completed, soft orange when pending
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isKycDone
+                          ? AppColors.successGreen.withValues(alpha: 0.12)
+                          : AppColors.kycNotLinkedCircleBg,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isKycDone ? Icons.verified_user_rounded : Icons.shield_outlined,
+                        color: isKycDone ? AppColors.successGreen : AppColors.warningAmber,
+                        size: 19,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
 
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Complete your KYC',
-                        style: TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isKycDone ? 'KYC Completed' : 'Complete your KYC',
+                          style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        stepsText,
-                        style: const TextStyle(
-                          color: AppColors.textDarkSecondary,
-                          fontSize: 11,
+                        const SizedBox(height: 1),
+                        Text(
+                          stepsText,
+                          style: TextStyle(
+                            color: isKycDone ? AppColors.successGreen : AppColors.textDarkSecondary,
+                            fontSize: 11,
+                            fontWeight: isKycDone ? FontWeight.w600 : FontWeight.w400,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textDarkSecondary,
-                  size: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // 3-step progress bar row
-            Row(
-              children: [
-                // Step 1: Mobile
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 2.5,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryPurple,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Mobile ✓',
-                        style: TextStyle(
-                          color: AppColors.primaryPurple,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    isKycDone ? Icons.check_circle_rounded : Icons.chevron_right_rounded,
+                    color: isKycDone ? AppColors.successGreen : AppColors.textDarkSecondary,
+                    size: 20,
                   ),
-                ),
-                const SizedBox(width: 6),
+                ],
+              ),
+              const SizedBox(height: 10),
 
-                // Step 2: Aadhaar
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 2.5,
-                        decoration: BoxDecoration(
-                          color: isAadhaarDone ? AppColors.primaryPurple : AppColors.indicatorInactive,
-                          borderRadius: BorderRadius.circular(2),
+              // 3-step progress bar row
+              Row(
+                children: [
+                  // Step 1: Mobile
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 2.5,
+                          decoration: BoxDecoration(
+                            color: isKycDone ? AppColors.successGreen : AppColors.primaryPurple,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isAadhaarDone ? 'Aadhaar ✓' : 'Aadhaar',
-                        style: TextStyle(
-                          color: isAadhaarDone ? AppColors.primaryPurple : AppColors.textDarkSecondary,
-                          fontSize: 10.5,
-                          fontWeight: isAadhaarDone ? FontWeight.w700 : FontWeight.w500,
+                        const SizedBox(height: 4),
+                        Text(
+                          'Mobile ✓',
+                          style: TextStyle(
+                            color: isKycDone ? AppColors.successGreen : AppColors.primaryPurple,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
+                  const SizedBox(width: 6),
 
-                // Step 3: PAN
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 2.5,
-                        decoration: BoxDecoration(
-                          color: isPanDone ? AppColors.primaryPurple : AppColors.indicatorInactive,
-                          borderRadius: BorderRadius.circular(2),
+                  // Step 2: Aadhaar
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 2.5,
+                          decoration: BoxDecoration(
+                            color: (isKycDone || isAadhaarDone)
+                                ? (isKycDone ? AppColors.successGreen : AppColors.primaryPurple)
+                                : AppColors.indicatorInactive,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isPanDone ? 'PAN ✓' : 'PAN',
-                        style: TextStyle(
-                          color: isPanDone ? AppColors.primaryPurple : AppColors.textDarkSecondary,
-                          fontSize: 10.5,
-                          fontWeight: isPanDone ? FontWeight.w700 : FontWeight.w500,
+                        const SizedBox(height: 4),
+                        Text(
+                          (isKycDone || isAadhaarDone) ? 'Aadhaar ✓' : 'Aadhaar',
+                          style: TextStyle(
+                            color: (isKycDone || isAadhaarDone)
+                                ? (isKycDone ? AppColors.successGreen : AppColors.primaryPurple)
+                                : AppColors.textDarkSecondary,
+                            fontSize: 10.5,
+                            fontWeight: (isKycDone || isAadhaarDone) ? FontWeight.w700 : FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 6),
+
+                  // Step 3: PAN
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          height: 2.5,
+                          decoration: BoxDecoration(
+                            color: (isKycDone || isPanDone)
+                                ? (isKycDone ? AppColors.successGreen : AppColors.primaryPurple)
+                                : AppColors.indicatorInactive,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          (isKycDone || isPanDone) ? 'PAN ✓' : 'PAN',
+                          style: TextStyle(
+                            color: (isKycDone || isPanDone)
+                                ? (isKycDone ? AppColors.successGreen : AppColors.primaryPurple)
+                                : AppColors.textDarkSecondary,
+                            fontSize: 10.5,
+                            fontWeight: (isKycDone || isPanDone) ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   /// Compact 2x2 Feature Grid: Reduced height to 112, radius to 14
