@@ -2108,9 +2108,24 @@ class ApiService {
 
   /// Get Active Loan Applications API: GET {{baseUrl}}/loan-applications/active
   static Future<Map<String, dynamic>> getActiveLoanApplications({
+    int page = 1,
+    int perPage = 7,
+    String? status,
+    String? loanType,
+    String? search,
     String? token,
   }) async {
-    final url = Uri.parse('$baseUrl/loan-applications/active');
+    final queryParams = <String, String>{
+      'page': page.toString(),
+      'per_page': perPage.toString(),
+      if (status != null && status.isNotEmpty) 'status': status,
+      if (loanType != null && loanType.isNotEmpty) 'loan_type': loanType,
+      if (search != null && search.isNotEmpty) 'search': search,
+    };
+
+    final url = Uri.parse('$baseUrl/loan-applications/active').replace(
+      queryParameters: queryParams,
+    );
     final authToken = token ?? await SessionManager.getAuthToken();
 
     final headers = {

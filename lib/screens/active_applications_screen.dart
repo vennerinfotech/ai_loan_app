@@ -32,7 +32,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             // Applications List (Reactive)
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && controller.applications.isEmpty) {
                   return const Center(
                     child: CircularProgressIndicator(
                       color: AppColors.primaryPurple,
@@ -42,19 +42,41 @@ class ActiveApplicationsScreen extends StatelessWidget {
 
                 final filtered = controller.filteredApplications;
 
-                if (filtered.isEmpty) {
+                if (filtered.isEmpty && !controller.isLoading.value) {
                   return _buildEmptyState();
                 }
+
+                final hasLoadingMore = controller.isLoadingMore.value;
 
                 return RefreshIndicator(
                   onRefresh: controller.refreshApplications,
                   color: AppColors.primaryPurple,
                   child: ListView.separated(
+                    controller: controller.scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 14),
+                    itemCount: filtered.length + (hasLoadingMore ? 1 : 0),
+                    separatorBuilder: (_, index) {
+                      if (index >= filtered.length - 1) return const SizedBox.shrink();
+                      return const SizedBox(height: 14);
+                    },
                     itemBuilder: (context, index) {
-                      return _buildApplicationCard(filtered[index]);
+                      if (index < filtered.length) {
+                        return _buildApplicationCard(filtered[index]);
+                      }
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.primaryPurple,
+                            ),
+                          ),
+                        ),
+                      );
                     },
                   ),
                 );

@@ -1,3 +1,5 @@
+import 'applicant_detail_model.dart';
+
 /// Status of an active loan application
 enum ApplicationStatusType {
   inReview,
@@ -50,6 +52,7 @@ class ActiveApplicationModel {
   final String currentStep;
   final ApplicationStatusType statusType;
   final String appliedDate;
+  final ApplicantLoanApplication? raw;
 
   const ActiveApplicationModel({
     required this.id,
@@ -63,6 +66,7 @@ class ActiveApplicationModel {
     required this.currentStep,
     required this.statusType,
     required this.appliedDate,
+    this.raw,
   });
 
   /// Factory constructor to create an [ActiveApplicationModel] from API JSON.

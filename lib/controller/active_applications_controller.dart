@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../models/active_application_model.dart';
@@ -7,7 +7,7 @@ import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
 
 /// GetX controller managing the active loan applications state,
-/// filtering, and real API integration from GET /loan-applications/active.
+/// pagination, filtering, and real API integration from GET /loan-applications/active.
 class ActiveApplicationsController extends GetxController {
   // Observables
   final applications = <ActiveApplicationModel>[].obs;
@@ -16,11 +16,35 @@ class ActiveApplicationsController extends GetxController {
   final pagination = Rxn<ActiveApplicationsPagination>();
   final selectedFilterIndex = 0.obs;
   final isLoading = false.obs;
+  final isLoadingMore = false.obs;
+  final hasMore = true.obs;
+  final currentPage = 1.obs;
+  final int perPage = 7;
+
+  late final ScrollController scrollController;
 
   @override
   void onInit() {
     super.onInit();
+    scrollController = ScrollController();
+    scrollController.addListener(_onScroll);
     fetchApplications();
+  }
+
+  @override
+  void onClose() {
+    scrollController.removeListener(_onScroll);
+    scrollController.dispose();
+    super.onClose();
+  }
+
+  void _onScroll() {
+    if (!scrollController.hasClients) return;
+    final maxScroll = scrollController.position.maxScrollExtent;
+    final currentScroll = scrollController.position.pixels;
+    if (maxScroll - currentScroll <= 150) {
+      loadMoreApplications();
+    }
   }
 
   /// Sets the selected filter tab index (0: All, 1: In review, 2: Approved)
@@ -43,7 +67,7 @@ class ActiveApplicationsController extends GetxController {
     return applications;
   }
 
-  int get totalCount => applications.length;
+  int get totalCount => pagination.value?.total ?? applications.length;
 
   int get inReviewCount => applications
       .where((a) => a.statusType == ApplicationStatusType.inReview)
@@ -53,29 +77,79 @@ class ActiveApplicationsController extends GetxController {
       .where((a) => a.statusType == ApplicationStatusType.approved)
       .length;
 
-  /// Fetches active applications strictly from GET {{baseUrl}}/loan-applications/active.
-  Future<void> fetchApplications() async {
-    isLoading.value = true;
+  /// Fetches initial page (page 1) strictly from GET {{baseUrl}}/loan-applications/active.
+  Future<void> fetchApplications({bool isRefresh = false}) async {
+    if (isRefresh) {
+      currentPage.value = 1;
+      hasMore.value = true;
+    } else {
+      isLoading.value = true;
+    }
+
     try {
-      final res = await ApiService.getActiveLoanApplications();
+      final res = await ApiService.getActiveLoanApplications(
+        page: 1,
+        perPage: perPage,
+      );
       if (res['success'] == true || res['status_code'] == 200) {
         final data = ActiveLoanApplicationsResponseData.fromJson(res);
         rawApplications.assignAll(data.loanApplications);
         activeStatuses.assignAll(data.activeStatuses);
         pagination.value = data.pagination;
 
+        currentPage.value = data.pagination?.currentPage ?? 1;
+        final lastPage = data.pagination?.lastPage ?? 1;
+        hasMore.value = (data.pagination?.hasMorePages == true) || (currentPage.value < lastPage);
+
         // Map into UI models
         final uiModels = data.loanApplications.map(_mapToUiModel).toList();
         applications.assignAll(uiModels);
       } else {
         debugPrint('Notice in fetchApplications: ${res['message']}');
-        applications.clear();
+        if (!isRefresh) applications.clear();
       }
     } catch (e) {
       debugPrint('Error in fetchApplications: $e');
-      applications.clear();
+      if (!isRefresh) applications.clear();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Loads next page applications for pagination (perPage: 7)
+  Future<void> loadMoreApplications() async {
+    if (isLoading.value || isLoadingMore.value || !hasMore.value) return;
+
+    isLoadingMore.value = true;
+    final nextPage = currentPage.value + 1;
+
+    try {
+      final res = await ApiService.getActiveLoanApplications(
+        page: nextPage,
+        perPage: perPage,
+      );
+      if (res['success'] == true || res['status_code'] == 200) {
+        final data = ActiveLoanApplicationsResponseData.fromJson(res);
+        if (data.loanApplications.isNotEmpty) {
+          rawApplications.addAll(data.loanApplications);
+          pagination.value = data.pagination;
+          currentPage.value = data.pagination?.currentPage ?? nextPage;
+
+          final lastPage = data.pagination?.lastPage ?? nextPage;
+          hasMore.value = (data.pagination?.hasMorePages == true) || (currentPage.value < lastPage);
+
+          final uiModels = data.loanApplications.map(_mapToUiModel).toList();
+          applications.addAll(uiModels);
+        } else {
+          hasMore.value = false;
+        }
+      } else {
+        hasMore.value = false;
+      }
+    } catch (e) {
+      debugPrint('Error in loadMoreApplications: $e');
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
@@ -154,11 +228,12 @@ class ActiveApplicationsController extends GetxController {
       currentStep: statusLabel,
       statusType: type,
       appliedDate: appliedDate,
+      raw: app,
     );
   }
 
   /// Refreshes applications from backend
   Future<void> refreshApplications() async {
-    await fetchApplications();
+    await fetchApplications(isRefresh: true);
   }
 }
