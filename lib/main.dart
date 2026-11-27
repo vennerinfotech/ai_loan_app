@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'services/network_controller.dart';
 import 'screens/splash_screen.dart';
 import 'theme/theme.dart';
 
@@ -22,6 +23,9 @@ void main() async {
 
   // Initialize Notification Service (permissions, channels, listeners)
   await NotificationService.instance.initialize();
+
+  // Initialize Network Connectivity Controller
+  Get.put(NetworkController(), permanent: true);
 
   runApp(const FinsphereApp());
 }
