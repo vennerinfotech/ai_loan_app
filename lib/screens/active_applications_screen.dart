@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../models/active_application_model.dart';
 import '../controller/active_applications_controller.dart';
+import '../widgets/loan_application_detail_bottom_sheet.dart';
 import 'loan_flow/application_status_screen.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
 
@@ -62,7 +63,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                     },
                     itemBuilder: (context, index) {
                       if (index < filtered.length) {
-                        return _buildApplicationCard(filtered[index]);
+                        return _buildApplicationCard(context, filtered[index]);
                       }
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
@@ -216,17 +217,13 @@ class ActiveApplicationsScreen extends StatelessWidget {
   }
 
   /// Application Card matching Finsphere AI theme
-  Widget _buildApplicationCard(ActiveApplicationModel app) {
+  Widget _buildApplicationCard(BuildContext context, ActiveApplicationModel app) {
     final iconData = _getLoanIcon(app.loanType);
     final iconBg = _getLoanIconBg(app.loanType);
     final iconColor = _getLoanIconColor(app.loanType);
 
     return GestureDetector(
-      onTap: () => Get.to(
-        () => const ApplicationStatusScreen(),
-        transition: Transition.noTransition,
-        duration: Duration.zero,
-      ),
+      onTap: () => LoanApplicationDetailBottomSheet.show(context, app),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -427,7 +424,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             const Divider(height: 1, color: AppColors.canvas),
             const SizedBox(height: 10),
 
-            // Bottom Track Link
+            // Bottom Action Row: Applied Date + [View detail] + [Track status]
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -440,20 +437,73 @@ class ActiveApplicationsScreen extends StatelessWidget {
                   ),
                 ),
                 Row(
-                  children: const [
-                    Text(
-                      'Track status',
-                      style: TextStyle(
-                        color: AppColors.primaryPurple,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                  children: [
+                    // View detail button (opens bottom sheet)
+                    GestureDetector(
+                      onTap: () => LoanApplicationDetailBottomSheet.show(context, app),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.visibility_outlined,
+                              size: 13,
+                              color: AppColors.primaryPurple,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'View detail',
+                              style: TextStyle(
+                                color: AppColors.primaryPurple,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 11,
-                      color: AppColors.primaryPurple,
+                    const SizedBox(width: 8),
+
+                    // Track status button (retains tracking flow)
+                    GestureDetector(
+                      onTap: () => Get.to(
+                        () => const ApplicationStatusScreen(),
+                        transition: Transition.noTransition,
+                        duration: Duration.zero,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.line),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Track',
+                              style: TextStyle(
+                                color: AppColors.textDark,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(width: 3),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 10,
+                              color: AppColors.textDark,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

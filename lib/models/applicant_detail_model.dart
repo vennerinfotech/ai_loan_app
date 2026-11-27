@@ -532,6 +532,8 @@ class ApplicantLoanApplication {
   final List<ApplicantObligation> obligations;
   final ApplicantDocsSummary? documentsSummary;
   final List<ApplicantDocumentItem> documents;
+  final ApplicantProfile? applicant;
+  final int? coApplicantsCount;
 
   ApplicantLoanApplication({
     this.id,
@@ -561,6 +563,8 @@ class ApplicantLoanApplication {
     this.obligations = const [],
     this.documentsSummary,
     this.documents = const [],
+    this.applicant,
+    this.coApplicantsCount,
   });
 
   factory ApplicantLoanApplication.fromJson(Map<String, dynamic> json) {
@@ -650,6 +654,12 @@ class ApplicantLoanApplication {
               .map((e) => ApplicantDocumentItem.fromJson(e))
               .toList()
           : const [],
+      applicant: json['applicant'] != null && json['applicant'] is Map<String, dynamic>
+          ? ApplicantProfile.fromJson(json['applicant'] as Map<String, dynamic>)
+          : null,
+      coApplicantsCount: json['co_applicants_count'] is int
+          ? json['co_applicants_count']
+          : int.tryParse(json['co_applicants_count']?.toString() ?? ''),
     );
   }
 
@@ -672,6 +682,8 @@ class ApplicantLoanApplication {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (lastActivityAt != null) 'last_activity_at': lastActivityAt,
+      if (applicant != null) 'applicant': applicant!.toJson(),
+      if (coApplicantsCount != null) 'co_applicants_count': coApplicantsCount,
       if (personalDetails != null)
         'personal_details': personalDetails!.toJson(),
       if (employmentDetails != null)
