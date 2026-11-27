@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../models/user_model.dart';
 import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
@@ -50,6 +51,9 @@ class ProfileController extends GetxController {
   // Selected language preference
   final selectedLanguage = 'English'.obs;
 
+  // App version loaded from package info
+  final appVersion = ''.obs;
+
   // Direct convenience getters backed by [user.value]
   String get name => user.value?.name ?? '';
   String get fullName => user.value?.name ?? '';
@@ -72,6 +76,16 @@ class ProfileController extends GetxController {
     super.onInit();
     _loadCachedSession();
     fetchApplicantProfile();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      appVersion.value = 'Version ${info.version}';
+    } catch (e) {
+      debugPrint('Failed to load app version: $e');
+    }
   }
 
   Future<void> _loadCachedSession() async {

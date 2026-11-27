@@ -32,23 +32,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: AppColors.lightBackground,
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          color: AppColors.indigo,
-          backgroundColor: Colors.white,
-          onRefresh: () => profileController.fetchApplicantProfile(isRefresh: true),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top Bar: Heading "Profile" + Edit Squircle
-                _buildTopBar(context),
+        child: Column(
+          children: [
+            // Sticky Top Bar: Heading "Profile" + Edit Squircle
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              child: _buildTopBar(context),
+            ),
 
-                const SizedBox(height: 16),
-
-                // User Banner Bar (Capsule)
-                _buildUserBanner(),
+            // Scrollable Body
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.indigo,
+                backgroundColor: Colors.white,
+                onRefresh: () =>
+                    profileController.fetchApplicantProfile(isRefresh: true),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // User Banner Bar (Capsule)
+                      _buildUserBanner(),
 
                 const SizedBox(height: 22),
 
@@ -75,9 +81,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // Log out Button
                 _buildLogoutButton(context),
+
+                // App Version at bottom
+                Obx(() {
+                  final version = profileController.appVersion.value;
+                  if (version.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 18),
+                    child: Center(
+                      child: Text(
+                        version,
+                        style: const TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
               ],
             ),
           ),
+        ),
+      ),
+          ],
         ),
       ),
     );
