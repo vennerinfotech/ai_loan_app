@@ -2024,6 +2024,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
   Widget _buildSkeletonCoApplicantCards() {
     return Skeletonizer(
       enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2150,6 +2154,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
   Widget _buildSkeletonDetailsPlaceholder() {
     return Skeletonizer(
       enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -2472,6 +2480,10 @@ class ApplicantDetailsScreen extends StatelessWidget {
   Widget _buildSkeletonApplicantContent() {
     return Skeletonizer(
       enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

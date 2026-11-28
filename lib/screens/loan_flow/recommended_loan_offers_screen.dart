@@ -743,6 +743,10 @@ class RecommendedLoanOffersScreen extends StatelessWidget {
   Widget _buildSkeletonSuggestions() {
     return Skeletonizer(
       enabled: true,
+      effect: const ShimmerEffect(
+        baseColor: Color(0xFFE5E7EB),
+        highlightColor: Color(0xFFF3F4F6),
+      ),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../controller/photo_gallery_controller.dart';
@@ -19,17 +20,18 @@ class PhotoGalleryScreen extends StatelessWidget {
     this.shareText,
   });
 
+  /// Build a network image using CachedNetworkImage for caching & reliability
   Widget _buildNetworkImage(
     String url, {
     required BoxFit fit,
     Widget? placeholder,
     Widget? errorWidget,
   }) {
-    return Image.network(
-      url,
+    return CachedNetworkImage(
+      imageUrl: url,
       fit: fit,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
+      memCacheWidth: fit == BoxFit.cover ? 400 : null,
+      progressIndicatorBuilder: (context, url, downloadProgress) {
         return placeholder ??
             Center(
               child: SizedBox(
@@ -37,16 +39,13 @@ class PhotoGalleryScreen extends StatelessWidget {
                 height: 25,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : null,
+                  value: downloadProgress.progress,
                   color: Colors.white70,
                 ),
               ),
             );
       },
-      errorBuilder: (context, error, stackTrace) =>
+      errorWidget: (context, url, error) =>
           errorWidget ??
           const Center(
             child: Icon(

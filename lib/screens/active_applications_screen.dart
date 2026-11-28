@@ -490,19 +490,19 @@ class ActiveApplicationsScreen extends StatelessWidget {
             // Bottom Action Row: Applied Date + [View detail] + [Track status]
             Row(
               children: [
-                Expanded(
+                Flexible(
                   child: Text(
                     'Applied on ${app.appliedDate}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: AppColors.muted,
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -510,7 +510,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                     GestureDetector(
                       onTap: () => LoanApplicationDetailBottomSheet.show(context, app),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primaryPurple.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
@@ -536,9 +536,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
-
-                    // Track status button (retains tracking flow)
+                    const SizedBox(width: 4),
                     GestureDetector(
                       onTap: () => Get.to(
                         () => const ApplicationStatusScreen(),
@@ -546,7 +544,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                         duration: Duration.zero,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),

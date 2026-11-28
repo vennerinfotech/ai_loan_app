@@ -65,6 +65,10 @@ class _AddCoApplicantScreenState extends State<AddCoApplicantScreen> {
 
                 return Skeletonizer(
                   enabled: isLoading,
+                  effect: const ShimmerEffect(
+                    baseColor: Color(0xFFE5E7EB),
+                    highlightColor: Color(0xFFF3F4F6),
+                  ),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     child: Form(
