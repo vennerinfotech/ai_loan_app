@@ -186,6 +186,7 @@ class MpinLoginController extends GetxController
           phone: loggedPhone,
           name: name,
           token: token,
+          userId: model.data?.user?.id,
         );
 
         // Keep Keystore MPIN updated with verified MPIN

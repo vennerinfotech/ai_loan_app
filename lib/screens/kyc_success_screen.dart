@@ -5,6 +5,8 @@ import '../theme/app_colors.dart';
 import '../controller/aadhaar_kyc_controller.dart';
 import '../controller/pan_kyc_controller.dart';
 import '../controller/kyc_flow_controller.dart';
+import '../services/api_service.dart';
+import '../services/session_manager.dart';
 import 'credit_check_screen.dart';
 import 'loan_flow/choose_loan_type_screen.dart';
 
@@ -25,18 +27,73 @@ class KycSuccessScreen extends StatelessWidget {
 }
 
 /// Body content of "KYC success" (used within step flow)
-class KycSuccessBody extends StatelessWidget {
+class KycSuccessBody extends StatefulWidget {
   const KycSuccessBody({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final aadhaarController = Get.isRegistered<AadhaarKycController>()
+  State<KycSuccessBody> createState() => _KycSuccessBodyState();
+}
+
+class _KycSuccessBodyState extends State<KycSuccessBody> {
+  late final AadhaarKycController _aadhaarController;
+  late final PanKycController _panController;
+
+  @override
+  void initState() {
+    super.initState();
+    _aadhaarController = Get.isRegistered<AadhaarKycController>()
         ? Get.find<AadhaarKycController>()
         : Get.put(AadhaarKycController());
 
-    final panController = Get.isRegistered<PanKycController>()
+    _panController = Get.isRegistered<PanKycController>()
         ? Get.find<PanKycController>()
         : Get.put(PanKycController());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadKycDetails();
+    });
+  }
+
+  Future<void> _loadKycDetails() async {
+    // 1. Get user ID directly from previous PAN upload or saved session
+    final userId = _panController.uploadedPanData.value?.userId ??
+        int.tryParse(await SessionManager.getUserId());
+    if (userId == null) return;
+
+    // 2. Fetch applicant details for this user ID
+    final data = await ApiService.getApplicantDetailModel(userId: userId);
+    if (data == null) return;
+
+    // 3. Populate Name & Date of Birth
+    final name =
+        (data.kyc?.aadhaar?.nameOnCard ?? data.applicant?.name ?? '').trim();
+    if (name.isNotEmpty) {
+      _aadhaarController.userName.value = name;
+    }
+
+    final dob = (data.applicant?.dateOfBirth ?? '').trim();
+    if (dob.isNotEmpty) {
+      _aadhaarController.dob.value = dob;
+    }
+
+    // 4. Format and populate Aadhaar Number
+    final rawAadhaar = (data.kyc?.aadhaar?.number ??
+            data.applicant?.aadhaarCardNumber ??
+            '')
+        .trim();
+    final digits = rawAadhaar.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 12) {
+      _aadhaarController.maskedAadhaarDisplay.value =
+          'XXXX XXXX ${digits.substring(8)}';
+    } else if (rawAadhaar.isNotEmpty) {
+      _aadhaarController.maskedAadhaarDisplay.value = rawAadhaar;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final aadhaarController = _aadhaarController;
+    final panController = _panController;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

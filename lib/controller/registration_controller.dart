@@ -414,6 +414,7 @@ class RegistrationController extends GetxController
             phone: model.data?.user?.phone ?? phone,
             name: model.data?.user?.name ?? fullName.value,
             token: model.data!.token!,
+            userId: model.data?.user?.id,
           );
         }
 

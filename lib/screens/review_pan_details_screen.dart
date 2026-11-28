@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import '../theme/app_colors.dart';
 import '../controller/pan_kyc_controller.dart';
+import '../controller/kyc_flow_controller.dart';
 import '../widgets/kyc_stepper.dart';
 
 /// Screen 4: "Review PAN details" (Reference Image 4)
@@ -321,15 +322,21 @@ class ReviewPanDetailsBody extends StatelessWidget {
     );
   }
 
-  /// Bottom Edit & Confirm & submit buttons
+  /// Bottom Cancel & Confirm & submit buttons
   Widget _buildBottomSection(PanKycController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
       child: Row(
         children: [
-          // Edit Button
+          // Cancel Button
           GestureDetector(
-            onTap: controller.editDetails,
+            onTap: () {
+              if (Get.isRegistered<KycFlowController>()) {
+                Get.find<KycFlowController>().setStep(KycSubStep.panUpload);
+              } else {
+                Get.back();
+              }
+            },
             child: Container(
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -340,7 +347,7 @@ class ReviewPanDetailsBody extends StatelessWidget {
               ),
               child: const Center(
                 child: Text(
-                  'Edit',
+                  'Cancel',
                   style: TextStyle(
                     color: AppColors.textDark,
                     fontSize: 14,

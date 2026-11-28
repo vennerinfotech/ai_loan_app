@@ -116,6 +116,7 @@ class ResetMpinController extends GetxController {
             phone: phone,
             name: name,
             token: token,
+            userId: model.data?.user?.id,
           );
         }
 

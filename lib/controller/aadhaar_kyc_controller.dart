@@ -901,6 +901,12 @@ class AadhaarKycController extends GetxController {
                 : dataMap);
         receiptUser.value = rawUser;
 
+        // Persist user ID from receipt if available
+        final receiptUserId = rawUser['id'] ?? dataMap['user_id'] ?? model.user?.id;
+        if (receiptUserId != null) {
+          SessionManager.saveUserId(receiptUserId);
+        }
+
         // 1. Full name & initials directly from API
         final name = (rawUser['name'] ?? model.user?.name ?? '').toString().trim();
         if (name.isNotEmpty && name.toLowerCase() != 'null') {

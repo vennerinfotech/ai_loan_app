@@ -12,6 +12,7 @@ import '../widgets/image_picker_bottom_sheet.dart';
 import '../models/store_pan_response_model.dart';
 import '../models/upload_pan_model.dart';
 import '../services/api_service.dart';
+import '../services/session_manager.dart';
 
 /// GetX Controller for PAN Card Verification flow.
 /// Implements:
@@ -210,12 +211,17 @@ class PanKycController extends GetxController {
 
           // Legacy StorePanData support
           final legacyData = StorePanData.fromJson(dataMap);
+          final resolvedUserId = uploadData.userId ?? legacyData.userId ?? dataMap['user_id'];
           storePanData.value = StorePanData(
             panCardNumber: uploadData.extractedData?.panNumber ?? storePanData.value?.panCardNumber ?? panNumber.value,
-            userId: uploadData.userId ?? legacyData.userId ?? storePanData.value?.userId,
+            userId: resolvedUserId ?? storePanData.value?.userId,
             documentId: legacyData.documentId ?? storePanData.value?.documentId ?? panDocumentId.value,
             filename: uploadData.filename ?? legacyData.filename,
           );
+
+          if (resolvedUserId != null) {
+            SessionManager.saveUserId(resolvedUserId);
+          }
 
           if (uploadData.filename != null && uploadData.filename!.isNotEmpty) {
             panUploadedFilename.value = uploadData.filename!;
