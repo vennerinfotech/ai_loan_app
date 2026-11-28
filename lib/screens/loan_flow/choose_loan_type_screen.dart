@@ -39,6 +39,10 @@ class ChooseLoanTypeBody extends StatelessWidget {
 
       return Skeletonizer(
         enabled: isLoading,
+        effect: const ShimmerEffect(
+          baseColor: Color(0xFFE5E7EB),
+          highlightColor: Color(0xFFF3F4F6),
+        ),
         child: Column(
           children: [
             // Scrollable Options Content
@@ -437,9 +441,15 @@ class ChooseLoanTypeBody extends StatelessWidget {
               controller.selectedLoanType.value.trim().isNotEmpty;
           final loanType = controller.selectedLoanType.value;
 
-          return SizedBox(
-            width: double.infinity,
-            height: 52,
+          return Skeleton.replace(
+            replacement: Bone.button(
+              width: double.infinity,
+              height: 52,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
             child: ElevatedButton(
               onPressed: (isLoading || !hasSelection)
                   ? null
@@ -475,6 +485,7 @@ class ChooseLoanTypeBody extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           );
         }),
       ),

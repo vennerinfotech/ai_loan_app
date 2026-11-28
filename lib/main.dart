@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_ui/material_ui.dart' as m_ui;
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
@@ -38,12 +39,19 @@ class FinsphereApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Finsphere.AI',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       defaultTransition: Transition.noTransition,
       transitionDuration: Duration.zero,
       localizationsDelegates: const [
         m_ui.DefaultMaterialLocalizations.delegate,
       ],
+      builder: (context, child) {
+        return SkeletonizerConfig(
+          data: const SkeletonizerConfigData(),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       home: const SplashScreen(),
     );
   }
