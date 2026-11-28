@@ -490,7 +490,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
             // Bottom Action Row: Applied Date + [View detail] + [Track status]
             Row(
               children: [
-                Flexible(
+                Expanded(
                   child: Text(
                     'Applied on ${app.appliedDate}',
                     maxLines: 1,
@@ -502,7 +502,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
