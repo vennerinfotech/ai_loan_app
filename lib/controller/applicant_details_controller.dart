@@ -664,10 +664,7 @@ class ApplicantDetailsController extends GetxController {
       if (res['success'] == true || res['status_code'] == 200) {
         // Refresh co-applicants list and selected co-applicant details
         await fetchCoApplicants();
-        if (selectedCoApplicantDetails.value?.coApplicantId == coApplicantId ||
-            selectedCoApplicantDetails.value?.coApplicant?.id == coApplicantId) {
-          await fetchCoApplicantDetails(coApplicantId);
-        }
+        await fetchCoApplicantDetails(coApplicantId);
       }
       return res;
     } finally {

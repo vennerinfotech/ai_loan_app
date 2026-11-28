@@ -1287,11 +1287,23 @@ class ApplicantDetailsScreen extends StatelessWidget {
     ApplicantDetailsController controller,
     CoApplicantDetailData details,
   ) {
-    final hasDocuments = details.documents.isNotEmpty;
-    final uploadedCount = details.documents
-        .where((d) => d.uploaded == true || d.files.isNotEmpty)
-        .length;
-    final totalCount = details.documents.length;
+    final profile = details.coApplicant;
+    final Map<String, dynamic> rawDocs = Map<String, dynamic>.from(profile?.documents ?? {});
+
+    // If documents map is empty in profile, check direct fields
+    if (rawDocs.isEmpty && profile != null) {
+      if (profile.aadhaarCardImage != null && profile.aadhaarCardImage!.isNotEmpty) {
+        rawDocs['aadhaar_card'] = profile.aadhaarCardImage;
+      }
+      if (profile.panCardImage != null && profile.panCardImage!.isNotEmpty) {
+        rawDocs['pan_card_image'] = profile.panCardImage;
+      }
+    }
+
+    final hasDocuments = rawDocs.isNotEmpty;
+    final totalCount = rawDocs.length;
+    final Map<String, dynamic> docUrls = Map<String, dynamic>.from(profile?.documentUrls ?? {});
+    final isVerified = (details.documentAccess?.verified == true) || (profile?.documentAccess?.verified == true);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1326,18 +1338,14 @@ class ApplicantDetailsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: uploadedCount == totalCount && totalCount > 0
-                        ? AppColors.successGreenBg
-                        : AppColors.canvas,
+                    color: isVerified ? AppColors.successGreenBg : AppColors.canvas,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.line),
                   ),
                   child: Text(
-                    '$uploadedCount/$totalCount',
+                    isVerified ? '$totalCount Verified' : '$totalCount Uploaded',
                     style: TextStyle(
-                      color: uploadedCount == totalCount && totalCount > 0
-                          ? AppColors.successGreen
-                          : AppColors.muted,
+                      color: isVerified ? AppColors.successGreen : AppColors.muted,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
                     ),
@@ -1347,10 +1355,18 @@ class ApplicantDetailsScreen extends StatelessWidget {
           ),
         ),
 
-        // Document Cards
+        // Dynamic Document Cards directly from documents map
         if (hasDocuments)
-          for (final doc in details.documents)
-            _buildDocUploadStyleCard(context, controller, doc, details)
+          for (final entry in rawDocs.entries)
+            _buildDynamicCoAppDocCard(
+              context: context,
+              controller: controller,
+              details: details,
+              docKey: entry.key,
+              rawFilePath: entry.value?.toString() ?? '',
+              docUrls: docUrls,
+              isVerified: isVerified,
+            )
         else
           Container(
             width: double.infinity,
@@ -1405,26 +1421,27 @@ class ApplicantDetailsScreen extends StatelessWidget {
     );
   }
 
-  /// Individual Document Card matching the Upload Document screen card style
-  Widget _buildDocUploadStyleCard(
-    BuildContext context,
-    ApplicantDetailsController controller,
-    CoApplicantDocumentConfig doc,
-    CoApplicantDetailData details,
-  ) {
-    final isUploaded = doc.uploaded == true ||
-        doc.status?.toLowerCase() == 'uploaded' ||
-        doc.files.isNotEmpty;
-    final fileCount = doc.files.length;
-    final hasRejected = doc.files.any((f) => f.status?.toLowerCase() == 'rejected');
-    final String label = doc.label ?? _formatDocKey(doc.key ?? 'Document');
-    final docKey = doc.key ?? '';
+  /// Single Dynamic Co-Applicant Document Card rendered directly from key-value pair
+  Widget _buildDynamicCoAppDocCard({
+    required BuildContext context,
+    required ApplicantDetailsController controller,
+    required CoApplicantDetailData details,
+    required String docKey,
+    required String rawFilePath,
+    required Map<String, dynamic> docUrls,
+    required bool isVerified,
+  }) {
+    final label = _formatKeyToTitle(docKey);
+    final fileName = rawFilePath.split('/').last;
 
-    // Collect all valid URLs for viewing in photo gallery
-    final allUrls = doc.files
-        .map((f) => (f.url?.isNotEmpty == true) ? f.url! : (f.name ?? ''))
-        .where((u) => u.isNotEmpty)
-        .toList();
+    // Direct 1-to-1 lookup from document_urls map by key:
+    final rawUrl = docUrls[docKey];
+    final List<String> urls = [];
+    if (rawUrl is String && rawUrl.isNotEmpty) {
+      urls.add(rawUrl);
+    } else if (rawUrl is List) {
+      urls.addAll(rawUrl.map((e) => e.toString()).where((u) => u.isNotEmpty));
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1432,11 +1449,7 @@ class ApplicantDetailsScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasRejected
-              ? AppColors.errorRed
-              : isUploaded
-                  ? AppColors.indigo.withValues(alpha: 0.35)
-                  : AppColors.line,
+          color: AppColors.line,
           width: 1.2,
         ),
         boxShadow: [
@@ -1449,248 +1462,258 @@ class ApplicantDetailsScreen extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                // Leading Icon Container (42x42 squircle matching upload screen)
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: hasRejected
-                        ? AppColors.errorRedBg
-                        : isUploaded
-                            ? AppColors.successGreenBg
-                            : AppColors.indigoTint,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      hasRejected
-                          ? Icons.error_outline_rounded
-                          : isUploaded
-                              ? Icons.check_circle_rounded
-                              : _getDocIcon(docKey),
-                      color: hasRejected
-                          ? AppColors.errorRed
-                          : isUploaded
-                              ? AppColors.successGreen
-                              : AppColors.navy,
-                      size: 22,
-                    ),
-                  ),
+            // Leading Icon Container
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.indigoTint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Icon(
+                  _getDocIcon(docKey),
+                  color: AppColors.navy,
+                  size: 22,
                 ),
-                const SizedBox(width: 12),
+              ),
+            ),
+            const SizedBox(width: 12),
 
-                // Title + Subtitle / File count
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              label,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w800,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (fileCount > 1) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: AppColors.canvas,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.line),
-                              ),
-                              child: Text(
-                                '$fileCount',
-                                style: const TextStyle(
-                                  color: AppColors.navy,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        isUploaded
-                            ? (fileCount == 1
-                                ? (doc.files.first.name ?? 'Uploaded ✓')
-                                : '$fileCount files attached')
-                            : 'Upload pending',
-                        style: TextStyle(
-                          color: hasRejected
-                              ? AppColors.errorRed
-                              : isUploaded
-                                  ? AppColors.successGreen
-                                  : AppColors.muted,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+            // Title + Filename
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // Trailing Action: View Document Button (if uploaded) or Pending Tag
-                if (isUploaded)
-                  GestureDetector(
-                    onTap: () => _onTapViewCoApplicantDoc(
-                      context,
-                      controller,
-                      details: details,
-                      docTitle: label,
-                      imagePaths: allUrls,
-                      initialIndex: 0,
+                  const SizedBox(height: 3),
+                  Text(
+                    fileName.isNotEmpty ? fileName : 'Attached Document',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: AppColors.indigoTint,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.indigo.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.visibility_outlined,
-                            size: 14,
-                            color: AppColors.navy,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'View',
-                            style: TextStyle(
-                              color: AppColors.navy,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.canvas,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: const Text(
-                      'Pending',
-                      style: TextStyle(
-                        color: AppColors.muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                ],
+              ),
             ),
 
-            // If multiple files, display file pills list below
-            if (fileCount > 1) ...[
-              const SizedBox(height: 10),
-              const Divider(height: 1, thickness: 1, color: AppColors.line),
-              const SizedBox(height: 8),
-              ...doc.files.asMap().entries.map((entry) {
-                final idx = entry.key;
-                final file = entry.value;
-                final fileName = file.name?.trim().isNotEmpty == true
-                    ? file.name!
-                    : 'Attached Document #${idx + 1}';
+            const SizedBox(width: 8),
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.insert_drive_file_outlined,
-                        size: 13,
-                        color: AppColors.muted,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          fileName,
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _onTapViewCoApplicantDoc(
-                          context,
-                          controller,
-                          details: details,
-                          docTitle: label,
-                          fileName: fileName,
-                          imagePaths: allUrls,
-                          initialIndex: idx,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.canvas,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.line),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.visibility_outlined,
-                                size: 11,
-                                color: AppColors.navy,
-                              ),
-                              SizedBox(width: 3),
-                              Text(
-                                'View',
-                                style: TextStyle(
-                                  color: AppColors.navy,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+            // Action: View Document Button (Only "View" label with visibility icon)
+            GestureDetector(
+              onTap: () => _onTapViewCoApplicantDocSimple(
+                context: context,
+                controller: controller,
+                details: details,
+                docKey: docKey,
+                docTitle: label,
+                urls: urls,
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.indigoTint,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: AppColors.indigo.withValues(alpha: 0.25),
                   ),
-                );
-              }),
-            ],
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.visibility_outlined,
+                      size: 14,
+                      color: AppColors.navy,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'View',
+                      style: TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// On tap: First check if user is verified or not, then view or prompt OTP
+  Future<void> _onTapViewCoApplicantDocSimple({
+    required BuildContext context,
+    required ApplicantDetailsController controller,
+    required CoApplicantDetailData details,
+    required String docKey,
+    required String docTitle,
+    required List<String> urls,
+  }) async {
+    // 1. If URLs are already available, view directly without any checks or dialogs
+    if (urls.isNotEmpty) {
+      Get.to(() => PhotoGalleryScreen(imagePaths: urls));
+      return;
+    }
+
+    final coApplicantId = details.coApplicantId ?? details.coApplicant?.id;
+    if (coApplicantId == null) {
+      Get.snackbar('Notice', 'Co-Applicant information is missing.');
+      return;
+    }
+
+    // 2. Check if already verified from loaded details
+    bool isVerified = details.coApplicant?.documentAccess?.verified == true ||
+        details.documentAccess?.verified == true;
+
+    // If verification status isn't marked true locally, query status API
+    if (!isVerified) {
+      try {
+        final res = await ApiService.getCoApplicantDocumentVerificationStatus(
+          coApplicantId: coApplicantId,
+        );
+        final isSuccess = res['success'] == true || res['status_code'] == 200;
+        if (isSuccess && res['data'] is Map<String, dynamic>) {
+          final data = res['data'] as Map<String, dynamic>;
+          final docAccess = data['document_access'] is Map<String, dynamic>
+              ? data['document_access'] as Map<String, dynamic>
+              : null;
+          isVerified = docAccess != null && docAccess['verified'] == true;
+        }
+      } catch (e) {
+        debugPrint('Error checking verification status: $e');
+      }
+    }
+
+    if (isVerified) {
+      // User is verified -> fetch fresh details to retrieve URLs
+      final freshData = await controller.fetchCoApplicantDetails(coApplicantId);
+      final freshDocUrls = freshData?.coApplicant?.documentUrls ??
+          controller.selectedCoApplicantDetails.value?.coApplicant?.documentUrls ??
+          {};
+      final rawFresh = freshDocUrls[docKey];
+
+      final List<String> freshUrls = [];
+      if (rawFresh is String && rawFresh.isNotEmpty) {
+        freshUrls.add(rawFresh);
+      } else if (rawFresh is List) {
+        freshUrls.addAll(rawFresh.map((e) => e.toString()).where((u) => u.isNotEmpty));
+      }
+
+      if (freshUrls.isNotEmpty) {
+        Get.to(() => PhotoGalleryScreen(imagePaths: freshUrls));
+      } else {
+        Get.snackbar(
+          'Notice',
+          'No document file available to view.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: AppColors.navy,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+    } else {
+      // User is not verified -> Show Verification Required dialog
+      if (context.mounted) {
+        final coAppName = details.coApplicant?.name ?? 'Co-Applicant';
+        final coAppPhone = details.coApplicant?.phone;
+
+        _showVerifyToViewDocDialog(
+          context,
+          docTitle: docTitle,
+          onVerifyNumber: () {
+            CoApplicantOtpBottomSheet.show(
+              context: context,
+              controller: controller,
+              coApplicantId: coApplicantId,
+              coApplicantName: coAppName,
+              initialPhone: coAppPhone,
+              onVerified: () async {
+                // Wait briefly for bottom sheet pop animation to settle
+                await Future.delayed(const Duration(milliseconds: 250));
+
+                // Controller's verifyCoApplicantOtp already updated selectedCoApplicantDetails
+                var freshDocUrls = controller.selectedCoApplicantDetails.value?.coApplicant?.documentUrls ?? {};
+                var rawFresh = freshDocUrls[docKey];
+
+                final List<String> freshUrls = [];
+                if (rawFresh is String && rawFresh.isNotEmpty) {
+                  freshUrls.add(rawFresh);
+                } else if (rawFresh is List) {
+                  freshUrls.addAll(rawFresh.map((e) => e.toString()).where((u) => u.isNotEmpty));
+                }
+
+                // If not yet present, fetch directly
+                if (freshUrls.isEmpty) {
+                  final freshData = await controller.fetchCoApplicantDetails(coApplicantId);
+                  final moreUrls = freshData?.coApplicant?.documentUrls ?? {};
+                  final r = moreUrls[docKey];
+                  if (r is String && r.isNotEmpty) {
+                    freshUrls.add(r);
+                  } else if (r is List) {
+                    freshUrls.addAll(r.map((e) => e.toString()).where((u) => u.isNotEmpty));
+                  }
+                }
+
+                if (freshUrls.isNotEmpty) {
+                  Get.to(() => PhotoGalleryScreen(imagePaths: freshUrls));
+                } else {
+                  Get.snackbar(
+                    'Notice',
+                    'Document unlocked. Please tap View again.',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: AppColors.navy,
+                    colorText: Colors.white,
+                    margin: const EdgeInsets.all(16),
+                  );
+                }
+              },
+            );
+          },
+        );
+      }
+    }
+  }
+
+  /// Format any document key to human-readable title without hardcoding
+  String _formatKeyToTitle(String key) {
+    switch (key) {
+      case 'pan_card_image':
+      case 'pan_card':
+        return 'PAN Card';
+      case 'aadhar_card_front':
+        return 'Aadhaar Card (Front)';
+      case 'aadhar_card_back':
+        return 'Aadhaar Card (Back)';
+      case 'aadhar_card_combined_pdf':
+        return 'Aadhaar Card (Single PDF)';
+      default:
+        return key
+            .replaceAll('_', ' ')
+            .split(' ')
+            .where((w) => w.isNotEmpty)
+            .map((w) => '${w[0].toUpperCase()}${w.substring(1)}')
+            .join(' ');
+    }
   }
 
   /// Get icon for document key matching upload documents screen
@@ -1703,148 +1726,6 @@ class ApplicantDetailsScreen extends StatelessWidget {
     if (k.contains('salary') || k.contains('payslip')) return Icons.receipt_long_outlined;
     if (k.contains('itr') || k.contains('form_16') || k.contains('tax')) return Icons.request_quote_outlined;
     return Icons.description_outlined;
-  }
-
-  /// Live check co-applicant verification status upon tapping View.
-  /// If verified -> view directly.
-  /// If unverified -> show Verification Required dialog -> Verify Number opens OTP bottom sheet.
-  Future<void> _onTapViewCoApplicantDoc(
-    BuildContext context,
-    ApplicantDetailsController controller, {
-    required CoApplicantDetailData details,
-    required String docTitle,
-    String? fileName,
-    required List<String> imagePaths,
-    int initialIndex = 0,
-  }) async {
-    final coApplicantId = details.coApplicantId ?? details.coApplicant?.id;
-
-    if (coApplicantId == null) {
-      if (imagePaths.isNotEmpty) {
-        Get.to(() => PhotoGalleryScreen(
-              imagePaths: imagePaths,
-              initialIndex: initialIndex,
-            ));
-      }
-      return;
-    }
-
-    // Show loading while checking verification status
-    Get.dialog(
-      const Center(
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: AppColors.navy,
-                  ),
-                ),
-                SizedBox(width: 14),
-                Text(
-                  'Checking verification...',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textDark,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      barrierDismissible: false,
-    );
-
-    try {
-      final res = await ApiService.getCoApplicantDocumentVerificationStatus(
-        coApplicantId: coApplicantId,
-      );
-
-      if (Get.isDialogOpen == true) {
-        Get.back();
-      }
-
-      final isSuccess = res['success'] == true || res['status_code'] == 200;
-      bool isVerified = false;
-      if (isSuccess && res['data'] is Map<String, dynamic>) {
-        final data = res['data'] as Map<String, dynamic>;
-        final docAccess = data['document_access'] is Map<String, dynamic>
-            ? data['document_access'] as Map<String, dynamic>
-            : null;
-        isVerified = docAccess != null && docAccess['verified'] == true;
-      }
-
-      if (isVerified) {
-        // Already verified -> View document directly
-        if (imagePaths.isNotEmpty) {
-          Get.to(() => PhotoGalleryScreen(
-                imagePaths: imagePaths,
-                initialIndex: initialIndex,
-              ));
-        } else {
-          Get.snackbar(
-            'Notice',
-            'No document file available to view.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: AppColors.navy,
-            colorText: Colors.white,
-            margin: const EdgeInsets.all(16),
-          );
-        }
-      } else {
-        // Not verified -> Show "Verification Required" dialog
-        if (context.mounted) {
-          _showVerifyToViewDocDialog(
-            context,
-            docTitle: fileName ?? docTitle,
-            onVerifyNumber: () {
-              CoApplicantOtpBottomSheet.show(
-                context: context,
-                controller: controller,
-                coApplicantId: coApplicantId,
-                coApplicantName: details.coApplicant?.name ?? 'Co-Applicant',
-                initialPhone: details.coApplicant?.phone,
-                onVerified: () {
-                  controller.fetchCoApplicants();
-                  controller.fetchCoApplicantDetails(coApplicantId);
-                  if (imagePaths.isNotEmpty) {
-                    Get.to(() => PhotoGalleryScreen(
-                          imagePaths: imagePaths,
-                          initialIndex: initialIndex,
-                        ));
-                  }
-                },
-              );
-            },
-          );
-        }
-      }
-    } catch (e) {
-      if (Get.isDialogOpen == true) {
-        Get.back();
-      }
-      debugPrint('Error checking co-applicant verification status: $e');
-      Get.snackbar(
-        'Error',
-        'Failed to verify document access. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: AppColors.errorRed,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-      );
-    }
   }
 
   /// Confirmation dialog before viewing documents (requires number verification)
