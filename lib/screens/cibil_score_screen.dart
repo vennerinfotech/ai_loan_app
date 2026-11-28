@@ -40,8 +40,8 @@ class CibilScoreScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // 3. Bottom CTA: "See loans you qualify for ->"
-            _buildBottomCta(context),
+            // 3. Bottom CTA: "View loans you qualify for" & "Download report"
+            _buildBottomCta(context, controller),
           ],
         ),
       ),
@@ -408,44 +408,98 @@ class CibilScoreScreen extends StatelessWidget {
     );
   }
 
-  /// Bottom CTA Button: "See loans you qualify for ->"
-  Widget _buildBottomCta(BuildContext context) {
+  /// Bottom CTA Section: "View loans you qualify for" & "Download report"
+  Widget _buildBottomCta(BuildContext context, CibilScoreController controller) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          onPressed: () {
-            Get.offAll(() => const ChooseLoanTypeScreen());
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.indigo,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            elevation: 0,
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'View loans you qualify for',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Primary Button: "View loans you qualify for"
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: () {
+                Get.offAll(() => const ChooseLoanTypeScreen());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.indigo,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                elevation: 0,
               ),
-              SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: Colors.white,
-                size: 18,
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'View loans you qualify for',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+
+          // 2. Download Report button with "Save As" location dialog
+          Obx(
+            () => GestureDetector(
+              onTap: controller.isDownloadingPdf.value
+                  ? null
+                  : () => controller.downloadReportPdf(),
+              child: Container(
+                width: double.infinity,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: controller.isDownloadingPdf.value
+                    ? const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.indigo,
+                          ),
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.download_rounded,
+                            color: AppColors.textDarkSecondary,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Download report',
+                            style: TextStyle(
+                              color: AppColors.textDarkSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

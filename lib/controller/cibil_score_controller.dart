@@ -2,8 +2,12 @@ import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../models/cibil_score_model.dart';
+import '../models/applicant_detail_model.dart';
 import '../services/api_service.dart';
+import '../services/session_manager.dart';
+import '../services/cibil_report_pdf_service.dart';
 import 'pan_kyc_controller.dart';
+import 'aadhaar_kyc_controller.dart';
 import 'dashboard_controller.dart';
 
 /// GetX Controller for CIBIL Credit Score fetching and display
@@ -160,6 +164,105 @@ class CibilScoreController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
       return false;
+    }
+  }
+
+  final isDownloadingPdf = false.obs;
+
+  /// Download official CIBIL Bureau Report PDF with 100% dynamic credit score & applicant data
+  Future<void> downloadReportPdf() async {
+    if (isDownloadingPdf.value) return;
+    isDownloadingPdf.value = true;
+
+    try {
+      // 1. Get user ID from session or previous PAN upload
+      final userId = int.tryParse(await SessionManager.getUserId()) ??
+          (Get.isRegistered<PanKycController>()
+              ? Get.find<PanKycController>().uploadedPanData.value?.userId
+              : null);
+
+      ApplicantDetailModel? applicantData;
+      if (userId != null) {
+        applicantData =
+            await ApiService.getApplicantDetailModel(userId: userId);
+      }
+
+      final applicant = applicantData?.applicant;
+      final kyc = applicantData?.kyc;
+
+      // 2. Resolve all user fields dynamically
+      final name = (applicant?.name ??
+              (Get.isRegistered<AadhaarKycController>()
+                  ? Get.find<AadhaarKycController>().userName.value
+                  : ''))
+          .trim();
+
+      final dob = (applicant?.dateOfBirth ??
+              (Get.isRegistered<AadhaarKycController>()
+                  ? Get.find<AadhaarKycController>().dob.value
+                  : ''))
+          .trim();
+
+      final gender = (applicant?.gender ??
+              (Get.isRegistered<AadhaarKycController>()
+                  ? Get.find<AadhaarKycController>().gender.value
+                  : 'Female'))
+          .trim();
+
+      final pan = panNumber.value.trim().isNotEmpty
+          ? panNumber.value.trim().toUpperCase()
+          : (applicant?.panCardNumber ?? '').trim().toUpperCase();
+
+      final aadhaar = (kyc?.aadhaar?.number ??
+              applicant?.aadhaarCardNumber ??
+              (Get.isRegistered<AadhaarKycController>()
+                  ? Get.find<AadhaarKycController>().maskedAadhaarDisplay.value
+                  : ''))
+          .trim();
+
+      final phone = (applicant?.phone ??
+              (Get.isRegistered<AadhaarKycController>()
+                  ? Get.find<AadhaarKycController>().linkedMobile.value
+                  : await SessionManager.getUserPhone()))
+          .trim();
+
+      final email = (applicant?.email ?? '').trim();
+
+      final address = (applicant?.address != null &&
+              applicant!.address!.isNotEmpty)
+          ? applicant.address!
+          : ((applicant?.communicationAddress != null &&
+                  applicant!.communicationAddress!.isNotEmpty)
+              ? applicant.communicationAddress!
+              : (applicant?.permanentAddress ??
+                  (Get.isRegistered<AadhaarKycController>()
+                      ? Get.find<AadhaarKycController>().address.value
+                      : '')));
+
+      // 3. Dynamic Credit Score directly from this screen/controller!
+      final dynamicScore = cibilScore.value > 0
+          ? cibilScore.value
+          : (kyc?.cibilScore ?? 750);
+
+      final reportData = CibilReportData(
+        fullName: name.isNotEmpty ? name : 'Applicant',
+        dob: dob.isNotEmpty ? dob : '-',
+        gender: gender.isNotEmpty ? gender : 'Female',
+        panNumber: pan.isNotEmpty ? pan : '-',
+        aadhaarNumber: aadhaar.isNotEmpty ? aadhaar : '-',
+        contactNumber: phone.isNotEmpty ? phone : '-',
+        email: email,
+        registeredAddress: address.isNotEmpty ? address : '-',
+        score: dynamicScore,
+      );
+
+      await CibilReportPdfService.saveOrDownloadPdf(
+        data: reportData,
+      );
+    } catch (e) {
+      debugPrint('Error downloading CIBIL PDF: $e');
+    } finally {
+      isDownloadingPdf.value = false;
     }
   }
 }

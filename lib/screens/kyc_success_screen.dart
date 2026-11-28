@@ -289,10 +289,6 @@ class _KycSuccessBodyState extends State<KycSuccessBody> {
 
   /// Bottom action buttons
   Widget _buildActionButtons(BuildContext context) {
-    final aadhaarController = Get.isRegistered<AadhaarKycController>()
-        ? Get.find<AadhaarKycController>()
-        : Get.put(AadhaarKycController());
-
     return Column(
       children: [
         // 1. Primary Button: "Choose loan type" (Proceed directly to apply for loan)
@@ -368,54 +364,6 @@ class _KycSuccessBodyState extends State<KycSuccessBody> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // 3. Download Receipt Button
-        Obx(
-          () => GestureDetector(
-            onTap: aadhaarController.isDownloadingReceipt.value
-                ? null
-                : () => aadhaarController.downloadVerificationReceipt(context: context),
-            child: Container(
-              width: double.infinity,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: aadhaarController.isDownloadingReceipt.value
-                  ? const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryPurple,
-                        ),
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.download_rounded,
-                          color: AppColors.muted,
-                          size: 16,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Download receipt',
-                          style: TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
             ),
           ),
         ),
