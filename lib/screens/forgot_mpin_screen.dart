@@ -13,11 +13,27 @@ import '../theme/theme.dart';
 /// "Send OTP →" CTA button, and "Back to login" link.
 /// Pixel-perfect match to Figma reference design.
 class ForgotMpinScreen extends StatelessWidget {
-  const ForgotMpinScreen({super.key});
+  final String? initialPhone;
+
+  const ForgotMpinScreen({
+    super.key,
+    this.initialPhone,
+  });
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ForgotMpinController());
+
+    if (initialPhone != null && initialPhone!.isNotEmpty) {
+      String clean = initialPhone!.replaceAll(RegExp(r'[^0-9]'), '');
+      if (clean.length > 10) {
+        clean = clean.substring(clean.length - 10);
+      }
+      if (clean.length == 10 && controller.mobileNumber.value.isEmpty) {
+        controller.mobileController.text = clean;
+        controller.mobileNumber.value = clean;
+      }
+    }
 
     return Scaffold(
       backgroundColor: AppColors.lightBackground,

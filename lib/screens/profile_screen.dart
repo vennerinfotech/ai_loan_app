@@ -7,7 +7,7 @@ import '../controller/profile_controller.dart';
 import 'loan_flow/applicant_details_screen.dart';
 import 'document_wallet_screen.dart';
 import 'personal_details_screen.dart';
-import 'reset_mpin_screen.dart';
+import 'forgot_mpin_screen.dart';
 import '../services/support_service.dart';
 
 /// Screen displaying user profile, account settings, security, and support (Reference Image 2)
@@ -447,6 +447,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   /// SECURITY Section Card
   Widget _buildSecurityCard(BuildContext context) {
+    final profileController = Get.isRegistered<ProfileController>()
+        ? Get.find<ProfileController>()
+        : Get.put(ProfileController());
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -460,7 +464,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             iconBg: AppColors.successGreenBg,
             iconColor: AppColors.successGreen,
             title: 'Change MPIN',
-            onTap: () => Get.to(() => const ResetMpinScreen()),
+            onTap: () => Get.to(() => ForgotMpinScreen(
+              initialPhone: profileController.user.value?.phone,
+            )),
           ),
           const Divider(height: 1, color: AppColors.canvas, indent: 56),
           _buildToggleRow(
