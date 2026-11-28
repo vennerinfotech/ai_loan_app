@@ -120,7 +120,7 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
               backgroundColor: Colors.transparent,
               insetPadding: const EdgeInsets.symmetric(horizontal: 22),
               child: Container(
-                padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+                padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
@@ -182,13 +182,14 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
                     ),
                     const SizedBox(height: 24),
 
-                    // Action Buttons: "Cancel" & "Continue"
+                    // Action Buttons: "Cancel" & "Upload PAN card"
                     Row(
                       children: [
                         // Cancel Button
                         Expanded(
+                          flex: 2,
                           child: SizedBox(
-                            height: 48,
+                            height: 46,
                             child: OutlinedButton(
                               onPressed: isSubmitting
                                   ? null
@@ -197,29 +198,33 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
                                       Get.back(); // return to enter PAN screen
                                     },
                               style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 4),
                                 side: const BorderSide(color: AppColors.line, width: 1.2),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
-                                'Cancel',
-                                style: TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                              child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Cancel',
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
 
                         // Continue Button (triggers store PAN API and navigates to upload screen)
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: SizedBox(
-                            height: 48,
+                            height: 46,
                             child: ElevatedButton(
                               onPressed: isSubmitting
                                   ? null
@@ -242,8 +247,9 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.navy,
                                 disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.6),
+                                padding: const EdgeInsets.symmetric(horizontal: 6),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 elevation: 0,
                               ),
@@ -252,28 +258,31 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        strokeWidth: 2.2,
+                                        strokeWidth: 2,
                                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                       ),
                                     )
-                                  : const Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Upload PAN card',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 13.5,
-                                            fontWeight: FontWeight.w800,
+                                  : const FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Upload PAN card',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                           ),
-                                        ),
-                                        SizedBox(width: 6),
-                                        Icon(
-                                          Icons.arrow_forward_rounded,
-                                          color: AppColors.amber,
-                                          size: 16,
-                                        ),
-                                      ],
+                                          SizedBox(width: 4),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            color: AppColors.amber,
+                                            size: 15,
+                                          ),
+                                        ],
+                                      ),
                                     ),
                             ),
                           ),
@@ -360,83 +369,89 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
 
               const Spacer(flex: 1),
 
-              // 2. Central Animated Gauge with Cosmic Orbit and Traveling Amber Dot
-              SizedBox(
-                width: 250,
-                height: 250,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Faint Cosmic background orbits
-                    AnimatedBuilder(
-                      animation: _orbitController,
-                      builder: (context, _) {
-                        return CustomPaint(
-                          size: const Size(250, 250),
-                          painter: _PanCosmicOrbitPainter(
-                            rotation: _orbitController.value,
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Main circular gauge with progress arc & glowing amber dot tip
-                    AnimatedBuilder(
-                      animation: _progressAnimation,
-                      builder: (context, _) {
-                        return CustomPaint(
-                          size: const Size(200, 200),
-                          painter: _CircularProgressGaugePainter(
-                            progress: _progressAnimation.value,
-                          ),
-                        );
-                      },
-                    ),
-
-                    // Center percentage & "Verifying identity" subtitle
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+              // 2. Central Animated Gauge with Cosmic Orbit and Traveling Amber Dot (Flexible to prevent small screen overflow)
+              Flexible(
+                flex: 5,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: SizedBox(
+                    width: 250,
+                    height: 250,
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '$_displayPercentage',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 44,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -1.0,
+                        // Faint Cosmic background orbits
+                        AnimatedBuilder(
+                          animation: _orbitController,
+                          builder: (context, _) {
+                            return CustomPaint(
+                              size: const Size(250, 250),
+                              painter: _PanCosmicOrbitPainter(
+                                rotation: _orbitController.value,
                               ),
+                            );
+                          },
+                        ),
+
+                        // Main circular gauge with progress arc & glowing amber dot tip
+                        AnimatedBuilder(
+                          animation: _progressAnimation,
+                          builder: (context, _) {
+                            return CustomPaint(
+                              size: const Size(200, 200),
+                              painter: _CircularProgressGaugePainter(
+                                progress: _progressAnimation.value,
+                              ),
+                            );
+                          },
+                        ),
+
+                        // Center percentage & "Verifying identity" subtitle
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '$_displayPercentage',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 44,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -1.0,
+                                  ),
+                                ),
+                                const Text(
+                                  '%',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 2),
                             const Text(
-                              '%',
+                              'Verifying identity',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w700,
+                                color: AppColors.indigoTint,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          'Verifying identity',
-                          style: TextStyle(
-                            color: AppColors.indigoTint,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // 3. Heading: "Hang tight, [Name]"
               Text(
@@ -477,7 +492,7 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
               // 5. Checklist Status Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1B1A66).withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(22),
@@ -557,7 +572,7 @@ class _PanVerifyingScreenState extends State<PanVerifyingScreen>
 
   Widget _buildDivider() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Divider(
         color: Colors.white.withValues(alpha: 0.08),
         height: 1,

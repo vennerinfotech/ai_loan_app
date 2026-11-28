@@ -30,9 +30,6 @@ class PanKycController extends GetxController {
   final panNumber = ''.obs;
   TextEditingController panController = TextEditingController();
 
-  // Branching toggle: is PAN verified with Income Tax records?
-  final isPanVerified = false.obs;
-
   // API State
   final isStoringPan = false.obs;
   final storePanData = Rxn<StorePanData>();
@@ -224,10 +221,6 @@ class PanKycController extends GetxController {
             panUploadedFilename.value = uploadData.filename!;
           } else if (resolvedFilename.isNotEmpty) {
             panUploadedFilename.value = resolvedFilename;
-          }
-
-          if (uploadData.panStatus != null) {
-            isPanVerified.value = uploadData.panStatus!.toLowerCase() == 'accepted';
           }
 
           // Populate extracted OCR details directly from API

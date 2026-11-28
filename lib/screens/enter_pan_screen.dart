@@ -151,10 +151,6 @@ class _EnterPanBodyState extends State<EnterPanBody> {
 
                 // "Upload PAN card instead" Button
                 _buildUploadInsteadButton(controller),
-                const SizedBox(height: 16),
-
-                // Branching simulation switch
-                _buildSimulationToggle(controller),
               ],
             ),
           ),
@@ -277,54 +273,6 @@ class _EnterPanBodyState extends State<EnterPanBody> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Simulation toggle to test both branches (PAN Verified vs PAN Not Verified)
-  Widget _buildSimulationToggle(PanKycController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.indigoTint,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line, width: 1),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.tune_rounded, color: AppColors.primaryPurple, size: 18),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Simulation: PAN matches Income Tax records?',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  'Toggle to test Verified vs Not Verified flows',
-                  style: TextStyle(
-                    color: AppColors.textDarkSecondary,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Obx(
-            () => Switch(
-              value: controller.isPanVerified.value,
-              activeThumbColor: AppColors.primaryPurple,
-              activeTrackColor: AppColors.primaryPurple.withValues(alpha: 0.3),
-              onChanged: (val) => controller.isPanVerified.value = val,
-            ),
-          ),
-        ],
       ),
     );
   }
