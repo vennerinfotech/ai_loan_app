@@ -356,48 +356,45 @@ class DashboardScreen extends StatelessWidget {
             ),
           ),
 
-          // Notification Action Button with Badge (Search bar removed)
-          GestureDetector(
-            onTap: () => controller.onDashboardOptionSelected('Notifications'),
-            child: Stack(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+          // Notification Action Button with Badge (no onTap placeholder navigation)
+          Stack(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: AppColors.textDark,
+                    size: 19,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 9,
+                right: 10,
+                child: Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryPurple,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.dashboardCardBorder, width: 1.2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.textDark,
-                      size: 19,
-                    ),
                   ),
                 ),
-                Positioned(
-                  top: 9,
-                  right: 10,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primaryPurple,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

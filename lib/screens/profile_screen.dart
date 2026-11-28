@@ -8,7 +8,6 @@ import 'loan_flow/applicant_details_screen.dart';
 import 'document_wallet_screen.dart';
 import 'personal_details_screen.dart';
 import 'reset_mpin_screen.dart';
-import '../widgets/language_selection_bottom_sheet.dart';
 import '../services/support_service.dart';
 
 /// Screen displaying user profile, account settings, security, and support (Reference Image 2)
@@ -120,9 +119,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Profile',
           style: TextStyle(
             color: AppColors.textDark,
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -0.5,
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
           ),
         ),
         GestureDetector(
@@ -474,22 +473,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               setState(() => notificationsEnabled = val);
             },
           ),
-          const Divider(height: 1, color: AppColors.canvas, indent: 56),
-          Obx(() {
-            final profileController = Get.isRegistered<ProfileController>()
-                ? Get.find<ProfileController>()
-                : Get.put(ProfileController());
-            return _buildActionRow(
-              icon: Icons.translate_rounded,
-              iconBg: AppColors.successGreenBg,
-              iconColor: AppColors.successGreen,
-              title: 'Language',
-              trailingText: profileController.selectedLanguage.value,
-              onTap: () {
-                LanguageSelectionBottomSheet.show(context);
-              },
-            );
-          }),
         ],
       ),
     );

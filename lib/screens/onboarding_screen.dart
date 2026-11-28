@@ -28,20 +28,24 @@ class OnboardingScreen extends StatelessWidget {
             const buttonsAreaHeight = 130.0;
             final pageViewHeight = availableHeight - buttonsAreaHeight;
 
-            // Proportional hero card height (~55% on spacious screens, ~50% on compact screens)
-            final heroFactor = availableHeight <= 620 ? 0.50 : 0.55;
+            // Proportional hero card height (~54% on spacious screens, ~46% on compact screens)
+            final isCompact = availableHeight < 680;
+            final heroFactor = isCompact ? 0.46 : 0.54;
             final heroCardHeight =
-                (availableHeight * heroFactor).clamp(280.0, 485.0);
+                (availableHeight * heroFactor).clamp(230.0, 485.0);
+
+            final titleFontSize = isCompact ? 25.0 : 29.0;
+            final descFontSize = isCompact ? 13.0 : 13.5;
 
             // Responsive vertical spacing below hero card:
             // Remaining space inside the page view area
-            const textContentHeight = 124.0; // indicator (6) + title (68) + subtitle (50)
+            final textContentHeight = isCompact ? 116.0 : 130.0;
             final remainingSpace =
                 math.max(0.0, pageViewHeight - heroCardHeight - textContentHeight);
 
             final gapAboveIndicator = (remainingSpace * 0.28).clamp(8.0, 32.0);
             final gapAboveTitle = (remainingSpace * 0.20).clamp(6.0, 22.0);
-            final gapBelowSubtitle = (remainingSpace * 0.52).clamp(8.0, 64.0);
+            final gapBelowSubtitle = (remainingSpace * 0.52).clamp(6.0, 64.0);
 
             return Column(
               children: [
@@ -56,7 +60,8 @@ class OnboardingScreen extends StatelessWidget {
                         itemCount: controller.pages.length,
                         itemBuilder: (context, index) {
                           final data = controller.pages[index];
-                          return Padding(
+                          return SingleChildScrollView(
+                            physics: const ClampingScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,9 +89,9 @@ class OnboardingScreen extends StatelessWidget {
                                     children: [
                                       TextSpan(
                                         text: data.titlePrefix,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: AppColors.textDark,
-                                          fontSize: 29,
+                                          fontSize: titleFontSize,
                                           fontWeight: FontWeight.w800,
                                           height: 1.15,
                                           letterSpacing: -0.6,
@@ -94,9 +99,9 @@ class OnboardingScreen extends StatelessWidget {
                                       ),
                                       TextSpan(
                                         text: data.titleHighlight,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: AppColors.headingHighlight,
-                                          fontSize: 29,
+                                          fontSize: titleFontSize,
                                           fontWeight: FontWeight.w800,
                                           height: 1.15,
                                           letterSpacing: -0.6,
@@ -111,9 +116,9 @@ class OnboardingScreen extends StatelessWidget {
                                 // Description subtitle (swipes with page)
                                 Text(
                                   data.description,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: AppColors.textDarkSecondary,
-                                    fontSize: 13.5,
+                                    fontSize: descFontSize,
                                     height: 1.45,
                                     fontWeight: FontWeight.w400,
                                   ),
@@ -358,13 +363,18 @@ class _OnboardingHeroCard extends StatelessWidget {
             bottom: 14,
             left: 12,
             right: 12,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: const [
-                _FeaturePill(title: 'Instant approval'),
-                _FeaturePill(title: '100% secure'),
-                _FeaturePill(title: 'Best rates'),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: const [
+                  _FeaturePill(title: 'Instant approval'),
+                  SizedBox(width: 6),
+                  _FeaturePill(title: '100% secure'),
+                  SizedBox(width: 6),
+                  _FeaturePill(title: 'Best rates'),
+                ],
+              ),
             ),
           ),
         ],

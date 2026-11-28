@@ -489,23 +489,28 @@ class ActiveApplicationsScreen extends StatelessWidget {
 
             // Bottom Action Row: Applied Date + [View detail] + [Track status]
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Applied on ${app.appliedDate}',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    'Applied on ${app.appliedDate}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 6),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // View detail button (opens bottom sheet)
                     GestureDetector(
                       onTap: () => LoanApplicationDetailBottomSheet.show(context, app),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
                         decoration: BoxDecoration(
                           color: AppColors.primaryPurple.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(8),
@@ -531,7 +536,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
 
                     // Track status button (retains tracking flow)
                     GestureDetector(
@@ -541,7 +546,7 @@ class ActiveApplicationsScreen extends StatelessWidget {
                         duration: Duration.zero,
                       ),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4.5),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
